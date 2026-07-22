@@ -1,0 +1,79 @@
+# Trading bot configuration.
+#
+# EVERY risk limit lives here. Nothing is hardcoded in Python.
+# This file is version-controlled: each change is an auditable diff you can
+# correlate against the equity curve later.
+#
+# An invalid config HALTS trading. It never falls back to defaults.
+
+# paper | live | halt
+#   paper -> orders go to Alpaca paper
+#   live  -> orders go to Robinhood MCP via the executor
+#   halt  -> reject every proposal and close open positions
+mode: paper
+
+account:
+  # Position sizing is validated against this until the broker reports equity.
+  # MUST match the funded account size or every size check is wrong.
+  starting_equity: 4600.00
+
+risk:
+  max_position_pct: 0.15            # max single position as fraction of equity
+  max_leveraged_exposure_pct: 0.20  # max total leveraged-ETF exposure
+  max_positions: 8
+  stop_loss_pct: 0.08               # floor stop distance
+  stop_atr_multiple: 2.0            # ATR14-based stop distance
+  max_stop_distance_pct: 0.15       # hard cap so a wild ATR can't create an absurd stop
+  daily_loss_limit_pct: 0.04        # -4% on the day -> no new entries
+  monthly_kill_switch_pct: 0.10     # -10% MTD  -> flatten to cash until the 1st
+  peak_drawdown_halt_pct: 0.18      # -18% from peak -> halt, require manual restart
+  allow_averaging_down: false       # never true
+  loss_reentry_block_days: 5        # no re-entry in a ticker exited at a loss
+
+sleeves:
+  momentum:
+    allocation: 0.45
+    lookback_months: 6
+    skip_months: 1
+    hold_top_n: 4
+    universe: [XLK, XLE, XLV, XLF, XLI, XLY, XLP, XLU, XLB, XLRE, XLC,
+               QQQ, IWM, EFA, EEM, GLD, TLT]
+    risk_off_symbol: SHY
+  pead:
+    allocation: 0.20
+    min_gap_pct: 0.04
+    min_volume_multiple: 2.0
+    min_close_range_pct: 0.67       # close in top third of the day's range
+    max_positions: 2
+    max_hold_days: 20
+    profit_target_pct: 0.15
+  mean_reversion:
+    allocation: 0.20
+    rsi_period: 2
+    rsi_entry: 5
+    rsi_exit: 70
+    max_hold_days: 6
+    stop_pct: 0.06
+  leveraged:
+    allocation: 0.15
+    symbols: [TQQQ, SOXL, UPRO]
+    max_vix: 22.0
+    trend_symbol: QQQ
+
+universe:
+  min_price: 5.00
+  min_avg_dollar_volume: 20000000   # 20-day average dollar volume
+  exclude_ipo_days: 180
+  # Bearish exposure uses inverse ETFs, never true shorts — Robinhood's
+  # shorting support is unreliable and would break paper/live parity.
+  allow_short: false
+  inverse_etfs: [SH, PSQ, SQQQ, SDS]
+
+execution:
+  order_type: limit                 # never market
+  max_limit_slippage_pct: 0.003     # marketable limit, <= 0.30% through the touch
+  no_entry_first_minutes: 10
+  no_entry_last_minutes: 10
+  market_open: "09:30"
+  market_close: "16:00"
+  timezone: America/New_York
