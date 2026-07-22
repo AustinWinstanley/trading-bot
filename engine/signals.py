@@ -43,11 +43,60 @@ class Signal:
 
 
 def _slice(df: pd.DataFrame, as_of: dt.date) -> pd.DataFrame:
-    """Bars up to and including `as_of`. The only lookahead guard that matters."""
+    """Bars up to and including `as_of`. The only lookahead guard that matters.
+
+    Uses `searchsorted` on the (sorted) index rather than a boolean mask: the
+    mask scans every row on every call, which made the backtest O(n^2) in the
+    number of trading days. This is O(log n) and returns a view.
+    """
     if df is None or df.empty:
         return pd.DataFrame()
     cutoff = pd.Timestamp(as_of, tz="UTC") + pd.Timedelta(hours=23, minutes=59)
-    return df.loc[df.index <= cutoff]
+    pos = df.index.searchsorted(cutoff, side="right")
+    if pos == len(df):
+        return df
+    return df.iloc[:pos]
+
+
+def _ind(df: pd.DataFrame, name: str, fn) -> pd.Series:
+    """Use a precomputed indicator column when present, else compute it.
+
+    Safe because every indicator in this module is *causal* — a rolling or
+    Wilder-smoothed function of past bars only. The value at row i is identical
+    whether it was computed over `df[:i+1]` or over the whole frame and then
+    indexed. `test_precomputed_indicators_match_point_in_time` asserts exactly
+    that, so the fast path cannot silently drift from the correct one.
+
+    This turns the backtest from O(n^2) into O(n) without giving the backtest
+    its own indicator implementation.
+    """
+    if name in df.columns:
+        return df[name]
+    return fn(df)
+
+
+def precompute_indicators(bars: dict[str, pd.DataFrame], cfg: Config) -> dict[str, pd.DataFrame]:
+    """Attach causal indicator columns to every frame. Backtest-only speedup."""
+    mom = cfg.sleeves["momentum"]
+    lookback = int(mom["lookback_months"]) * TRADING_DAYS_PER_MONTH
+    skip = int(mom["skip_months"]) * TRADING_DAYS_PER_MONTH
+    rsi_period = int(cfg.sleeves["mean_reversion"]["rsi_period"])
+
+    out: dict[str, pd.DataFrame] = {}
+    for sym, df in bars.items():
+        if df is None or df.empty:
+            continue
+        d = df.copy()
+        close = d["close"]
+        d["sma5"] = sma(close, 5)
+        d["sma50"] = sma(close, 50)
+        d["sma200"] = sma(close, 200)
+        d[f"rsi{rsi_period}"] = rsi(close, rsi_period)
+        d["atr14"] = atr(d, 14)
+        d["adv20"] = avg_dollar_volume(d, 20)
+        d[f"mom_{lookback}_{skip}"] = momentum_skip(close, lookback, skip)
+        out[sym] = d
+    return out
 
 
 def realised_vol(close: pd.Series, period: int = 20) -> float:
@@ -71,7 +120,7 @@ def market_regime(bars: dict[str, pd.DataFrame], as_of: dt.date, benchmark: str 
     if len(df) < 200:
         return {"risk_on": False, "reason": f"insufficient {benchmark} history ({len(df)} bars, need 200)"}
     close = df["close"]
-    ma200 = sma(close, 200).iloc[-1]
+    ma200 = _ind(df, "sma200", lambda d: sma(d["close"], 200)).iloc[-1]
     last = float(close.iloc[-1])
     risk_on = bool(last > ma200)
     return {
@@ -91,7 +140,7 @@ def passes_universe_filters(df: pd.DataFrame, cfg: Config) -> tuple[bool, str]:
         return False, f"price {price:.2f} < {cfg.universe.min_price:.2f}"
     if len(df) < 20:
         return False, f"only {len(df)} bars, need 20 for liquidity check"
-    adv = float(avg_dollar_volume(df, 20).iloc[-1])
+    adv = float(_ind(df, "adv20", lambda d: avg_dollar_volume(d, 20)).iloc[-1])
     if not np.isfinite(adv) or adv < cfg.universe.min_avg_dollar_volume:
         return False, f"20d avg dollar volume {adv:,.0f} < {cfg.universe.min_avg_dollar_volume:,.0f}"
     if len(df) < cfg.universe.exclude_ipo_days:
@@ -133,7 +182,8 @@ def momentum_signals(
         ok, _ = passes_universe_filters(df, cfg)
         if not ok or len(df) < lookback + 1:
             continue
-        mom = momentum_skip(df["close"], lookback, skip).iloc[-1]
+        mom = _ind(df, f"mom_{lookback}_{skip}",
+                   lambda d: momentum_skip(d["close"], lookback, skip)).iloc[-1]
         if pd.notna(mom):
             scored.append((symbol, float(mom)))
 
@@ -247,8 +297,8 @@ def mean_reversion_signals(
         df = _slice(bars.get(symbol, pd.DataFrame()), as_of)
         if df.empty:
             continue
-        r = rsi(df["close"], period).iloc[-1]
-        ma5 = sma(df["close"], 5).iloc[-1]
+        r = _ind(df, f"rsi{period}", lambda d: rsi(d["close"], period)).iloc[-1]
+        ma5 = _ind(df, "sma5", lambda d: sma(d["close"], 5)).iloc[-1]
         close = float(df["close"].iloc[-1])
         if pd.notna(r) and float(r) > float(sleeve["rsi_exit"]):
             signals.append(Signal("mean_reversion", symbol, "exit", reason=f"RSI({period}) {float(r):.1f} > {sleeve['rsi_exit']}"))
@@ -268,8 +318,8 @@ def mean_reversion_signals(
         if not ok or len(df) < 200:
             continue
         close = df["close"]
-        r = rsi(close, period).iloc[-1]
-        ma200 = sma(close, 200).iloc[-1]
+        r = _ind(df, f"rsi{period}", lambda d: rsi(d["close"], period)).iloc[-1]
+        ma200 = _ind(df, "sma200", lambda d: sma(d["close"], 200)).iloc[-1]
         last = float(close.iloc[-1])
         if pd.isna(r) or pd.isna(ma200):
             continue
@@ -312,8 +362,8 @@ def leveraged_signals(
 
     close = df["close"]
     last = float(close.iloc[-1])
-    ma50 = float(sma(close, 50).iloc[-1])
-    ma200 = float(sma(close, 200).iloc[-1])
+    ma50 = float(_ind(df, "sma50", lambda d: sma(d["close"], 50)).iloc[-1])
+    ma200 = float(_ind(df, "sma200", lambda d: sma(d["close"], 200)).iloc[-1])
     vol = realised_vol(close, 20)
     mom10 = float(close.iloc[-1] / close.iloc[-11] - 1.0) if len(close) > 11 else float("nan")
 

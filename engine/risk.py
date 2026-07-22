@@ -478,7 +478,10 @@ def evaluate(
                 RejectedProposal(symbol, f"approved notional {approved_notional:,.2f} rounds to zero quantity", raw)
             )
             continue
-        approved_notional = qty * clean["limit_price"]
+        # Floor to cents, never round. round() can round *up*, which would
+        # enlarge the order past what was requested and breach the gate's
+        # contract by a fraction of a cent.
+        approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
 
         stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
         stop_price = round(clean["limit_price"] * (1 - stop_pct), 4)
@@ -491,7 +494,7 @@ def evaluate(
                 symbol=symbol,
                 side="buy",
                 sleeve=clean["sleeve"],
-                notional=round(approved_notional, 2),
+                notional=approved_notional,   # already floored to cents
                 qty=qty,
                 limit_price=clean["limit_price"],
                 stop_price=stop_price,
