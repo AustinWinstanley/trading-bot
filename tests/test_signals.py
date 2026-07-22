@@ -97,6 +97,61 @@ def test_no_lookahead_in_full_signal_build(cfg):
     assert build_signals(full, as_of, cfg) == build_signals(truncated, as_of, cfg)
 
 
+def test_precomputed_indicators_match_point_in_time(cfg):
+    """The backtest's O(n) fast path must equal the O(n^2) correct path.
+
+    Precomputing indicators over the whole frame is only safe because every
+    indicator here is causal. This asserts it rather than assuming it — if
+    someone adds a centred or forward-looking indicator later, this fails.
+    """
+    from engine.signals import precompute_indicators
+
+    rng = np.random.default_rng(17)
+    df = make_bars(100 * np.cumprod(1 + rng.normal(0.0004, 0.015, 800)), volume=8_000_000)
+    pre = precompute_indicators({"X": df}, cfg)["X"]
+
+    lookback = int(cfg.sleeves["momentum"]["lookback_months"]) * 21
+    skip = int(cfg.sleeves["momentum"]["skip_months"]) * 21
+    period = int(cfg.sleeves["mean_reversion"]["rsi_period"])
+
+    checks = {
+        "sma5": lambda d: sma(d["close"], 5),
+        "sma50": lambda d: sma(d["close"], 50),
+        "sma200": lambda d: sma(d["close"], 200),
+        f"rsi{period}": lambda d: rsi(d["close"], period),
+        "atr14": lambda d: atr(d, 14),
+        "adv20": lambda d: avg_dollar_volume(d, 20),
+        f"mom_{lookback}_{skip}": lambda d: momentum_skip(d["close"], lookback, skip),
+    }
+
+    for i in (250, 400, 600, 799):
+        window = df.iloc[: i + 1]
+        for col, fn in checks.items():
+            point_in_time = fn(window).iloc[-1]
+            precomputed = pre[col].iloc[i]
+            if pd.isna(point_in_time) and pd.isna(precomputed):
+                continue
+            assert precomputed == pytest.approx(point_in_time, rel=1e-9, abs=1e-9), (
+                f"{col} diverged at row {i}: precomputed={precomputed} "
+                f"point_in_time={point_in_time}"
+            )
+
+
+def test_precomputed_and_raw_bars_produce_identical_signals(cfg):
+    from engine.signals import precompute_indicators
+
+    rng = np.random.default_rng(23)
+    universe = cfg.sleeves["momentum"]["universe"] + cfg.sleeves["leveraged"]["symbols"] + ["SPY"]
+    bars = {
+        s: make_bars(100 * np.cumprod(1 + 0.0007 + rng.normal(0, 0.013, 700)), volume=9_000_000)
+        for s in universe
+    }
+    as_of = bars["SPY"].index[-1].date()
+    assert build_signals(bars, as_of, cfg) == build_signals(
+        precompute_indicators(bars, cfg), as_of, cfg
+    )
+
+
 def test_slice_excludes_bars_after_as_of(cfg):
     df = trending_up(300)
     as_of = df.index[200].date()

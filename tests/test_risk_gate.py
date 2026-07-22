@@ -96,6 +96,29 @@ def test_gate_never_enlarges_an_order(cfg, account, clean_risk, ctx):
         assert order.notional <= order.requested_notional + 1e-6
 
 
+def test_rounding_never_enlarges_an_order(cfg, account, clean_risk, ctx):
+    """Regression: round() on the approved notional could round *up*.
+
+    Caught by the runtime invariant on the first backtest against real data.
+    Any cent-level enlargement is still an enlargement, so the gate floors.
+    """
+    awkward = [
+        buy("XLK", notional=n, limit=p)
+        for n, p in [
+            (515.4363427315984, 100.0),
+            (333.3333333333, 77.77),
+            (0.015, 100.0),
+            (99.999999, 33.33),
+            (690.0, 3.33),
+        ]
+    ]
+    result = evaluate(awkward, account, clean_risk, ctx, cfg)
+    for order in result.approved:
+        assert order.notional <= order.requested_notional, (
+            f"{order.symbol}: approved {order.notional!r} > requested {order.requested_notional!r}"
+        )
+
+
 def test_every_approved_buy_carries_a_stop_below_entry(cfg, account, clean_risk, ctx):
     result = evaluate([buy("XLK"), buy("QQQ", limit=400.0)], account, clean_risk, ctx, cfg)
     assert len(result.approved) == 2
