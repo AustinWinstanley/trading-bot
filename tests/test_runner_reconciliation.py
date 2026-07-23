@@ -5,6 +5,7 @@ import sqlite3
 from engine.risk import Position
 from scripts.run_daily import (
     cancel_symbol_orders,
+    is_liquidation_order,
     is_protective_order,
     reconcile_journal_orders,
     sync_broker_stops,
@@ -27,6 +28,12 @@ def test_stop_orders_are_protective_but_limits_are_pending_entries():
     assert is_protective_order({"type": "stop"})
     assert is_protective_order({"type": "stop_limit"})
     assert not is_protective_order({"type": "limit"})
+
+
+def test_only_dedicated_flatten_client_ids_are_liquidations():
+    assert is_liquidation_order({"client_order_id": "bot-20260723-XLK-flatten"})
+    assert not is_liquidation_order({"client_order_id": "bot-20260723-XLK-sell"})
+    assert not is_liquidation_order({"client_order_id": "manual-flatten"})
 
 
 def test_reconcile_updates_journal_from_broker():
