@@ -17,12 +17,40 @@ CRON_PAUSED_FILE="$STATE_DIR/crontab-paused-$STAMP.txt"
 PAUSE_MARKER="# TRADING-BOT-UPGRADE-PAUSED "
 CRON_WAS_PRESENT=0
 CRON_IS_PAUSED=0
+REPORT_STASHED=0
+REPORT_STASH_REF=""
+REPORT_STASH_NEEDS_MANUAL=0
 UPGRADE_SUCCEEDED=0
+
+restore_report_stash() {
+  if [[ "$REPORT_STASHED" -ne 1 ]]; then
+    return 0
+  fi
+
+  echo "==> Restoring server-generated paper reports"
+  # Mark this attempt consumed before popping so the EXIT trap never retries a
+  # conflicted pop. Git retains the stash when pop cannot apply cleanly.
+  REPORT_STASHED=0
+  if git stash pop --quiet "$REPORT_STASH_REF"; then
+    REPORT_STASH_REF=""
+    return 0
+  fi
+
+  REPORT_STASH_NEEDS_MANUAL=1
+  echo "Paper-report stash could not be restored automatically." >&2
+  echo "Git retained it as $REPORT_STASH_REF; inspect 'git status' before resolving." >&2
+  return 1
+}
 
 on_exit() {
   rc=$?
   if [[ "$UPGRADE_SUCCEEDED" -eq 1 ]]; then
     exit "$rc"
+  fi
+  if [[ "$REPORT_STASHED" -eq 1 ]]; then
+    set +e
+    restore_report_stash
+    set -e
   fi
   echo
   echo "UPGRADE FAILED (exit $rc)."
@@ -34,6 +62,9 @@ on_exit() {
     else
       echo "There was no original user crontab to restore."
     fi
+  fi
+  if [[ "$REPORT_STASH_NEEDS_MANUAL" -eq 1 ]]; then
+    echo "The paper-report stash remains available as $REPORT_STASH_REF."
   fi
   echo "No orders were submitted by this upgrade script."
   exit "$rc"
@@ -105,6 +136,13 @@ flock 203
 flock 204
 flock 205
 
+if ! git diff --quiet HEAD -- reports/paper; then
+  echo "==> Stashing tracked server-generated paper reports"
+  git stash push --quiet -m "upgrade-$STAMP paper reports" -- reports/paper
+  REPORT_STASH_REF="stash@{0}"
+  REPORT_STASHED=1
+fi
+
 echo "==> Installing declared dependencies"
 "$PIP" install -r "$REPO_ROOT/requirements.txt"
 
@@ -122,6 +160,8 @@ echo "==> Checking base paper account health"
 
 echo "==> Checking 2x paper account health"
 "$PYTHON" -m scripts.healthcheck --profile 2x
+
+restore_report_stash
 
 echo "==> Restoring original crontab"
 if [[ "$CRON_WAS_PRESENT" -eq 1 ]]; then
