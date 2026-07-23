@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 state/*.db
 state/*.json
+state/*.lock
 state/crontab-*.txt
 logs/
 .pytest_cache/
