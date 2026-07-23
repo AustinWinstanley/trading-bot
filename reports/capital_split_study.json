@@ -1,0 +1,576 @@
+{
+  "conclusion": "The current equal-dollar accounts behave like an approximately 1.5x combined portfolio, not two diversified strategies. Judge risk and capital decisions on the combined results.",
+  "current_capital_split": {
+    "base_dollars": 10000,
+    "2x_dollars": 10000,
+    "two_x_weight": 0.5,
+    "nominal_combined_leverage": 1.5
+  },
+  "limitations": [
+    "Both accounts trade the same sleeves, so operational correlation is near one.",
+    "Recent results retain stock-universe and borrow-history limitations.",
+    "Long-history results use the academic momentum proxy.",
+    "The severe bootstrap remains conditional on 2020-2026 regimes."
+  ],
+  "recent_capacity_adjusted": {
+    "full": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1138,
+        "ann_return": 0.123,
+        "vol": 0.1238,
+        "sharpe": 0.993,
+        "sortino": 1.287,
+        "max_dd": -0.1396,
+        "x_money": 2.001,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1308,
+        "ann_return": 0.1434,
+        "vol": 0.1536,
+        "sharpe": 0.933,
+        "sortino": 1.207,
+        "max_dd": -0.1724,
+        "x_money": 2.207,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1471,
+        "ann_return": 0.1637,
+        "vol": 0.1836,
+        "sharpe": 0.892,
+        "sortino": 1.153,
+        "max_dd": -0.2043,
+        "x_money": 2.42,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1626,
+        "ann_return": 0.1841,
+        "vol": 0.2137,
+        "sharpe": 0.862,
+        "sortino": 1.114,
+        "max_dd": -0.2353,
+        "x_money": 2.638,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1773,
+        "ann_return": 0.2045,
+        "vol": 0.2438,
+        "sharpe": 0.839,
+        "sortino": 1.084,
+        "max_dd": -0.2653,
+        "x_money": 2.86,
+        "nominal_combined_leverage": 2.0
+      }
+    ],
+    "early_2020_2022": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0436,
+        "ann_return": 0.0563,
+        "vol": 0.1173,
+        "sharpe": 0.48,
+        "sortino": 0.557,
+        "max_dd": -0.1159,
+        "x_money": 1.131,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0476,
+        "ann_return": 0.0645,
+        "vol": 0.1458,
+        "sharpe": 0.443,
+        "sortino": 0.514,
+        "max_dd": -0.1413,
+        "x_money": 1.143,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0509,
+        "ann_return": 0.0728,
+        "vol": 0.1744,
+        "sharpe": 0.417,
+        "sortino": 0.485,
+        "max_dd": -0.1666,
+        "x_money": 1.154,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0534,
+        "ann_return": 0.081,
+        "vol": 0.2031,
+        "sharpe": 0.399,
+        "sortino": 0.464,
+        "max_dd": -0.1917,
+        "x_money": 1.161,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0551,
+        "ann_return": 0.0893,
+        "vol": 0.2319,
+        "sharpe": 0.385,
+        "sortino": 0.448,
+        "max_dd": -0.2168,
+        "x_money": 1.167,
+        "nominal_combined_leverage": 2.0
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1746,
+        "ann_return": 0.17,
+        "vol": 0.1282,
+        "sharpe": 1.326,
+        "sortino": 1.86,
+        "max_dd": -0.1396,
+        "x_money": 1.77,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2036,
+        "ann_return": 0.1989,
+        "vol": 0.1589,
+        "sharpe": 1.251,
+        "sortino": 1.755,
+        "max_dd": -0.1724,
+        "x_money": 1.93,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2321,
+        "ann_return": 0.2278,
+        "vol": 0.1898,
+        "sharpe": 1.2,
+        "sortino": 1.68,
+        "max_dd": -0.2043,
+        "x_money": 2.097,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2601,
+        "ann_return": 0.2567,
+        "vol": 0.2208,
+        "sharpe": 1.163,
+        "sortino": 1.627,
+        "max_dd": -0.2353,
+        "x_money": 2.271,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2875,
+        "ann_return": 0.2857,
+        "vol": 0.2518,
+        "sharpe": 1.134,
+        "sortino": 1.587,
+        "max_dd": -0.2653,
+        "x_money": 2.451,
+        "nominal_combined_leverage": 2.0
+      }
+    ]
+  },
+  "long_history_proxy": {
+    "full": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2007-04-12",
+        "to": "2026-05-29",
+        "years": 19.13,
+        "cagr": 0.078,
+        "ann_return": 0.0805,
+        "vol": 0.1024,
+        "sharpe": 0.786,
+        "sortino": 1.033,
+        "max_dd": -0.2619,
+        "x_money": 4.208,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2007-04-12",
+        "to": "2026-05-29",
+        "years": 19.13,
+        "cagr": 0.0827,
+        "ann_return": 0.0879,
+        "vol": 0.1286,
+        "sharpe": 0.683,
+        "sortino": 0.899,
+        "max_dd": -0.3298,
+        "x_money": 4.574,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2007-04-12",
+        "to": "2026-05-29",
+        "years": 19.13,
+        "cagr": 0.0867,
+        "ann_return": 0.0953,
+        "vol": 0.1549,
+        "sharpe": 0.615,
+        "sortino": 0.81,
+        "max_dd": -0.3925,
+        "x_money": 4.906,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2007-04-12",
+        "to": "2026-05-29",
+        "years": 19.13,
+        "cagr": 0.0899,
+        "ann_return": 0.1027,
+        "vol": 0.1811,
+        "sharpe": 0.567,
+        "sortino": 0.747,
+        "max_dd": -0.4498,
+        "x_money": 5.192,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2007-04-12",
+        "to": "2026-05-29",
+        "years": 19.13,
+        "cagr": 0.0924,
+        "ann_return": 0.1101,
+        "vol": 0.2074,
+        "sharpe": 0.531,
+        "sortino": 0.699,
+        "max_dd": -0.5023,
+        "x_money": 5.423,
+        "nominal_combined_leverage": 2.0
+      }
+    ],
+    "design_2007_2016": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2007-04-12",
+        "to": "2016-12-30",
+        "years": 9.72,
+        "cagr": 0.0488,
+        "ann_return": 0.0523,
+        "vol": 0.0973,
+        "sharpe": 0.538,
+        "sortino": 0.727,
+        "max_dd": -0.2619,
+        "x_money": 1.588,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2007-04-12",
+        "to": "2016-12-30",
+        "years": 9.72,
+        "cagr": 0.046,
+        "ann_return": 0.0524,
+        "vol": 0.122,
+        "sharpe": 0.429,
+        "sortino": 0.581,
+        "max_dd": -0.3298,
+        "x_money": 1.548,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2007-04-12",
+        "to": "2016-12-30",
+        "years": 9.72,
+        "cagr": 0.0426,
+        "ann_return": 0.0525,
+        "vol": 0.1467,
+        "sharpe": 0.358,
+        "sortino": 0.484,
+        "max_dd": -0.3925,
+        "x_money": 1.5,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2007-04-12",
+        "to": "2016-12-30",
+        "years": 9.72,
+        "cagr": 0.0386,
+        "ann_return": 0.0525,
+        "vol": 0.1715,
+        "sharpe": 0.306,
+        "sortino": 0.415,
+        "max_dd": -0.4498,
+        "x_money": 1.445,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2007-04-12",
+        "to": "2016-12-30",
+        "years": 9.72,
+        "cagr": 0.0339,
+        "ann_return": 0.0526,
+        "vol": 0.1962,
+        "sharpe": 0.268,
+        "sortino": 0.363,
+        "max_dd": -0.5023,
+        "x_money": 1.383,
+        "nominal_combined_leverage": 2.0
+      }
+    ],
+    "heldout_2017_plus": [
+      {
+        "portfolio": "0% 2x / 100% base",
+        "from": "2017-01-03",
+        "to": "2026-05-29",
+        "years": 9.4,
+        "cagr": 0.1092,
+        "ann_return": 0.1097,
+        "vol": 0.1074,
+        "sharpe": 1.021,
+        "sortino": 1.309,
+        "max_dd": -0.1671,
+        "x_money": 2.649,
+        "nominal_combined_leverage": 1.0
+      },
+      {
+        "portfolio": "25% 2x / 75% base",
+        "from": "2017-01-03",
+        "to": "2026-05-29",
+        "years": 9.4,
+        "cagr": 0.1222,
+        "ann_return": 0.1247,
+        "vol": 0.1351,
+        "sharpe": 0.922,
+        "sortino": 1.185,
+        "max_dd": -0.2061,
+        "x_money": 2.954,
+        "nominal_combined_leverage": 1.25
+      },
+      {
+        "portfolio": "50% 2x / 50% base",
+        "from": "2017-01-03",
+        "to": "2026-05-29",
+        "years": 9.4,
+        "cagr": 0.1344,
+        "ann_return": 0.1396,
+        "vol": 0.1629,
+        "sharpe": 0.857,
+        "sortino": 1.102,
+        "max_dd": -0.2439,
+        "x_money": 3.271,
+        "nominal_combined_leverage": 1.5
+      },
+      {
+        "portfolio": "75% 2x / 25% base",
+        "from": "2017-01-03",
+        "to": "2026-05-29",
+        "years": 9.4,
+        "cagr": 0.1458,
+        "ann_return": 0.1546,
+        "vol": 0.1906,
+        "sharpe": 0.811,
+        "sortino": 1.044,
+        "max_dd": -0.2804,
+        "x_money": 3.594,
+        "nominal_combined_leverage": 1.75
+      },
+      {
+        "portfolio": "100% 2x / 0% base",
+        "from": "2017-01-03",
+        "to": "2026-05-29",
+        "years": 9.4,
+        "cagr": 0.1565,
+        "ann_return": 0.1696,
+        "vol": 0.2183,
+        "sharpe": 0.777,
+        "sortino": 1.0,
+        "max_dd": -0.3157,
+        "x_money": 3.921,
+        "nominal_combined_leverage": 2.0
+      }
+    ]
+  },
+  "equal_split_severe_bootstrap": {
+    "1y": {
+      "years": 1,
+      "block_sessions": 63,
+      "simulations": 5000,
+      "cagr": {
+        "p05": -0.0912,
+        "p25": 0.0403,
+        "p50": 0.1432,
+        "p75": 0.2603,
+        "p95": 0.4396
+      },
+      "sharpe": {
+        "p05": -0.3722,
+        "p25": 0.3044,
+        "p50": 0.8457,
+        "p75": 1.4408,
+        "p95": 2.286
+      },
+      "max_drawdown": {
+        "p05": -0.2308,
+        "p25": -0.1703,
+        "p50": -0.1297,
+        "p75": -0.1015,
+        "p95": -0.0737
+      },
+      "probability_negative_cagr": 0.1708,
+      "probability_drawdown_over_20pct": 0.1452,
+      "probability_drawdown_over_30pct": 0.006
+    },
+    "3y": {
+      "years": 3,
+      "block_sessions": 63,
+      "simulations": 5000,
+      "cagr": {
+        "p05": -0.0025,
+        "p25": 0.0832,
+        "p50": 0.1443,
+        "p75": 0.2097,
+        "p95": 0.3063
+      },
+      "sharpe": {
+        "p05": 0.0834,
+        "p25": 0.5214,
+        "p50": 0.829,
+        "p75": 1.1592,
+        "p95": 1.6484
+      },
+      "max_drawdown": {
+        "p05": -0.298,
+        "p25": -0.2263,
+        "p50": -0.189,
+        "p75": -0.1603,
+        "p95": -0.1122
+      },
+      "probability_negative_cagr": 0.0536,
+      "probability_drawdown_over_20pct": 0.4422,
+      "probability_drawdown_over_30pct": 0.048
+    }
+  },
+  "equal_split_long_history_stress": [
+    {
+      "window": "GFC",
+      "from": "2007-10-09",
+      "to": "2009-03-09",
+      "sessions": 356,
+      "total_return": -0.2526,
+      "max_drawdown": -0.3034,
+      "worst_day": -0.0481
+    },
+    {
+      "window": "momentum crash rebound",
+      "from": "2009-03-10",
+      "to": "2009-06-30",
+      "sessions": 79,
+      "total_return": -0.0999,
+      "max_drawdown": -0.1394,
+      "worst_day": -0.0182
+    },
+    {
+      "window": "Eurozone / US downgrade",
+      "from": "2011-05-02",
+      "to": "2011-10-03",
+      "sessions": 108,
+      "total_return": -0.1329,
+      "max_drawdown": -0.1474,
+      "worst_day": -0.0474
+    },
+    {
+      "window": "China / energy selloff",
+      "from": "2015-07-01",
+      "to": "2016-02-11",
+      "sessions": 156,
+      "total_return": -0.0323,
+      "max_drawdown": -0.1034,
+      "worst_day": -0.0288
+    },
+    {
+      "window": "2018 volatility and Q4",
+      "from": "2018-01-26",
+      "to": "2018-12-24",
+      "sessions": 230,
+      "total_return": -0.1401,
+      "max_drawdown": -0.177,
+      "worst_day": -0.041
+    },
+    {
+      "window": "COVID crash",
+      "from": "2020-02-19",
+      "to": "2020-03-23",
+      "sessions": 24,
+      "total_return": -0.2413,
+      "max_drawdown": -0.2439,
+      "worst_day": -0.0737
+    },
+    {
+      "window": "inflation bear",
+      "from": "2022-01-03",
+      "to": "2022-10-12",
+      "sessions": 196,
+      "total_return": -0.1281,
+      "max_drawdown": -0.143,
+      "worst_day": -0.0282
+    }
+  ]
+}

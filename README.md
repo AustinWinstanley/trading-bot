@@ -118,6 +118,26 @@ contribution is only 0.55–0.60. These are stress estimates, not a reconstructe
 production backtest, but the limited incremental return and much larger
 drawdown keep 2× strictly experimental.
 
+The two $10,000 paper accounts should be judged as one $20,000 portfolio.
+Because they trade the same sleeves, an equal-dollar split is approximately a
+1.5× portfolio rather than a diversified pair:
+
+| Capital in 2× account | Nominal combined leverage | Recent CAGR / max drawdown | 2007–2026 proxy CAGR / max drawdown |
+| ---: | ---: | ---: | ---: |
+| 0% | 1.00× | 11.38% / -13.96% | 7.80% / -26.19% |
+| 25% | 1.25× | 13.08% / -17.24% | 8.27% / -32.98% |
+| 50% (current paper split) | 1.50× | 14.71% / -20.43% | 8.67% / -39.25% |
+| 75% | 1.75× | 16.26% / -23.53% | 8.99% / -44.98% |
+| 100% | 2.00× | 17.73% / -26.53% | 9.24% / -50.23% |
+
+For the current equal split, the severe recent-history bootstrap estimates a
+17.1% chance of a negative one-year CAGR and a 44.2% chance of a drawdown over
+20% during a three-year path. The long-history proxy lost 25.3% through the
+GFC window and 24.1% during the COVID crash, with drawdowns of 30.3% and 24.4%
+respectively. These estimates support keeping the equal split as an aggressive
+paper experiment, while treating its combined risk budget and drawdown as
+1.5× exposure.
+
 A volatility de-risking overlay on that long-history 2× proxy updates weekly,
 never exceeds 2×, and charges 5 bp per estimated portfolio-wide rescale:
 
@@ -166,6 +186,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m pytest
 .venv/bin/python -m backtest.production_portfolio
 .venv/bin/python -m backtest.allocation_study
+.venv/bin/python -m backtest.capital_split_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
