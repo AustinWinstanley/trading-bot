@@ -388,11 +388,27 @@ borrow rejections, latest sleeve exposure, and sleeve-level unrealized P&L for
 both paper accounts. Dry runs wrap schema migrations in the same rolled-back
 transaction as journal changes.
 
-The 2× profile also records a shadow 12% volatility-target recommendation from
-its own daily paper-equity history. It requires 32 observations in a 63-session
-window and may recommend 0.5×–2× exposure, but `shadow` mode cannot alter target
-weights or orders. The base profile is explicitly `off`; config validation
-rejects any unimplemented active mode.
+The 2× profile records a shadow 12% volatility-target recommendation from its
+own daily paper-equity history. It requires 32 observations in a 63-session
+window and may recommend 0.5×–2× exposure. `shadow` mode cannot alter target
+weights or orders, and both checked-in profiles keep active scaling disabled by
+default (`off` for base and `shadow` for 2×).
+
+The implemented opt-in `active` mode applies the recommendation uniformly to
+every target and its sleeve attribution before proposals reach the normal risk
+gate. It may only reduce the fixed profile or restore it toward its configured
+ceiling; it cannot exceed the original targets. Until enough observations
+exist it retains fixed exposure. Historical returns earned under earlier active
+scales are normalized before estimating fixed-profile volatility, preventing a
+de-risk/re-leverage feedback loop. Existing rebalance bands, exposure caps,
+stops, circuit breakers, and marketable-limit rules remain in force.
+
+To begin an explicit 2× paper experiment, change only
+`paper_portfolio.volatility_overlay.mode` in `config_2x.yaml` from `shadow` to
+`active`, run the upgrade checks, and inspect the dry-run's `recommended` and
+`applied` leverage before allowing cron to resume. Returning the value to
+`shadow` immediately stops new overlay scaling; ordinary rebalancing restores
+the fixed targets subject to the same risk controls.
 
 ## Safety contract
 

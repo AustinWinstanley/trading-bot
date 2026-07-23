@@ -166,7 +166,8 @@ def main() -> None:
         },
         "limitations": [
             "Results inherit every limitation of the long-history momentum proxy.",
-            "A weekly portfolio-wide rescale is not implemented in live execution.",
+            "The long study rebalances weekly; opt-in paper execution evaluates "
+            "daily but trades only beyond the portfolio rebalance bands.",
             "Turnover cost is estimated before paper slippage telemetry accumulates.",
             "Volatility targeting cannot prevent overnight gaps or flash crashes.",
         ],
