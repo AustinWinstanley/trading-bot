@@ -1,0 +1,243 @@
+{
+  "pre_registration": {
+    "household_capital": {
+      "base": 0.2,
+      "2x": 0.8
+    },
+    "control_underlying_weights": {
+      "spy": 0.4,
+      "tsmom": 0.25,
+      "trend": 0.2,
+      "mom_ls": 0.3
+    },
+    "candidate_2x_underlying_weights": {
+      "spy": 0.3,
+      "tsmom": 0.35,
+      "trend": 0.25,
+      "mom_ls": 0.2
+    },
+    "promotion_rule": "Household Sharpe and max drawdown must improve and at least 90% of CAGR must remain in both early and held-out windows."
+  },
+  "decision": "reject",
+  "gates": {
+    "early_2020_2022": {
+      "sharpe_improves": false,
+      "max_drawdown_improves": true,
+      "cagr_retains_at_least_90pct": false
+    },
+    "heldout_2023_plus": {
+      "sharpe_improves": true,
+      "max_drawdown_improves": true,
+      "cagr_retains_at_least_90pct": false
+    }
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base unchanged",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.062,
+        "ann_return": 0.0775,
+        "vol": 0.126,
+        "sharpe": 0.615,
+        "sortino": 0.722,
+        "max_dd": -0.1148,
+        "x_money": 1.189
+      },
+      {
+        "portfolio": "2x same mandate control",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0923,
+        "ann_return": 0.1336,
+        "vol": 0.2493,
+        "sharpe": 0.536,
+        "sortino": 0.629,
+        "max_dd": -0.2084,
+        "x_money": 1.289
+      },
+      {
+        "portfolio": "2x differentiated defensive underlying",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0609,
+        "ann_return": 0.0921,
+        "vol": 0.2169,
+        "sharpe": 0.425,
+        "sortino": 0.505,
+        "max_dd": -0.1989,
+        "x_money": 1.185
+      },
+      {
+        "portfolio": "household same mandate control",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0873,
+        "ann_return": 0.1224,
+        "vol": 0.2246,
+        "sharpe": 0.545,
+        "sortino": 0.64,
+        "max_dd": -0.1897,
+        "x_money": 1.272
+      },
+      {
+        "portfolio": "household differentiated mandates",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0618,
+        "ann_return": 0.0892,
+        "vol": 0.1985,
+        "sharpe": 0.449,
+        "sortino": 0.533,
+        "max_dd": -0.1823,
+        "x_money": 1.188
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base unchanged",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.176,
+        "ann_return": 0.1711,
+        "vol": 0.1281,
+        "sharpe": 1.336,
+        "sortino": 1.872,
+        "max_dd": -0.1399,
+        "x_money": 1.777
+      },
+      {
+        "portfolio": "2x same mandate control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2754,
+        "ann_return": 0.276,
+        "vol": 0.251,
+        "sharpe": 1.1,
+        "sortino": 1.539,
+        "max_dd": -0.2623,
+        "x_money": 2.371
+      },
+      {
+        "portfolio": "2x differentiated defensive underlying",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2347,
+        "ann_return": 0.2339,
+        "vol": 0.2098,
+        "sharpe": 1.115,
+        "sortino": 1.572,
+        "max_dd": -0.2248,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "household same mandate control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2564,
+        "ann_return": 0.255,
+        "vol": 0.2263,
+        "sharpe": 1.127,
+        "sortino": 1.577,
+        "max_dd": -0.239,
+        "x_money": 2.248
+      },
+      {
+        "portfolio": "household differentiated mandates",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2234,
+        "ann_return": 0.2214,
+        "vol": 0.1933,
+        "sharpe": 1.145,
+        "sortino": 1.613,
+        "max_dd": -0.2082,
+        "x_money": 2.045
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base unchanged",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1233,
+        "ann_return": 0.1324,
+        "vol": 0.1272,
+        "sharpe": 1.041,
+        "sortino": 1.348,
+        "max_dd": -0.1399,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "2x same mandate control",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1895,
+        "ann_return": 0.2172,
+        "vol": 0.2502,
+        "sharpe": 0.868,
+        "sortino": 1.12,
+        "max_dd": -0.2623,
+        "x_money": 3.056
+      },
+      {
+        "portfolio": "2x differentiated defensive underlying",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1533,
+        "ann_return": 0.1753,
+        "vol": 0.2128,
+        "sharpe": 0.824,
+        "sortino": 1.073,
+        "max_dd": -0.2646,
+        "x_money": 2.505
+      },
+      {
+        "portfolio": "household same mandate control",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1773,
+        "ann_return": 0.2002,
+        "vol": 0.2255,
+        "sharpe": 0.888,
+        "sortino": 1.146,
+        "max_dd": -0.239,
+        "x_money": 2.86
+      },
+      {
+        "portfolio": "household differentiated mandates",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1479,
+        "ann_return": 0.1667,
+        "vol": 0.1955,
+        "sharpe": 0.853,
+        "sortino": 1.11,
+        "max_dd": -0.2347,
+        "x_money": 2.43
+      }
+    ]
+  },
+  "limitations": [
+    "Household returns assume daily rebalancing to an 80/20 account capital split.",
+    "The current-company momentum universe is survivorship-biased.",
+    "Historical short borrowability is unavailable.",
+    "Both accounts are modeled from $10,000 to preserve current whole-share capacity tests; the household weighting is applied to returns."
+  ]
+}
