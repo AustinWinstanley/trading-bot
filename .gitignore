@@ -15,3 +15,5 @@ state/edgar/*.zip
 state/edgar/*.parquet
 state/history/
 state/history_deep/
+state/xsec/
+state/universe_*.json

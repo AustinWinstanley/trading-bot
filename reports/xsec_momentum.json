@@ -1,0 +1,96 @@
+{
+  "note": "SURVIVORSHIP BIASED (currently-listed names only) \u2014 upper bound, negative results trustworthy, positive results are not validated",
+  "cost_bps": 15.0,
+  "results": [
+    {
+      "strategy": "12-1mo top10 monthly",
+      "cagr": 0.2544,
+      "sharpe": 0.755,
+      "vol": 0.4673,
+      "max_dd": -0.5172,
+      "x_money": 4.34,
+      "rebalances": 60.0,
+      "error": NaN
+    },
+    {
+      "strategy": "12-1mo top20 monthly",
+      "cagr": 0.2395,
+      "sharpe": 0.775,
+      "vol": 0.4033,
+      "max_dd": -0.4769,
+      "x_money": 4.02,
+      "rebalances": 60.0,
+      "error": NaN
+    },
+    {
+      "strategy": "12-1mo top50 monthly",
+      "cagr": 0.1899,
+      "sharpe": 0.739,
+      "vol": 0.3244,
+      "max_dd": -0.401,
+      "x_money": 3.08,
+      "rebalances": 60.0,
+      "error": NaN
+    },
+    {
+      "strategy": "12-1mo top20 quarterly",
+      "cagr": 0.1648,
+      "sharpe": 0.607,
+      "vol": 0.4069,
+      "max_dd": -0.4801,
+      "x_money": 2.69,
+      "rebalances": 20.0,
+      "error": NaN
+    },
+    {
+      "strategy": "6-1mo  top20 monthly",
+      "cagr": 0.1404,
+      "sharpe": 0.546,
+      "vol": 0.4218,
+      "max_dd": -0.5422,
+      "x_money": 2.34,
+      "rebalances": 66.0,
+      "error": NaN
+    },
+    {
+      "strategy": "12-1mo long/short top20",
+      "cagr": 0.1241,
+      "sharpe": 0.684,
+      "vol": 0.2192,
+      "max_dd": -0.3067,
+      "x_money": 2.13,
+      "rebalances": 60.0,
+      "error": NaN
+    },
+    {
+      "strategy": "3-1mo  top20 monthly",
+      "cagr": 0.11,
+      "sharpe": 0.481,
+      "vol": 0.4005,
+      "max_dd": -0.6452,
+      "x_money": 1.97,
+      "rebalances": 69.0,
+      "error": NaN
+    },
+    {
+      "strategy": "6-1mo  top20 weekly",
+      "cagr": 0.0921,
+      "sharpe": 0.435,
+      "vol": 0.4288,
+      "max_dd": -0.5547,
+      "x_money": 1.77,
+      "rebalances": 275.0,
+      "error": NaN
+    },
+    {
+      "strategy": "SPY buy & hold",
+      "cagr": NaN,
+      "sharpe": NaN,
+      "vol": NaN,
+      "max_dd": NaN,
+      "x_money": NaN,
+      "rebalances": NaN,
+      "error": "insufficient data"
+    }
+  ]
+}
