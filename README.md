@@ -403,12 +403,14 @@ scales are normalized before estimating fixed-profile volatility, preventing a
 de-risk/re-leverage feedback loop. Existing rebalance bands, exposure caps,
 stops, circuit breakers, and marketable-limit rules remain in force.
 
-To begin an explicit 2× paper experiment, change only
+To begin an explicit 2× paper experiment, promote only
 `paper_portfolio.volatility_overlay.mode` in `config_2x.yaml` from `shadow` to
-`active`, run the upgrade checks, and inspect the dry-run's `recommended` and
-`applied` leverage before allowing cron to resume. Returning the value to
-`shadow` immediately stops new overlay scaling; ordinary rebalancing restores
-the fixed targets subject to the same risk controls.
+`active` in a reviewed commit, then use the normal server upgrade and inspect
+its dry-run's `recommended` and `applied` leverage before cron resumes. Do not
+leave a server-only config edit that would dirty the deployment checkout.
+Returning the value to `shadow` in another committed change immediately stops
+new overlay scaling; ordinary rebalancing restores the fixed targets subject
+to the same risk controls.
 
 ## Safety contract
 
