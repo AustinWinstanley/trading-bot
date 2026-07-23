@@ -240,7 +240,10 @@ def analyze() -> None:
 
     close, _ = xload()
     close = close.copy()
-    close.index = pd.DatetimeIndex(close.index).normalize()
+    # Third occurrence of the same trap: Alpaca index is tz-aware UTC at
+    # 04:00/05:00, verdict gap_dates are naive. Normalise AND drop tz so
+    # searchsorted compares like with like.
+    close.index = pd.DatetimeIndex(close.index).tz_convert("UTC").tz_localize(None).normalize()
     close = close[~close.index.duplicated(keep="last")]
     spy = close["SPY"]
 
@@ -253,7 +256,7 @@ def analyze() -> None:
         idx = px.index.searchsorted(date, side="right")   # enter close of D+1
         if idx + 1 >= len(px):
             continue
-        entry, b_entry = px.iloc[idx + 1] if False else px.iloc[idx], b.iloc[idx]
+        entry, b_entry = px.iloc[idx], b.iloc[idx]
         row = {"event_id": v["event_id"], "confirm": bool(v["verdict"].get("confirm")),
                "guidance_raised": bool(v["verdict"].get("guidance_raised"))}
         okrow = True
