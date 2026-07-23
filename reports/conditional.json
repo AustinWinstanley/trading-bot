@@ -1,0 +1,82 @@
+[
+  {
+    "conditioner": "vol_target",
+    "static_IS": 0.244,
+    "cond_IS": 0.418,
+    "static_OOS": 0.955,
+    "cond_OOS": 1.07,
+    "IS_gain": 0.174,
+    "OOS_gain": 0.115,
+    "signal": "mom_12_1"
+  },
+  {
+    "conditioner": "mom_crash",
+    "static_IS": 0.244,
+    "cond_IS": 0.221,
+    "static_OOS": 0.955,
+    "cond_OOS": 0.814,
+    "IS_gain": -0.024,
+    "OOS_gain": -0.141,
+    "signal": "mom_12_1"
+  },
+  {
+    "conditioner": "dispersion",
+    "static_IS": 0.244,
+    "cond_IS": 0.15,
+    "static_OOS": 0.955,
+    "cond_OOS": 0.727,
+    "IS_gain": -0.094,
+    "OOS_gain": -0.228,
+    "signal": "mom_12_1"
+  },
+  {
+    "conditioner": "ALL stacked",
+    "static_IS": 0.244,
+    "cond_IS": 0.356,
+    "static_OOS": 0.955,
+    "cond_OOS": 0.75,
+    "IS_gain": 0.112,
+    "OOS_gain": -0.205,
+    "signal": "mom_12_1"
+  },
+  {
+    "conditioner": "vol_target",
+    "static_IS": 0.233,
+    "cond_IS": 0.441,
+    "static_OOS": 0.421,
+    "cond_OOS": 0.436,
+    "IS_gain": 0.207,
+    "OOS_gain": 0.015,
+    "signal": "mom_6_1"
+  },
+  {
+    "conditioner": "mom_crash",
+    "static_IS": 0.233,
+    "cond_IS": 0.285,
+    "static_OOS": 0.421,
+    "cond_OOS": 0.261,
+    "IS_gain": 0.052,
+    "OOS_gain": -0.161,
+    "signal": "mom_6_1"
+  },
+  {
+    "conditioner": "dispersion",
+    "static_IS": 0.233,
+    "cond_IS": 0.238,
+    "static_OOS": 0.421,
+    "cond_OOS": 0.251,
+    "IS_gain": 0.005,
+    "OOS_gain": -0.17,
+    "signal": "mom_6_1"
+  },
+  {
+    "conditioner": "ALL stacked",
+    "static_IS": 0.233,
+    "cond_IS": 0.452,
+    "static_OOS": 0.421,
+    "cond_OOS": 0.11,
+    "IS_gain": 0.219,
+    "OOS_gain": -0.312,
+    "signal": "mom_6_1"
+  }
+]
