@@ -1,0 +1,118 @@
+{
+  "premium": {
+    "mean_vrp_points": 3.672,
+    "median_vrp_points": 4.386,
+    "pct_days_positive": 0.832,
+    "n_days": 8382
+  },
+  "strategies": [
+    {
+      "strategy": "PUT (put-write), daily era",
+      "from": "2007-01-03",
+      "to": "2026-07-22",
+      "cagr": 0.0712,
+      "sharpe": 0.567,
+      "sortino": 0.539,
+      "vol": 0.1386,
+      "max_dd": -0.3709,
+      "worst_day": -0.1146,
+      "worst_month": -0.1765,
+      "x_money": 3.8
+    },
+    {
+      "strategy": "BXM (covered call), daily era",
+      "from": "2003-01-02",
+      "to": "2026-07-22",
+      "cagr": 0.0668,
+      "sharpe": 0.549,
+      "sortino": 0.55,
+      "vol": 0.1347,
+      "max_dd": -0.4014,
+      "worst_day": -0.1215,
+      "worst_month": -0.1501,
+      "x_money": 4.6
+    },
+    {
+      "strategy": "PUT put-write, common window",
+      "from": "2007-01-03",
+      "to": "2026-07-22",
+      "cagr": 0.0712,
+      "sharpe": 0.567,
+      "sortino": 0.539,
+      "vol": 0.1386,
+      "max_dd": -0.3709,
+      "worst_day": -0.1146,
+      "worst_month": -0.1765,
+      "x_money": 3.8
+    },
+    {
+      "strategy": "BXM covered call, common window",
+      "from": "2007-01-03",
+      "to": "2026-07-22",
+      "cagr": 0.0595,
+      "sharpe": 0.477,
+      "sortino": 0.473,
+      "vol": 0.1432,
+      "max_dd": -0.4014,
+      "worst_day": -0.1215,
+      "worst_month": -0.1501,
+      "x_money": 3.1
+    },
+    {
+      "strategy": "SPY buy & hold, common window",
+      "from": "2007-01-03",
+      "to": "2026-07-22",
+      "cagr": 0.1091,
+      "sharpe": 0.627,
+      "sortino": 0.766,
+      "vol": 0.1962,
+      "max_dd": -0.552,
+      "worst_day": -0.1094,
+      "worst_month": -0.1652,
+      "x_money": 7.6
+    }
+  ],
+  "crashes": [
+    {
+      "crash": "2000-02 dot-com",
+      "SPY_ret": -0.4162,
+      "SPY_dd": -0.475
+    },
+    {
+      "crash": "2008 GFC",
+      "PUT_ret": -0.3483,
+      "PUT_dd": -0.3709,
+      "BXM_ret": -0.3906,
+      "BXM_dd": -0.4014,
+      "SPY_ret": -0.552,
+      "SPY_dd": -0.552
+    },
+    {
+      "crash": "2020 COVID",
+      "PUT_ret": -0.2892,
+      "PUT_dd": -0.2893,
+      "BXM_ret": -0.3023,
+      "BXM_dd": -0.3026,
+      "SPY_ret": -0.337,
+      "SPY_dd": -0.337
+    },
+    {
+      "crash": "2022 bear",
+      "PUT_ret": -0.1375,
+      "PUT_dd": -0.1601,
+      "BXM_ret": -0.1719,
+      "BXM_dd": -0.1821,
+      "SPY_ret": -0.245,
+      "SPY_dd": -0.245
+    },
+    {
+      "crash": "2018 Volmageddon",
+      "PUT_ret": -0.062,
+      "PUT_dd": -0.0764,
+      "BXM_ret": -0.0631,
+      "BXM_dd": -0.0772,
+      "SPY_ret": -0.0875,
+      "SPY_dd": -0.101
+    }
+  ]
+}
