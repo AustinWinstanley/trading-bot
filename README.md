@@ -188,6 +188,22 @@ parent orders, or unprotected positions; schedule them separately so a missed
 daily job is observable. Deploy only reviewed commits, run the test suite on
 the server, then run both dry-run commands before enabling cron.
 
+## Paper attribution
+
+The paper journals automatically apply additive schema migrations and retain
+the old rows. New live runs record requested versus gate-approved notional,
+reference price, filled quantity and price, fill timestamp, and enriched
+rejection details. Missing fill telemetry on older terminal orders is
+backfilled from Alpaca when possible.
+
+Each live snapshot also records target and actual long, short, and gross
+exposure. Shared symbols are allocated proportionally across their originating
+sleeves; holdings with no current target remain visible as `unattributed`.
+Weekly reports show fill rate, adverse slippage, gate shrinkage, whole-share and
+borrow rejections, latest sleeve exposure, and sleeve-level unrealized P&L for
+both paper accounts. Dry runs wrap schema migrations in the same rolled-back
+transaction as journal changes.
+
 ## Safety contract
 
 `engine/risk.py` may reject or shrink a proposal. It may never enlarge one or
