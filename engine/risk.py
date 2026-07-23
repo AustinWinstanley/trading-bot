@@ -65,6 +65,12 @@ class AccountState:
     def short_exposure(self) -> float:
         return sum(abs(p.market_value) for p in self.positions.values() if p.is_short)
 
+    def long_exposure(self) -> float:
+        return sum(p.market_value for p in self.positions.values() if not p.is_short)
+
+    def gross_exposure(self) -> float:
+        return self.long_exposure() + self.short_exposure()
+
     def leveraged_exposure(self, leveraged_symbols: Iterable[str]) -> float:
         lev = set(leveraged_symbols)
         return sum(p.market_value for s, p in self.positions.items() if s in lev)
@@ -314,6 +320,8 @@ def evaluate(
     open_position_count = len(account.positions)
     committed_notional: dict[str, float] = {}
     leveraged_exposure = account.leveraged_exposure(cfg.leveraged_symbols)
+    long_exposure = account.long_exposure()
+    gross_exposure = account.gross_exposure()
     cash_remaining = account.cash if account.buying_power is None else account.buying_power
 
     for raw in proposals:
@@ -391,6 +399,36 @@ def evaluate(
                 result.rejected.append(
                     RejectedProposal(symbol, f"price {data.price:.2f} below minimum {cfg.universe.min_price:.2f}", raw))
                 continue
+            if data.avg_dollar_volume_20d < cfg.universe.min_avg_dollar_volume:
+                result.rejected.append(
+                    RejectedProposal(
+                        symbol,
+                        f"20d avg dollar volume {data.avg_dollar_volume_20d:,.0f} below minimum "
+                        f"{cfg.universe.min_avg_dollar_volume:,.0f}",
+                        raw,
+                    )
+                )
+                continue
+            if data.listed_days < cfg.universe.exclude_ipo_days:
+                result.rejected.append(
+                    RejectedProposal(
+                        symbol,
+                        f"listed {data.listed_days}d < {cfg.universe.exclude_ipo_days}d IPO exclusion",
+                        raw,
+                    )
+                )
+                continue
+            slip = (data.price - clean["limit_price"]) / data.price if data.price > 0 else 0.0
+            if slip > cfg.execution.max_limit_slippage_pct:
+                result.rejected.append(
+                    RejectedProposal(
+                        symbol,
+                        f"short limit price {clean['limit_price']:.4f} is {slip:.2%} through the touch, "
+                        f"limit {cfg.execution.max_limit_slippage_pct:.2%}",
+                        raw,
+                    )
+                )
+                continue
             held = account.positions.get(symbol)
             if held is not None and not held.is_short:
                 result.rejected.append(RejectedProposal(symbol, "cannot short a symbol held long (would be a wash)", raw))
@@ -399,19 +437,37 @@ def evaluate(
                 result.rejected.append(
                     RejectedProposal(symbol, f"averaging down is never permitted (short is {held.unrealized_pct:.2%})", raw))
                 continue
+            loss_date = risk_state.recent_losses.get(symbol)
+            if loss_date is not None:
+                age = (ctx.now.date() - loss_date).days
+                if age < cfg.risk.loss_reentry_block_days:
+                    result.rejected.append(
+                        RejectedProposal(
+                            symbol,
+                            f"exited at a loss {age}d ago; re-entry blocked for "
+                            f"{cfg.risk.loss_reentry_block_days}d",
+                            raw,
+                        )
+                    )
+                    continue
             if held is None and open_position_count >= cfg.risk.max_positions:
                 result.rejected.append(RejectedProposal(symbol, f"already at max_positions ({cfg.risk.max_positions})", raw))
                 continue
 
             short_cap = cfg.risk.max_short_exposure_pct * account.equity
-            cur_short = account.short_exposure() + sum(
-                committed_notional.get(f"SHORT:{k}", 0.0) for k in [symbol] for _ in [0]
-            )
             total_committed_short = sum(v for k, v in committed_notional.items() if k.startswith("SHORT:"))
-            room = short_cap - account.short_exposure() - total_committed_short
+            short_room = short_cap - account.short_exposure() - total_committed_short
+            gross_cap = cfg.risk.max_gross_exposure_pct * account.equity
+            gross_room = gross_cap - gross_exposure - total_committed_short
+            room = min(short_room, gross_room)
             if room <= 0:
                 result.rejected.append(
-                    RejectedProposal(symbol, f"short exposure cap reached ({short_cap:,.2f})", raw))
+                    RejectedProposal(
+                        symbol,
+                        f"short or gross exposure cap reached "
+                        f"(short {short_cap:,.2f}, gross {gross_cap:,.2f})",
+                        raw,
+                    ))
                 continue
             approved_notional = min(requested, room)
             adjustments = [] if approved_notional == requested else [
@@ -550,6 +606,31 @@ def evaluate(
             )
             approved_notional = room
 
+        # Portfolio-wide long and gross exposure. These are distinct from
+        # buying headroom: shorts can release broker cash while still raising
+        # gross risk, so broker buying power is never a sufficient risk cap.
+        long_cap = cfg.risk.max_long_exposure_pct * account.equity
+        gross_cap = cfg.risk.max_gross_exposure_pct * account.equity
+        long_room = long_cap - long_exposure
+        gross_room = gross_cap - gross_exposure
+        exposure_room = min(long_room, gross_room)
+        if exposure_room <= 0:
+            result.rejected.append(
+                RejectedProposal(
+                    symbol,
+                    f"long or gross exposure cap reached "
+                    f"(long {long_cap:,.2f}, gross {gross_cap:,.2f})",
+                    raw,
+                )
+            )
+            continue
+        if approved_notional > exposure_room:
+            adjustments.append(
+                f"shrunk to portfolio exposure cap "
+                f"({approved_notional:,.2f} -> {exposure_room:,.2f})"
+            )
+            approved_notional = exposure_room
+
         # Leveraged-ETF exposure cap.
         if data.is_leveraged or symbol in cfg.leveraged_symbols:
             lev_cap = cfg.risk.max_leveraged_exposure_pct * account.equity
@@ -612,6 +693,8 @@ def evaluate(
 
         committed_notional[symbol] = already_committed + approved_notional
         cash_remaining -= approved_notional
+        long_exposure += approved_notional
+        gross_exposure += approved_notional
         if held is None:
             open_position_count += 1
         if data.is_leveraged or symbol in cfg.leveraged_symbols:
