@@ -107,6 +107,12 @@ def is_protective_order(order: dict) -> bool:
     return str(order.get("type", "")).lower() in PROTECTIVE_ORDER_TYPES
 
 
+def is_liquidation_order(order: dict) -> bool:
+    return str(order.get("client_order_id", "")).startswith("bot-") and str(
+        order.get("client_order_id", "")
+    ).endswith("-flatten")
+
+
 def reconcile_journal_orders(conn: sqlite3.Connection, trader: Trader) -> dict[str, int]:
     """Refresh non-terminal journal rows from Alpaca, the source of truth."""
     counts: dict[str, int] = {}
@@ -183,9 +189,6 @@ def main() -> None:
 
     cfg_file, env_sfx = set_profile(args.profile)
     cfg = load_config(REPO_ROOT / cfg_file)
-    if cfg.mode == "halt":
-        print("mode=halt — refusing to run")
-        return
 
     key = os.environ.get(f"ALPACA_API_KEY{env_sfx}")
     secret = os.environ.get(f"ALPACA_API_SECRET{env_sfx}")
@@ -228,7 +231,16 @@ def main() -> None:
               f"pending_symbols={len(pending_symbols)} stops={len(protective_symbols)}")
 
     # ---- targets ---------------------------------------------------------
-    targets, diag = build_targets(cfg, t)
+    # Halt mode must not depend on research-data availability. It exists to
+    # cancel orders and flatten risk even if target construction is broken.
+    if cfg.mode == "halt":
+        targets = {}
+        diag = {
+            "sleeve_counts": {}, "total_weight": 0.0, "cash_weight": 1.0,
+            "origin": {}, "gross_leverage": 0.0,
+        }
+    else:
+        targets, diag = build_targets(cfg, t)
     print(f"targets: {diag['sleeve_counts']}  total={diag['total_weight']}  cash={diag['cash_weight']}")
 
     # ---- proposals -------------------------------------------------------
@@ -343,16 +355,32 @@ def main() -> None:
         print(f"  HALT: {result.halt_reason}")
     if result.flatten_all and not args.dry_run:
         print("  FLATTEN: selling everything per kill switch")
-        t.cancel_all_orders()
-        open_orders = []
+        existing_liquidations = {
+            str(o.get("symbol")) for o in open_orders if is_liquidation_order(o)
+        }
+        # Preserve already-live flatten orders; cancel entries and protective
+        # children so they cannot fight the liquidation.
+        for live_order in open_orders:
+            if not is_liquidation_order(live_order) and live_order.get("id"):
+                t.cancel_order(str(live_order["id"]))
         for sym, pos in positions.items():
+            if sym in existing_liquidations:
+                print(f"    flatten {sym} already open — leaving it in place")
+                continue
             px = t.latest_price(sym) or pos.current_price
             try:
+                flatten_id = f"bot-{today:%Y%m%d}-{sym}-flatten"
                 if pos.is_short:
-                    o = t.submit_limit(sym, "buy", abs(pos.qty), round(px * 1.003, 2))
+                    o = t.submit_limit(
+                        sym, "buy", abs(pos.qty), round(px * 1.003, 2),
+                        client_order_id=flatten_id,
+                    )
                     flatten_side = "cover"
                 else:
-                    o = t.submit_limit(sym, "sell", pos.qty, round(px * 0.997, 2))
+                    o = t.submit_limit(
+                        sym, "sell", pos.qty, round(px * 0.997, 2),
+                        client_order_id=flatten_id,
+                    )
                     flatten_side = "sell"
                 conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                              (ts, sym, flatten_side, "killswitch", abs(pos.qty), abs(pos.market_value),
