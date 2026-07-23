@@ -70,6 +70,23 @@ MOM_LS remains positive across those bounds, but historical borrowability and
 actual delisting proceeds are unavailable, so this reduces rather than removes
 the uncertainty.
 
+A whole-share capacity study also modeled the actual $10,000 account sizes.
+The base account realizes only 8.94% average short exposure versus its 15%
+target because 26.6% of ranked shorts round below one share. The 2× account
+realizes 24.62% versus 30%, with 5.1% rounding to zero:
+
+| Construction | Base short | Base CAGR / Sharpe | 2× short | 2× CAGR / Sharpe |
+| --- | ---: | ---: | ---: | ---: |
+| Fractional benchmark | 15.00% | 11.98% / 1.064 | 30.00% | 18.04% / 0.856 |
+| Current whole-share bottom 20 | 8.94% | 11.65% / 1.012 | 24.62% | 18.00% / 0.849 |
+| Price-aware bottom 20 | 12.11% | 11.64% / 1.028 | 25.94% | 17.89% / 0.847 |
+| Whole-share bottom 10 | 12.22% | 11.98% / 1.040 | 27.42% | 17.59% / 0.827 |
+
+Neither alternative dominates across the early and held-out windows, so the
+current construction remains deployed while real paper fills accumulate.
+Historical easy-to-borrow status is unavailable, making all variants optimistic
+execution bounds.
+
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.
