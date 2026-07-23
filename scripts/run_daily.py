@@ -29,7 +29,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from engine.config import load_config
-from engine.data import REPO_ROOT, atr
+from engine.data import REPO_ROOT, atr, load_env
 from engine.execute import Trader
 from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
@@ -190,6 +190,7 @@ def main() -> None:
     cfg_file, env_sfx = set_profile(args.profile)
     cfg = load_config(REPO_ROOT / cfg_file)
 
+    load_env()
     key = os.environ.get(f"ALPACA_API_KEY{env_sfx}")
     secret = os.environ.get(f"ALPACA_API_SECRET{env_sfx}")
     if env_sfx and not (key and secret):
