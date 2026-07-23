@@ -61,52 +61,52 @@
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1176,
-      "ann_return": 0.1262,
-      "vol": 0.1205,
-      "sharpe": 1.047,
-      "sortino": 1.353,
+      "cagr": 0.1255,
+      "ann_return": 0.1341,
+      "vol": 0.1241,
+      "sharpe": 1.081,
+      "sortino": 1.395,
       "max_dd": -0.1323,
-      "x_money": 2.045
+      "x_money": 2.14
     },
     {
       "portfolio": "ensemble fractional long_flat",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1148,
-      "ann_return": 0.1234,
-      "vol": 0.1196,
-      "sharpe": 1.032,
-      "sortino": 1.326,
+      "cagr": 0.1227,
+      "ann_return": 0.1314,
+      "vol": 0.1233,
+      "sharpe": 1.066,
+      "sortino": 1.368,
       "max_dd": -0.1333,
-      "x_money": 2.013
+      "x_money": 2.106
     },
     {
       "portfolio": "ensemble majority long_flat",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1135,
-      "ann_return": 0.1221,
-      "vol": 0.1197,
-      "sharpe": 1.02,
-      "sortino": 1.313,
+      "cagr": 0.1213,
+      "ann_return": 0.1301,
+      "vol": 0.1233,
+      "sharpe": 1.055,
+      "sortino": 1.355,
       "max_dd": -0.1319,
-      "x_money": 1.997
+      "x_money": 2.089
     },
     {
       "portfolio": "ensemble long_short",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1089,
-      "ann_return": 0.1173,
-      "vol": 0.1161,
-      "sharpe": 1.01,
-      "sortino": 1.29,
+      "cagr": 0.1167,
+      "ann_return": 0.1252,
+      "vol": 0.1197,
+      "sharpe": 1.046,
+      "sortino": 1.334,
       "max_dd": -0.1331,
-      "x_money": 1.945
+      "x_money": 2.035
     }
   ]
 }

@@ -96,13 +96,13 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0924,
-        "ann_return": 0.1101,
-        "vol": 0.2074,
-        "sharpe": 0.531,
-        "sortino": 0.699,
-        "max_dd": -0.5023,
-        "x_money": 5.423,
+        "cagr": 0.0922,
+        "ann_return": 0.1099,
+        "vol": 0.2075,
+        "sharpe": 0.53,
+        "sortino": 0.698,
+        "max_dd": -0.503,
+        "x_money": 5.406,
         "average_leverage": 2.0,
         "minimum_leverage": 2.0,
         "pct_sessions_below_2x": 0.0
@@ -112,14 +112,14 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0755,
-        "ann_return": 0.0812,
+        "cagr": 0.0754,
+        "ann_return": 0.0811,
         "vol": 0.1285,
-        "sharpe": 0.632,
-        "sortino": 0.837,
-        "max_dd": -0.3665,
-        "x_money": 4.027,
-        "average_leverage": 1.348,
+        "sharpe": 0.631,
+        "sortino": 0.836,
+        "max_dd": -0.3668,
+        "x_money": 4.02,
+        "average_leverage": 1.347,
         "minimum_leverage": 0.5,
         "pct_sessions_below_2x": 0.9263
       },
@@ -128,13 +128,13 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0809,
-        "ann_return": 0.09,
+        "cagr": 0.0808,
+        "ann_return": 0.0898,
         "vol": 0.1549,
-        "sharpe": 0.581,
-        "sortino": 0.774,
-        "max_dd": -0.4358,
-        "x_money": 4.43,
+        "sharpe": 0.58,
+        "sortino": 0.773,
+        "max_dd": -0.4363,
+        "x_money": 4.419,
         "average_leverage": 1.61,
         "minimum_leverage": 0.579,
         "pct_sessions_below_2x": 0.7528
@@ -144,16 +144,16 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0846,
-        "ann_return": 0.0965,
+        "cagr": 0.0845,
+        "ann_return": 0.0964,
         "vol": 0.1739,
-        "sharpe": 0.555,
-        "sortino": 0.74,
-        "max_dd": -0.4681,
-        "x_money": 4.729,
+        "sharpe": 0.554,
+        "sortino": 0.739,
+        "max_dd": -0.4686,
+        "x_money": 4.718,
         "average_leverage": 1.783,
         "minimum_leverage": 0.695,
-        "pct_sessions_below_2x": 0.489
+        "pct_sessions_below_2x": 0.4911
       }
     ],
     "design_2007_2016": [
@@ -162,13 +162,13 @@
         "from": "2007-04-12",
         "to": "2016-12-30",
         "years": 9.72,
-        "cagr": 0.0339,
-        "ann_return": 0.0526,
-        "vol": 0.1962,
-        "sharpe": 0.268,
-        "sortino": 0.363,
-        "max_dd": -0.5023,
-        "x_money": 1.383,
+        "cagr": 0.0337,
+        "ann_return": 0.0524,
+        "vol": 0.1963,
+        "sharpe": 0.267,
+        "sortino": 0.362,
+        "max_dd": -0.503,
+        "x_money": 1.38,
         "average_leverage": 2.0,
         "minimum_leverage": 2.0,
         "pct_sessions_below_2x": 0.0
@@ -178,15 +178,15 @@
         "from": "2007-04-12",
         "to": "2016-12-30",
         "years": 9.72,
-        "cagr": 0.0398,
-        "ann_return": 0.0471,
+        "cagr": 0.0397,
+        "ann_return": 0.047,
         "vol": 0.1271,
         "sharpe": 0.37,
-        "sortino": 0.505,
-        "max_dd": -0.3665,
-        "x_money": 1.461,
-        "average_leverage": 1.391,
-        "minimum_leverage": 0.541,
+        "sortino": 0.504,
+        "max_dd": -0.3668,
+        "x_money": 1.46,
+        "average_leverage": 1.39,
+        "minimum_leverage": 0.542,
         "pct_sessions_below_2x": 0.9306
       },
       {
@@ -194,14 +194,14 @@
         "from": "2007-04-12",
         "to": "2016-12-30",
         "years": 9.72,
-        "cagr": 0.0402,
-        "ann_return": 0.0512,
+        "cagr": 0.04,
+        "ann_return": 0.051,
         "vol": 0.1533,
-        "sharpe": 0.334,
-        "sortino": 0.459,
-        "max_dd": -0.4358,
-        "x_money": 1.467,
-        "average_leverage": 1.667,
+        "sharpe": 0.333,
+        "sortino": 0.457,
+        "max_dd": -0.4363,
+        "x_money": 1.465,
+        "average_leverage": 1.666,
         "minimum_leverage": 0.677,
         "pct_sessions_below_2x": 0.7408
       },
@@ -210,16 +210,16 @@
         "from": "2007-04-12",
         "to": "2016-12-30",
         "years": 9.72,
-        "cagr": 0.0418,
-        "ann_return": 0.0554,
+        "cagr": 0.0416,
+        "ann_return": 0.0553,
         "vol": 0.1703,
         "sharpe": 0.325,
-        "sortino": 0.448,
-        "max_dd": -0.4681,
-        "x_money": 1.488,
-        "average_leverage": 1.834,
+        "sortino": 0.447,
+        "max_dd": -0.4686,
+        "x_money": 1.486,
+        "average_leverage": 1.833,
         "minimum_leverage": 0.812,
-        "pct_sessions_below_2x": 0.4061
+        "pct_sessions_below_2x": 0.4102
       }
     ],
     "heldout_2017_plus": [
@@ -228,13 +228,13 @@
         "from": "2017-01-03",
         "to": "2026-05-29",
         "years": 9.4,
-        "cagr": 0.1565,
+        "cagr": 0.1563,
         "ann_return": 0.1696,
-        "vol": 0.2183,
-        "sharpe": 0.777,
-        "sortino": 1.0,
-        "max_dd": -0.3157,
-        "x_money": 3.921,
+        "vol": 0.2185,
+        "sharpe": 0.776,
+        "sortino": 0.999,
+        "max_dd": -0.3156,
+        "x_money": 3.917,
         "average_leverage": 2.0,
         "minimum_leverage": 2.0,
         "pct_sessions_below_2x": 0.0
@@ -244,14 +244,14 @@
         "from": "2017-01-03",
         "to": "2026-05-29",
         "years": 9.4,
-        "cagr": 0.1139,
-        "ann_return": 0.1166,
+        "cagr": 0.1138,
+        "ann_return": 0.1165,
         "vol": 0.1299,
-        "sharpe": 0.898,
-        "sortino": 1.153,
-        "max_dd": -0.1894,
-        "x_money": 2.757,
-        "average_leverage": 1.303,
+        "sharpe": 0.897,
+        "sortino": 1.152,
+        "max_dd": -0.1893,
+        "x_money": 2.754,
+        "average_leverage": 1.302,
         "minimum_leverage": 0.5,
         "pct_sessions_below_2x": 0.9217
       },
@@ -260,14 +260,14 @@
         "from": "2017-01-03",
         "to": "2026-05-29",
         "years": 9.4,
-        "cagr": 0.1248,
-        "ann_return": 0.1302,
+        "cagr": 0.1247,
+        "ann_return": 0.1301,
         "vol": 0.1566,
         "sharpe": 0.831,
         "sortino": 1.074,
-        "max_dd": -0.2242,
-        "x_money": 3.02,
-        "average_leverage": 1.552,
+        "max_dd": -0.2241,
+        "x_money": 3.018,
+        "average_leverage": 1.551,
         "minimum_leverage": 0.579,
         "pct_sessions_below_2x": 0.7652
       },
@@ -276,14 +276,14 @@
         "from": "2017-01-03",
         "to": "2026-05-29",
         "years": 9.4,
-        "cagr": 0.1309,
-        "ann_return": 0.1391,
-        "vol": 0.1775,
+        "cagr": 0.1308,
+        "ann_return": 0.139,
+        "vol": 0.1776,
         "sharpe": 0.783,
-        "sortino": 1.014,
-        "max_dd": -0.2473,
-        "x_money": 3.177,
-        "average_leverage": 1.731,
+        "sortino": 1.013,
+        "max_dd": -0.2472,
+        "x_money": 3.174,
+        "average_leverage": 1.73,
         "minimum_leverage": 0.695,
         "pct_sessions_below_2x": 0.5749
       }
@@ -296,7 +296,7 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.3414,
+        "total_return": -0.3411,
         "max_drawdown": -0.3941,
         "worst_day": -0.064
       },
@@ -305,17 +305,17 @@
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.1436,
-        "max_drawdown": -0.1916,
-        "worst_day": -0.0249
+        "total_return": -0.1446,
+        "max_drawdown": -0.1925,
+        "worst_day": -0.025
       },
       {
         "window": "Eurozone / US downgrade",
         "from": "2011-05-02",
         "to": "2011-10-03",
         "sessions": 108,
-        "total_return": -0.1823,
-        "max_drawdown": -0.1953,
+        "total_return": -0.1822,
+        "max_drawdown": -0.1954,
         "worst_day": -0.0634
       },
       {
@@ -323,8 +323,8 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.054,
-        "max_drawdown": -0.1451,
+        "total_return": -0.0539,
+        "max_drawdown": -0.1452,
         "worst_day": -0.0384
       },
       {
@@ -333,16 +333,16 @@
         "to": "2018-12-24",
         "sessions": 230,
         "total_return": -0.1992,
-        "max_drawdown": -0.2335,
-        "worst_day": -0.0549
+        "max_drawdown": -0.2336,
+        "worst_day": -0.055
       },
       {
         "window": "COVID crash",
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.3126,
-        "max_drawdown": -0.3157,
+        "total_return": -0.3125,
+        "max_drawdown": -0.3156,
         "worst_day": -0.0986
       },
       {
@@ -350,9 +350,9 @@
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.1802,
+        "total_return": -0.1801,
         "max_drawdown": -0.1982,
-        "worst_day": -0.0383
+        "worst_day": -0.0384
       }
     ],
     "de-risk 12% vol": [
@@ -361,17 +361,17 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.189,
-        "max_drawdown": -0.2606,
-        "worst_day": -0.0323
+        "total_return": -0.1884,
+        "max_drawdown": -0.2604,
+        "worst_day": -0.0322
       },
       {
         "window": "momentum crash rebound",
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.1149,
-        "max_drawdown": -0.1543,
+        "total_return": -0.1156,
+        "max_drawdown": -0.1548,
         "worst_day": -0.02
       },
       {
@@ -388,7 +388,7 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.033,
+        "total_return": -0.0328,
         "max_drawdown": -0.1051,
         "worst_day": -0.0322
       },
@@ -398,7 +398,7 @@
         "to": "2018-12-24",
         "sessions": 230,
         "total_return": -0.1446,
-        "max_drawdown": -0.1596,
+        "max_drawdown": -0.1595,
         "worst_day": -0.0531
       },
       {
@@ -406,8 +406,8 @@
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.1859,
-        "max_drawdown": -0.1894,
+        "total_return": -0.1858,
+        "max_drawdown": -0.1893,
         "worst_day": -0.0471
       },
       {
@@ -415,7 +415,7 @@
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.0949,
+        "total_return": -0.0947,
         "max_drawdown": -0.1119,
         "worst_day": -0.0219
       }
@@ -426,18 +426,18 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.2426,
-        "max_drawdown": -0.3145,
-        "worst_day": -0.0404
+        "total_return": -0.242,
+        "max_drawdown": -0.3143,
+        "worst_day": -0.0403
       },
       {
         "window": "momentum crash rebound",
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.1433,
-        "max_drawdown": -0.19,
-        "worst_day": -0.0249
+        "total_return": -0.1443,
+        "max_drawdown": -0.1907,
+        "worst_day": -0.025
       },
       {
         "window": "Eurozone / US downgrade",
@@ -445,7 +445,7 @@
         "to": "2011-10-03",
         "sessions": 108,
         "total_return": -0.1119,
-        "max_drawdown": -0.1324,
+        "max_drawdown": -0.1323,
         "worst_day": -0.0387
       },
       {
@@ -453,7 +453,7 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.0455,
+        "total_return": -0.0453,
         "max_drawdown": -0.1322,
         "worst_day": -0.0384
       },
@@ -471,8 +471,8 @@
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.2207,
-        "max_drawdown": -0.2242,
+        "total_return": -0.2206,
+        "max_drawdown": -0.2241,
         "worst_day": -0.0589
       },
       {
@@ -480,7 +480,7 @@
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.1264,
+        "total_return": -0.1262,
         "max_drawdown": -0.1434,
         "worst_day": -0.0274
       }
@@ -491,25 +491,25 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.2853,
-        "max_drawdown": -0.3525,
-        "worst_day": -0.0485
+        "total_return": -0.2846,
+        "max_drawdown": -0.3523,
+        "worst_day": -0.0484
       },
       {
         "window": "momentum crash rebound",
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.1436,
-        "max_drawdown": -0.1916,
-        "worst_day": -0.0249
+        "total_return": -0.1446,
+        "max_drawdown": -0.1925,
+        "worst_day": -0.025
       },
       {
         "window": "Eurozone / US downgrade",
         "from": "2011-05-02",
         "to": "2011-10-03",
         "sessions": 108,
-        "total_return": -0.1375,
+        "total_return": -0.1374,
         "max_drawdown": -0.1586,
         "worst_day": -0.0464
       },
@@ -518,7 +518,7 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.0562,
+        "total_return": -0.0561,
         "max_drawdown": -0.1466,
         "worst_day": -0.0384
       },
@@ -527,17 +527,17 @@
         "from": "2018-01-26",
         "to": "2018-12-24",
         "sessions": 230,
-        "total_return": -0.1698,
+        "total_return": -0.1697,
         "max_drawdown": -0.2012,
-        "worst_day": -0.0549
+        "worst_day": -0.055
       },
       {
         "window": "COVID crash",
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.244,
-        "max_drawdown": -0.2473,
+        "total_return": -0.2439,
+        "max_drawdown": -0.2472,
         "worst_day": -0.065
       },
       {
@@ -545,8 +545,8 @@
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.1564,
-        "max_drawdown": -0.1744,
+        "total_return": -0.1562,
+        "max_drawdown": -0.1742,
         "worst_day": -0.0329
       }
     ]
