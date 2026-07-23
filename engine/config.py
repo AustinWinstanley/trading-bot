@@ -245,10 +245,10 @@ def load_config(path: Path | str | None = None) -> Config:
         overlay = paper.get("volatility_overlay", {})
         if overlay:
             overlay_mode = overlay.get("mode", "off")
-            if overlay_mode not in {"off", "shadow"}:
+            if overlay_mode not in {"off", "shadow", "active"}:
                 raise ConfigError(
                     "paper_portfolio.volatility_overlay.mode must be 'off' "
-                    "or 'shadow'; active leverage changes are not implemented"
+                    "'shadow', or 'active'"
                 )
             _fraction(
                 _require(overlay, "target_vol", "paper_portfolio.volatility_overlay"),

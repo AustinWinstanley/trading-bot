@@ -33,7 +33,7 @@ from engine.attribution import build_exposure_attribution
 from engine.config import load_config
 from engine.data import REPO_ROOT, atr, load_env
 from engine.execute import Trader
-from engine.leverage_overlay import recommend_leverage
+from engine.leverage_overlay import apply_target_scale, recommend_leverage
 from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
                          SymbolData, evaluate)
@@ -326,7 +326,7 @@ def main() -> None:
             f"observations={overlay['observations']}/"
             f"{overlay['min_observations']} realized={vol_text} "
             f"recommended={overlay['recommended_leverage']:.2f}x "
-            f"(trading remains {fixed_leverage:.2f}x)"
+            f"applied={overlay['applied_leverage']:.2f}x"
         )
     reconciled = reconcile_journal_orders(conn, t)
     open_orders = t.open_orders()
@@ -350,6 +350,7 @@ def main() -> None:
         }
     else:
         targets, diag = build_targets(cfg, t)
+        targets, diag = apply_target_scale(targets, diag, overlay)
     diag["volatility_overlay"] = overlay
     print(f"targets: {diag['sleeve_counts']}  total={diag['total_weight']}  cash={diag['cash_weight']}")
 
@@ -464,7 +465,7 @@ def main() -> None:
     )
     ctx = MarketContext(now=now_et, is_trading_day=bool(clock.get("is_open")) or args.force,
                         symbols=symbol_data)
-    lev = float(cfg.sleeves_paper.get("gross_leverage", 1.0))
+    lev = float(overlay["applied_leverage"])
     buying_power = None
     if lev > 1.0:
         long_exposure = sum(p2.market_value for p2 in positions.values() if not p2.is_short)
@@ -689,7 +690,7 @@ def main() -> None:
         f"- volatility overlay {overlay['mode']} | observations "
         f"{overlay['observations']}/{overlay['min_observations']} | "
         f"recommended {overlay['recommended_leverage']:.2f}× | "
-        f"traded {fixed_leverage:.2f}×",
+        f"traded {overlay['applied_leverage']:.2f}×",
     ]
     if result.halt_reason:
         lines.append(f"- **HALT: {result.halt_reason}**")
