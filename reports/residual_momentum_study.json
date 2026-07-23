@@ -1,0 +1,128 @@
+{
+  "conclusion": "Keep raw MOM_LS. Removing market-beta momentum lowers Sharpe in both early and held-out samples.",
+  "results": {
+    "full": [
+      {
+        "portfolio": "raw MOM_LS",
+        "from": "2020-02-06",
+        "to": "2026-07-22",
+        "years": 6.46,
+        "cagr": 0.1048,
+        "ann_return": 0.1321,
+        "vol": 0.2244,
+        "sharpe": 0.589,
+        "sortino": 0.711,
+        "max_dd": -0.293,
+        "x_money": 1.903
+      },
+      {
+        "portfolio": "residual MOM_LS",
+        "from": "2020-02-06",
+        "to": "2026-07-22",
+        "years": 6.46,
+        "cagr": 0.0706,
+        "ann_return": 0.0934,
+        "vol": 0.2009,
+        "sharpe": 0.465,
+        "sortino": 0.583,
+        "max_dd": -0.2827,
+        "x_money": 1.554
+      },
+      {
+        "portfolio": "residual beta-neutral",
+        "from": "2020-02-06",
+        "to": "2026-07-22",
+        "years": 6.46,
+        "cagr": 0.0587,
+        "ann_return": 0.0775,
+        "vol": 0.1806,
+        "sharpe": 0.429,
+        "sortino": 0.557,
+        "max_dd": -0.2526,
+        "x_money": 1.445
+      }
+    ],
+    "early_2020_2022": [
+      {
+        "portfolio": "raw MOM_LS",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.1078,
+        "ann_return": 0.141,
+        "vol": 0.209,
+        "sharpe": 0.674,
+        "sortino": 0.655,
+        "max_dd": -0.209,
+        "x_money": 1.345
+      },
+      {
+        "portfolio": "residual MOM_LS",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0843,
+        "ann_return": 0.115,
+        "vol": 0.2043,
+        "sharpe": 0.563,
+        "sortino": 0.567,
+        "max_dd": -0.2005,
+        "x_money": 1.264
+      },
+      {
+        "portfolio": "residual beta-neutral",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0751,
+        "ann_return": 0.0991,
+        "vol": 0.172,
+        "sharpe": 0.576,
+        "sortino": 0.593,
+        "max_dd": -0.207,
+        "x_money": 1.234
+      }
+    ],
+    "heldout_2023_2026": [
+      {
+        "portfolio": "raw MOM_LS",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1027,
+        "ann_return": 0.1259,
+        "vol": 0.2348,
+        "sharpe": 0.536,
+        "sortino": 0.731,
+        "max_dd": -0.2097,
+        "x_money": 1.415
+      },
+      {
+        "portfolio": "residual MOM_LS",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0598,
+        "ann_return": 0.0781,
+        "vol": 0.1986,
+        "sharpe": 0.393,
+        "sortino": 0.569,
+        "max_dd": -0.2067,
+        "x_money": 1.229
+      },
+      {
+        "portfolio": "residual beta-neutral",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0457,
+        "ann_return": 0.0623,
+        "vol": 0.1866,
+        "sharpe": 0.334,
+        "sortino": 0.495,
+        "max_dd": -0.1704,
+        "x_money": 1.172
+      }
+    ]
+  }
+}
