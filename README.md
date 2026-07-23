@@ -236,6 +236,33 @@ daily trades are not executable bid/ask quotes, and American assignment is not
 replayed. Standard monthly expirations and $5 strike increments reduce, but do
 not eliminate, that historical-chain uncertainty.
 
+A second exact-contract study tested buying the cheaper 90%/85% spread before
+stress rather than after it. Its rule entered only while SPY was above its
+200-day average and 20-session realized volatility was below 15%, with maximum
+loss capped at 2% per trade and 4% per calendar year. It also failed:
+
+| Anticipatory hedge test | CAGR | Sharpe | Max drawdown |
+| --- | ---: | ---: | ---: |
+| Exact 2024-02–2026-06, no hedge | 41.23% | 1.398 | -26.23% |
+| Exact anticipatory 90/85 | 39.48% | 1.368 | -25.94% |
+| 2007–2026 2× proxy, no hedge | 9.22% | 0.530 | -50.30% |
+| 2007–2026 synthetic anticipatory 90/85 | 6.32% | 0.404 | -50.30% |
+
+Only 6 exact spreads completed, versus the predeclared minimum of 12. The
+synthetic hedge improved the 2017+ drawdown from -31.56% to -28.82% and the
+COVID crash from -31.25% to -28.51%, but it did not protect the GFC, 2011,
+2015–2016, or 2022 windows because the calm signal and short holding period
+were not aligned with those losses. Even a 1% annual premium budget reduced
+the long-history proxy CAGR from 9.22% to 8.50% without improving its -50.30%
+maximum drawdown; 2%, 4%, and 6% budgets progressively worsened CAGR.
+
+The synthetic pricing model was intentionally conservative and priced the six
+comparable exact entries at a median 1.43 times their observed trade-bar debit.
+An optimistic flat-VIX pricing sensitivity still produced only 6.27% CAGR and
+0.400 Sharpe. This makes the rejection insensitive to the chosen downside-skew
+assumption, but not a fill-quality validation. No anticipatory options feature
+was added.
+
 ## Setup
 
 ```bash
@@ -265,6 +292,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.pilot_follower_study
 .venv/bin/python -m backtest.options_strategy_study
 .venv/bin/python -m backtest.spy_put_spread_study
+.venv/bin/python -m backtest.anticipatory_tail_hedge_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```

@@ -5,6 +5,7 @@ from backtest.spy_put_spread_study import (
     add_dollar_pnl,
     budget_diagnostics,
     select_put_spread,
+    spread_pnl,
 )
 
 
@@ -62,3 +63,11 @@ def test_budget_diagnostics_counts_contracts_that_fit_account_limits():
         "2%": 2,
         "3%": 2,
     }
+
+
+def test_spread_pnl_rejects_unknown_mode_before_reading_bars():
+    with pytest.raises(ValueError, match="unknown hedge mode"):
+        spread_pnl(
+            [], pd.DataFrame(), pd.Series(dtype=float),
+            mode="unknown", friction_per_leg=0.10,
+        )
