@@ -1,0 +1,118 @@
+{
+  "pre_registration": {
+    "candidate": "Hold SHY at 20% only while the SPY 200-day trend sleeve is off.",
+    "cost": "2 bps per unit of one-way SHY turnover",
+    "promotion_rule": "Higher CAGR and Sharpe with no worse max drawdown in both early and held-out windows."
+  },
+  "decision": "reject",
+  "gates": {
+    "early_2020_2022": {
+      "cagr_improves": false,
+      "sharpe_improves": false,
+      "max_drawdown_not_worse": false
+    },
+    "heldout_2023_plus": {
+      "cagr_improves": true,
+      "sharpe_improves": true,
+      "max_drawdown_not_worse": true
+    }
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "cash reserve control",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.062,
+        "ann_return": 0.0775,
+        "vol": 0.126,
+        "sharpe": 0.615,
+        "sortino": 0.722,
+        "max_dd": -0.1148,
+        "x_money": 1.189
+      },
+      {
+        "portfolio": "SHY reserve candidate",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0603,
+        "ann_return": 0.0758,
+        "vol": 0.1263,
+        "sharpe": 0.6,
+        "sortino": 0.706,
+        "max_dd": -0.1168,
+        "x_money": 1.184
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "cash reserve control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.176,
+        "ann_return": 0.1711,
+        "vol": 0.1281,
+        "sharpe": 1.336,
+        "sortino": 1.872,
+        "max_dd": -0.1399,
+        "x_money": 1.777
+      },
+      {
+        "portfolio": "SHY reserve candidate",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1771,
+        "ann_return": 0.172,
+        "vol": 0.128,
+        "sharpe": 1.344,
+        "sortino": 1.883,
+        "max_dd": -0.1391,
+        "x_money": 1.783
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "cash reserve control",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1233,
+        "ann_return": 0.1324,
+        "vol": 0.1272,
+        "sharpe": 1.041,
+        "sortino": 1.348,
+        "max_dd": -0.1399,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "SHY reserve candidate",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.123,
+        "ann_return": 0.1322,
+        "vol": 0.1273,
+        "sharpe": 1.039,
+        "sortino": 1.345,
+        "max_dd": -0.1391,
+        "x_money": 2.111
+      }
+    ]
+  },
+  "reserve_diagnostics": {
+    "days_invested": 281,
+    "fraction_of_days_invested": 0.1852,
+    "one_way_turnover": 6.4,
+    "full_period_incremental_return_annualized": -0.0002
+  },
+  "limitations": [
+    "SHY is an investable short-Treasury proxy, not broker-paid cash interest.",
+    "The test allocates only the explicit trend reserve and excludes short proceeds.",
+    "A live implementation would introduce an additional ETF position and order path.",
+    "The underlying momentum sleeve remains survivorship-biased."
+  ]
+}
