@@ -51,6 +51,12 @@ class Trader(AlpacaClient):
     def open_orders(self) -> list[dict]:
         return self._get(self.trading_base, "/v2/orders", {"status": "open", "limit": 500})  # type: ignore
 
+    def get_order(self, order_id: str) -> dict:
+        return self._get(self.trading_base, f"/v2/orders/{order_id}")
+
+    def cancel_order(self, order_id: str) -> None:
+        self._delete(f"/v2/orders/{order_id}")
+
     def cancel_all_orders(self) -> None:
         self._delete("/v2/orders")
 
