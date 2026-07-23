@@ -92,11 +92,11 @@ class Trader(AlpacaClient):
 
         Alpaca's OTO order keeps the stop dormant until the parent entry fills,
         eliminating both the unprotected interval and phantom local stops for
-        entries that never fill. Fractional stop orders require DAY TIF.
+        entries that never fill. Alpaca advanced orders require whole shares.
         """
         assert side in ("buy", "sell")
-        qty = math.floor(qty * 1e6) / 1e6
-        if qty <= 0:
+        qty = math.floor(qty)
+        if qty < 1:
             raise AlpacaError(f"{symbol}: qty rounds to zero")
         if stop_price <= 0:
             raise AlpacaError(f"{symbol}: stop price must be positive")
@@ -117,3 +117,43 @@ class Trader(AlpacaClient):
         if client_order_id:
             payload["client_order_id"] = client_order_id[:48]
         return self._post("/v2/orders", payload)
+
+    def submit_entry(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        limit_price: float,
+        stop_price: float,
+        *,
+        client_order_id: str | None = None,
+    ) -> tuple[dict, bool]:
+        """Submit an entry and report whether its stop is broker-held.
+
+        Alpaca rejects fractional advanced orders. Whole-share entries use OTO;
+        fractional entries use a simple DAY limit and must receive a software
+        fallback stop from the runner.
+        """
+        whole_qty = round(qty)
+        if math.isclose(qty, whole_qty, abs_tol=1e-6):
+            return (
+                self.submit_protected_limit(
+                    symbol,
+                    side,
+                    float(whole_qty),
+                    limit_price,
+                    stop_price,
+                    client_order_id=client_order_id,
+                ),
+                True,
+            )
+        return (
+            self.submit_limit(
+                symbol,
+                side,
+                qty,
+                limit_price,
+                client_order_id=client_order_id,
+            ),
+            False,
+        )

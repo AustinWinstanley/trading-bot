@@ -21,7 +21,7 @@ def test_protected_long_is_an_oto_with_stop(monkeypatch):
 
     monkeypatch.setattr(trader, "_post", fake_post)
     result = trader.submit_protected_limit(
-        "XLK", "buy", 1.23456789, 100.0, 92.0,
+        "XLK", "buy", 2.0, 100.0, 92.0,
         client_order_id="entry-1",
     )
 
@@ -30,7 +30,7 @@ def test_protected_long_is_an_oto_with_stop(monkeypatch):
     payload = captured["payload"]
     assert payload["order_class"] == "oto"
     assert payload["time_in_force"] == "day"
-    assert payload["qty"] == "1.234567"
+    assert payload["qty"] == "2"
     assert payload["stop_loss"] == {"stop_price": "92.0"}
 
 
@@ -43,6 +43,39 @@ def test_protected_short_has_stop_above_entry(monkeypatch):
     )
     trader.submit_protected_limit("XLK", "sell", 5.0, 100.0, 108.0)
     assert payloads[0]["stop_loss"]["stop_price"] == "108.0"
+
+
+def test_fractional_entry_is_simple_and_reports_software_stop(monkeypatch):
+    trader = trader_without_network()
+    payloads = []
+    monkeypatch.setattr(
+        trader,
+        "_post",
+        lambda path, payload: payloads.append(payload) or {"id": "fractional"},
+    )
+    order, broker_protected = trader.submit_entry(
+        "XLK", "buy", 1.23456789, 100.0, 92.0,
+        client_order_id="entry-1",
+    )
+    assert order["id"] == "fractional"
+    assert not broker_protected
+    assert payloads[0]["qty"] == "1.234567"
+    assert "order_class" not in payloads[0]
+
+
+def test_whole_share_entry_uses_broker_oto(monkeypatch):
+    trader = trader_without_network()
+    payloads = []
+    monkeypatch.setattr(
+        trader,
+        "_post",
+        lambda path, payload: payloads.append(payload) or {"id": "whole"},
+    )
+    _, broker_protected = trader.submit_entry(
+        "XLK", "buy", 2.0, 100.0, 92.0,
+    )
+    assert broker_protected
+    assert payloads[0]["order_class"] == "oto"
 
 
 @pytest.mark.parametrize(

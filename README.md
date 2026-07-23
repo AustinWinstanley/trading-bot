@@ -15,7 +15,7 @@ cron
   -> engine/portfolio.py     build target weights from completed daily data
   -> scripts/run_daily.py    diff targets against broker positions/orders
   -> engine/risk.py          reject or shrink; never enlarge or invent
-  -> engine/execute.py       Alpaca DAY limit + OTO broker stop
+  -> engine/execute.py       Alpaca DAY limit + whole-share OTO broker stop
   -> state/paper*.db         reconcile journal back to Alpaca order state
 ```
 
@@ -147,7 +147,8 @@ Risk controls include:
 
 - single-name, long, short, gross, and leveraged-ETF exposure caps;
 - daily, monthly, and peak-drawdown circuit breakers;
-- broker-held OTO stops plus a local monitoring fallback;
+- broker-held OTO stops for whole-share entries, with simple DAY fractional
+  entries protected by the local monitoring fallback;
 - no averaging down;
 - loss re-entry cooldown;
 - liquidity, price, IPO-age, borrowability, and slippage filters;

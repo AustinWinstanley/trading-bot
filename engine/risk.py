@@ -61,6 +61,7 @@ class AccountState:
     # The daily runner computes this as (gross_leverage * equity - long
     # exposure), NOT the broker's 4x buying power — the config is the cap.
     buying_power: float | None = None
+    shorting_enabled: bool = True
 
     def short_exposure(self) -> float:
         return sum(abs(p.market_value) for p in self.positions.values() if p.is_short)
@@ -382,6 +383,11 @@ def evaluate(
         if clean["side"] == "short":
             if not cfg.universe.allow_short:
                 result.rejected.append(RejectedProposal(symbol, "shorting disabled in config", raw))
+                continue
+            if not account.shorting_enabled:
+                result.rejected.append(
+                    RejectedProposal(symbol, "broker account does not permit shorting", raw)
+                )
                 continue
             if result.new_entries_blocked:
                 result.rejected.append(
