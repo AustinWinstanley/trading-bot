@@ -90,7 +90,7 @@ execution:
 # Deferred to iterations: options overlays, MOM_LS (needs shorts), LLM veto.
 paper_portfolio:
   sleeves:
-    clone: 0.40         # 13F top-3 per fund ("conviction"), equal weight
+    equity_core: 0.40   # unconditional SPY core; replaced invalidated clone study
     tsmom: 0.25         # asset-class trend, long/flat, inverse-vol weights
     trend: 0.20         # SPY above 200DMA, else cash
     mom_ls: 0.15        # market-neutral momentum: 15% long AND 15% short

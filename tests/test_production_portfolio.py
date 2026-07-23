@@ -2,6 +2,8 @@ import pandas as pd
 
 from backtest.clone_study import build_weights
 from backtest.production_portfolio import norm_index, returns_summary
+from engine.config import load_config
+from engine.portfolio import equity_core_targets
 
 
 def test_norm_index_aligns_different_intraday_utc_stamps():
@@ -36,3 +38,10 @@ def test_clone_weights_never_appear_before_timezone_naive_filing_event():
     weights = build_weights(holdings, dates, top_n=1)
     assert weights.loc[:"2021-05-15", "XLK"].sum() == 0
     assert weights.loc["2021-05-16":, "XLK"].eq(1).all()
+
+
+def test_equity_core_matches_configured_spy_allocation():
+    cfg = load_config()
+    assert equity_core_targets(cfg) == {
+        "SPY": cfg.sleeves_paper["sleeves"]["equity_core"]
+    }
