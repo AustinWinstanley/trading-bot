@@ -108,11 +108,15 @@ The server wrapper expects the checkout at `/home/user/trading-bot`:
 scripts/paper.sh daily
 scripts/paper.sh daily2x
 scripts/paper.sh weekly
+scripts/paper.sh health
+scripts/paper.sh health2x
 ```
 
 The wrapper uses `flock` to prevent overlapping jobs and `timeout` to bound
-stalled runs. Deploy only reviewed commits, run the test suite on the server,
-then run both dry-run commands before enabling cron.
+stalled runs. Health jobs fail on stale snapshots, inactive accounts, stale
+parent orders, or unprotected positions; schedule them separately so a missed
+daily job is observable. Deploy only reviewed commits, run the test suite on
+the server, then run both dry-run commands before enabling cron.
 
 ## Safety contract
 
