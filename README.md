@@ -118,6 +118,22 @@ contribution is only 0.55–0.60. These are stress estimates, not a reconstructe
 production backtest, but the limited incremental return and much larger
 drawdown keep 2× strictly experimental.
 
+A volatility de-risking overlay on that long-history 2× proxy updates weekly,
+never exceeds 2×, and charges 5 bp per estimated portfolio-wide rescale:
+
+| 2× risk policy | CAGR | Sharpe | Max drawdown | Average leverage |
+| --- | ---: | ---: | ---: | ---: |
+| Fixed 2× | 9.24% | 0.531 | -50.23% | 2.00× |
+| 12% volatility target | 7.55% | 0.632 | -36.65% | 1.35× |
+| 15% volatility target | 8.09% | 0.581 | -43.58% | 1.61× |
+| 18% volatility target | 8.46% | 0.555 | -46.81% | 1.78× |
+
+The pre-selected 15% variant failed its 25%-drawdown-reduction rule. The 12%
+variant passed that same screen in both 2007–2016 and 2017+ and also improved
+Sharpe/drawdown in both windows of the exact 2020–2026 production study. It is
+therefore a candidate for a new paper-only test, not evidence for real-money
+deployment.
+
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.
