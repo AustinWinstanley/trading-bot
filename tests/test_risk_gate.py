@@ -517,6 +517,10 @@ def ctx_shortable(ctx):
     symbols = dict(ctx.symbols)
     symbols["XLK"] = SymbolData(price=100.0, atr14=2.0, avg_dollar_volume_20d=500e6, shortable=True)
     symbols["NOBORROW"] = SymbolData(price=50.0, atr14=1.0, avg_dollar_volume_20d=100e6, shortable=False)
+    symbols["THINSHORT"] = SymbolData(price=50.0, atr14=1.0, avg_dollar_volume_20d=1e6, shortable=True)
+    symbols["NEWSHORT"] = SymbolData(
+        price=50.0, atr14=1.0, avg_dollar_volume_20d=100e6, listed_days=30, shortable=True
+    )
     return MarketContext(now=ctx.now, is_trading_day=True, symbols=symbols)
 
 
@@ -532,6 +536,34 @@ def test_short_carries_stop_above_entry(cfg, account, clean_risk, ctx_shortable)
 def test_short_rejected_when_not_shortable(cfg, account, clean_risk, ctx_shortable):
     result = evaluate([short_prop("NOBORROW", limit=50.0)], account, clean_risk, ctx_shortable, cfg)
     assert "not shortable" in only_rejection(result)
+
+
+def test_short_rejects_illiquid_symbol(cfg, account, clean_risk, ctx_shortable):
+    result = evaluate([short_prop("THINSHORT", limit=50.0)], account, clean_risk, ctx_shortable, cfg)
+    assert "dollar volume" in only_rejection(result)
+
+
+def test_short_rejects_recent_ipo(cfg, account, clean_risk, ctx_shortable):
+    result = evaluate([short_prop("NEWSHORT", limit=50.0)], account, clean_risk, ctx_shortable, cfg)
+    assert "IPO" in only_rejection(result)
+
+
+def test_short_limit_too_far_through_touch_is_rejected(
+    cfg, account, clean_risk, ctx_shortable
+):
+    result = evaluate([short_prop(limit=98.0)], account, clean_risk, ctx_shortable, cfg)
+    assert "through the touch" in only_rejection(result)
+
+
+def test_short_revenge_trade_is_blocked(cfg, account, ctx_shortable):
+    risk = RiskState(
+        peak_equity=EQUITY,
+        day_start_equity=EQUITY,
+        month_start_equity=EQUITY,
+        recent_losses={"XLK": dt.date(2026, 7, 20)},
+    )
+    result = evaluate([short_prop()], account, risk, ctx_shortable, cfg)
+    assert "re-entry blocked" in only_rejection(result)
 
 
 def test_short_gross_exposure_is_capped(cfg, account, clean_risk, ctx_shortable):
@@ -607,3 +639,23 @@ def test_cash_account_semantics_unchanged_when_buying_power_none(cfg, clean_risk
     account = AccountState(equity=EQUITY, cash=100.0, positions={})
     result = evaluate([buy("XLK", notional=690.0)], account, clean_risk, ctx, cfg)
     assert result.approved[0].notional <= 100.0
+
+
+def test_portfolio_long_exposure_cap_applies_even_with_buying_power(
+    cfg, clean_risk, ctx
+):
+    existing = cfg.risk.max_long_exposure_pct * EQUITY - 50.0
+    account = AccountState(
+        equity=EQUITY,
+        cash=0.0,
+        positions={
+            "EXISTING": Position(
+                "EXISTING", qty=existing / 100.0,
+                avg_entry_price=100.0, current_price=100.0
+            )
+        },
+        buying_power=1000.0,
+    )
+    result = evaluate([buy("XLK", notional=500.0)], account, clean_risk, ctx, cfg)
+    assert len(result.approved) == 1
+    assert result.approved[0].notional <= 50.0

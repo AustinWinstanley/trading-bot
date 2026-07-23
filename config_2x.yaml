@@ -8,6 +8,8 @@ account:
 risk:
   max_position_pct: 0.3
   max_leveraged_exposure_pct: 0.4
+  max_long_exposure_pct: 2.0
+  max_gross_exposure_pct: 2.3
   max_positions: 120
   stop_loss_pct: 0.08
   stop_atr_multiple: 2.0
@@ -17,7 +19,7 @@ risk:
   peak_drawdown_halt_pct: 0.35
   allow_averaging_down: false
   loss_reentry_block_days: 5
-  max_short_exposure_pct: 0.4
+  max_short_exposure_pct: 0.3
 sleeves:
   momentum:
     allocation: 0.45

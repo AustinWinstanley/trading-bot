@@ -20,6 +20,8 @@ account:
 risk:
   max_position_pct: 0.15            # max single position as fraction of equity
   max_leveraged_exposure_pct: 0.20  # max total leveraged-ETF exposure
+  max_long_exposure_pct: 1.00       # total long market value / equity
+  max_gross_exposure_pct: 1.15      # longs + absolute shorts / equity
   # Position count is not the binding risk control in the sleeve portfolio
   # (~79 names by design); per-name and gross caps are. 8 was a relic of the
   # original concentrated design and would have blocked the launch.
@@ -32,7 +34,7 @@ risk:
   peak_drawdown_halt_pct: 0.18      # -18% from peak -> halt, require manual restart
   allow_averaging_down: false       # never true
   loss_reentry_block_days: 5        # no re-entry in a ticker exited at a loss
-  max_short_exposure_pct: 0.20      # total short notional cap (gross)
+  max_short_exposure_pct: 0.15      # total short notional cap (matches MOM_LS target)
 
 sleeves:
   momentum:

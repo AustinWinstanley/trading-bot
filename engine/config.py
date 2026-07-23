@@ -26,6 +26,8 @@ class ConfigError(Exception):
 class RiskLimits:
     max_position_pct: float
     max_leveraged_exposure_pct: float
+    max_long_exposure_pct: float
+    max_gross_exposure_pct: float
     max_positions: int
     stop_loss_pct: float
     stop_atr_multiple: float
@@ -91,6 +93,15 @@ def _positive_int(value, name: str) -> int:
     return value
 
 
+def _positive_number(value, name: str, *, high: float) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ConfigError(f"{name} must be a number, got {value!r}")
+    value = float(value)
+    if not (0 < value <= high):
+        raise ConfigError(f"{name} must be in (0, {high}], got {value}")
+    return value
+
+
 def _parse_time(value, name: str) -> dt.time:
     try:
         hh, mm = str(value).split(":")
@@ -127,6 +138,12 @@ def load_config(path: Path | str | None = None) -> Config:
         max_leveraged_exposure_pct=_fraction(
             _require(r, "max_leveraged_exposure_pct", "risk"), "risk.max_leveraged_exposure_pct"
         ),
+        max_long_exposure_pct=_positive_number(
+            _require(r, "max_long_exposure_pct", "risk"), "risk.max_long_exposure_pct", high=3.0
+        ),
+        max_gross_exposure_pct=_positive_number(
+            _require(r, "max_gross_exposure_pct", "risk"), "risk.max_gross_exposure_pct", high=3.5
+        ),
         max_positions=_positive_int(_require(r, "max_positions", "risk"), "risk.max_positions"),
         stop_loss_pct=_fraction(_require(r, "stop_loss_pct", "risk"), "risk.stop_loss_pct"),
         stop_atr_multiple=float(_require(r, "stop_atr_multiple", "risk")),
@@ -153,6 +170,17 @@ def load_config(path: Path | str | None = None) -> Config:
 
     if risk.stop_atr_multiple <= 0:
         raise ConfigError("risk.stop_atr_multiple must be positive")
+    if risk.max_gross_exposure_pct < risk.max_long_exposure_pct:
+        raise ConfigError(
+            "risk.max_gross_exposure_pct must be >= risk.max_long_exposure_pct"
+        )
+    if risk.max_gross_exposure_pct + 1e-9 < (
+        risk.max_long_exposure_pct + risk.max_short_exposure_pct
+    ):
+        raise ConfigError(
+            "risk.max_gross_exposure_pct must cover max_long_exposure_pct + "
+            "max_short_exposure_pct"
+        )
     if risk.max_stop_distance_pct < risk.stop_loss_pct:
         raise ConfigError(
             "risk.max_stop_distance_pct must be >= risk.stop_loss_pct "
