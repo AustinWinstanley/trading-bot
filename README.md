@@ -116,7 +116,10 @@ from a temporary copy so pulling cannot modify the executing script. It
 restores the report stash on every exit and restores the exact original
 crontab only on success. If any check fails, trading cron remains paused and
 the script prints the one-line cron recovery command using its timestamped
-backup in `state/`.
+backup in `state/`. During an upgrade only, a completely unused profile with
+an active account, no positions, no orders, and an empty journal may pass
+without a snapshot; the regular scheduled health check remains strict until
+the profile completes its first live run.
 
 Individual wrapper jobs remain available:
 

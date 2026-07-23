@@ -61,3 +61,33 @@ def test_stale_parent_order_is_critical():
         max_age_hours=72,
     )
     assert any("non-protective order" in problem for problem in problems)
+
+
+def test_pristine_profile_can_bootstrap_upgrade():
+    problems = assess_health(
+        account_status="ACTIVE",
+        positions=[],
+        open_orders=[],
+        fallback_stops=set(),
+        last_snapshot=None,
+        now=NOW,
+        max_age_hours=72,
+        allow_pristine=True,
+        journal_is_pristine=True,
+    )
+    assert problems == []
+
+
+def test_allow_pristine_does_not_hide_a_used_account_without_snapshot():
+    problems = assess_health(
+        account_status="ACTIVE",
+        positions=[{"symbol": "SPY"}],
+        open_orders=[],
+        fallback_stops=set(),
+        last_snapshot=None,
+        now=NOW,
+        max_age_hours=72,
+        allow_pristine=True,
+        journal_is_pristine=True,
+    )
+    assert "no journal snapshot exists" in problems

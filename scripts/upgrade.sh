@@ -184,10 +184,10 @@ echo "==> Running 2x paper pipeline without orders or local writes"
 "$PYTHON" -m scripts.run_daily --dry-run --force --profile 2x
 
 echo "==> Checking base paper account health"
-"$PYTHON" -m scripts.healthcheck
+"$PYTHON" -m scripts.healthcheck --allow-pristine
 
 echo "==> Checking 2x paper account health"
-"$PYTHON" -m scripts.healthcheck --profile 2x
+"$PYTHON" -m scripts.healthcheck --profile 2x --allow-pristine
 
 restore_report_stash
 
