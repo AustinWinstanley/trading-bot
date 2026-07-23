@@ -207,6 +207,35 @@ replacement improved 2017+ Sharpe from 1.020 to 1.050 and drawdown from
 butterflies, and alternative put-writing variants did not improve robustly.
 These are hypothetical SPX benchmark results, not simulated SPY option fills.
 
+An exact-contract follow-up used Alpaca's expired SPY contract metadata and
+daily option trade bars from February 2024 onward. The pre-selected rule bought
+one 45-DTE 95%/90% put spread on the first session of a month when SPY was below
+its 200-day average or 20-session realized volatility exceeded 20%. It included
+$0.10 per leg of entry and exit friction and applied option dollar P&L to the
+capacity-adjusted $10,000 2× account:
+
+| 2024-02 through 2026-06 | CAGR | Sharpe | Max drawdown |
+| --- | ---: | ---: | ---: |
+| No hedge | 41.23% | 1.398 | -26.23% |
+| Always-on 95/90 spread | 35.54% | 1.352 | -17.11% |
+| Conditional 95/90 spread | 37.90% | 1.378 | -20.58% |
+| Conditional 90/85 sensitivity | 39.57% | 1.409 | -22.02% |
+
+The selected rule failed its promotion gate. Only 3 of 29 monthly observations
+triggered, none occurred in the 2024 design window, and all three completed
+spreads lost money. A single 95/90 contract put 3.50%–3.92% of starting account
+equity at risk after modeled friction, exceeding the tested 1%–3% budgets. The
+exploratory 90/85 spreads fit a 3% budget and nearly preserved Sharpe, but they
+used the same three events and cannot independently validate the idea.
+Always-on protection reduced drawdown but paid for it with lower return and
+Sharpe. No options paper feature was added.
+
+The contract study remains an execution approximation: expired-contract
+metadata does not reconstruct exactly when every strike was first listed,
+daily trades are not executable bid/ask quotes, and American assignment is not
+replayed. Standard monthly expirations and $5 strike increments reduce, but do
+not eliminate, that historical-chain uncertainty.
+
 ## Setup
 
 ```bash
@@ -235,6 +264,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.momentum_sleeve_overlay_study
 .venv/bin/python -m backtest.pilot_follower_study
 .venv/bin/python -m backtest.options_strategy_study
+.venv/bin/python -m backtest.spy_put_spread_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
