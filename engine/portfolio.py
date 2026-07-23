@@ -1,12 +1,15 @@
 """Target-weight construction for the paper portfolio.
 
-Three sleeves, all long-only, all reproducible from data on this box:
+Four sleeves, all reproducible from data on this box (shorts enabled
+2026-07-23 by user authorization for the Alpaca path):
 
   clone   top-N filed positions per fund from state/thirteenf/holdings.parquet
           (the "conviction" variant that tested best), equal weight
   tsmom   each asset-class ETF long iff its own trailing 12m return > 0,
           inverse-vol weighted within the sleeve; unlit assets stay cash
   trend   the trend symbol iff above its 200DMA, else cash
+  mom_ls  market-neutral momentum: +w long ranks, -w short ranks, from the
+          weekly-built target file; stands down if the file is stale
 
 Weights are fractions of total equity and always sum to <= 1. Cash is the
 residual and is an intentional position, not an error.
@@ -83,6 +86,38 @@ def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     return {sym: p["sleeves"]["trend"]} if last > ma else {}
 
 
+def mom_ls_targets(cfg: Config) -> dict[str, float]:
+    """Market-neutral momentum from the weekly-built target file.
+
+    Long names get +w, short names get -w. If the file is missing or stale
+    the sleeve STANDS DOWN (returns {}) rather than trading on old ranks —
+    a silent no-position is recoverable; trading stale shorts is not.
+    """
+    import json as _json
+    from engine.data import REPO_ROOT as _ROOT
+
+    p = cfg.sleeves_paper
+    path = _ROOT / p["mom_ls_targets_file"]
+    if not path.exists():
+        return {}
+    data = _json.loads(path.read_text())
+    age = (dt.date.today() - dt.date.fromisoformat(data["as_of"])).days
+    if age > int(p["mom_ls_max_age_days"]):
+        return {}
+    sleeve = p["sleeves"].get("mom_ls", 0.0)
+    longs, shorts = data.get("long", []), data.get("short", [])
+    out: dict[str, float] = {}
+    if longs:
+        w = sleeve / len(longs)
+        for sym in longs:
+            out[sym] = out.get(sym, 0.0) + w
+    if shorts:
+        w = sleeve / len(shorts)
+        for sym in shorts:
+            out[sym] = out.get(sym, 0.0) - w
+    return out
+
+
 def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], dict]:
     """Combined symbol -> weight, plus per-sleeve diagnostics."""
     p = cfg.sleeves_paper
@@ -107,6 +142,7 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
         "clone": clone_targets(cfg, tradable),
         "tsmom": tsmom_targets(cfg, bars),
         "trend": trend_targets(cfg, bars),
+        "mom_ls": mom_ls_targets(cfg),
     }
 
     combined: dict[str, float] = {}
@@ -116,14 +152,19 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
             combined[sym] = combined.get(sym, 0.0) + w
             origin[sym] = f"{origin.get(sym, '')}+{name}".strip("+")
 
-    total = sum(combined.values())
-    assert total <= 1.0 + 1e-9, f"targets sum to {total:.4f} > 1"
+    long_total = sum(w for w in combined.values() if w > 0)
+    short_total = sum(-w for w in combined.values() if w < 0)
+    assert long_total <= 1.0 + 1e-9, f"long targets sum to {long_total:.4f} > 1"
+    assert short_total <= cfg.risk.max_short_exposure_pct + 1e-9, \
+        f"short targets {short_total:.4f} exceed cap {cfg.risk.max_short_exposure_pct}"
     diag = {
         "as_of": dt.date.today().isoformat(),
         "sleeve_counts": {k: len(v) for k, v in sleeves.items()},
         "sleeve_weights": {k: round(sum(v.values()), 4) for k, v in sleeves.items()},
-        "total_weight": round(total, 4),
-        "cash_weight": round(1 - total, 4),
+        "long_weight": round(long_total, 4),
+        "short_weight": round(short_total, 4),
+        "total_weight": round(long_total, 4),
+        "cash_weight": round(1 - long_total, 4),
         "origin": origin,
     }
     return combined, diag

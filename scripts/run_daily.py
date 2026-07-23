@@ -128,7 +128,14 @@ def main() -> None:
     stop_rows = {r[0]: r[1] for r in conn.execute("SELECT symbol, stop_price FROM stops")}
     for sym, pos in positions.items():
         stop = stop_rows.get(sym)
-        if stop and pos.current_price <= stop:
+        if not stop:
+            continue
+        if pos.is_short and pos.current_price >= stop:
+            proposals.append({"symbol": sym, "side": "cover", "sleeve": "stop",
+                              "notional": abs(pos.market_value),
+                              "limit_price": round(pos.current_price * 1.003, 2),
+                              "rationale": f"short stop: {pos.current_price} >= {stop}"})
+        elif not pos.is_short and pos.current_price <= stop:
             proposals.append({"symbol": sym, "side": "sell", "sleeve": "stop",
                               "notional": pos.market_value,
                               "limit_price": round(pos.current_price * 0.997, 2),
@@ -139,17 +146,31 @@ def main() -> None:
     for sym in all_syms:
         if any(pr["symbol"] == sym for pr in proposals):
             continue
-        tgt_notional = targets.get(sym, 0.0) * equity
+        tgt_notional = targets.get(sym, 0.0) * equity        # negative = short target
         cur_notional = positions[sym].market_value if sym in positions else 0.0
         diff = tgt_notional - cur_notional
-        threshold = max(band * tgt_notional, min_notional) if tgt_notional > 0 else min_notional
+        threshold = max(band * abs(tgt_notional), min_notional) if tgt_notional != 0 else min_notional
         if abs(diff) < threshold:
             continue
         px = t.latest_price(sym)
         if px is None or px <= 0:
             continue
-        side = "buy" if diff > 0 else "sell"
-        limit = round(px * (1 + cfg.execution.max_limit_slippage_pct), 2) if side == "buy" \
+
+        # Map the sign geometry to a side. Crossing zero (long target while
+        # short, or vice versa) is handled by closing first; the opening leg
+        # happens on a later run once flat. Never both in one order.
+        if diff > 0:
+            side = "cover" if cur_notional < 0 else "buy"
+            if side == "cover":
+                diff = min(diff, -cur_notional)              # close at most the short
+        else:
+            side = "sell" if cur_notional > 0 else "short"
+            if side == "sell":
+                diff = max(diff, -cur_notional)              # sell at most what we hold
+        if abs(diff) < min_notional:
+            continue
+        buyish = side in ("buy", "cover")
+        limit = round(px * (1 + cfg.execution.max_limit_slippage_pct), 2) if buyish \
             else round(px * (1 - cfg.execution.max_limit_slippage_pct), 2)
         proposals.append({"symbol": sym, "side": side,
                           "sleeve": diag["origin"].get(sym, "rebalance"),
@@ -168,9 +189,17 @@ def main() -> None:
             px = t.latest_price(sym) or (float(df["close"].iloc[-1]) if df is not None and len(df) else 0.0)
             a = float(atr(df, 14).iloc[-1]) if df is not None and len(df) >= 15 else px * 0.02
             adv = float((df["close"] * df["volume"]).tail(20).mean()) if df is not None and len(df) >= 20 else 0.0
+            shortable = False
+            if any(pr["symbol"] == sym and pr["side"] == "short" for pr in proposals):
+                try:
+                    asset = t.get_asset(sym)
+                    shortable = bool(asset.get("shortable") and asset.get("easy_to_borrow"))
+                except Exception:
+                    shortable = False
             symbol_data[sym] = SymbolData(price=px, atr14=a, avg_dollar_volume_20d=adv,
                                           listed_days=10_000,
-                                          is_leveraged=sym in cfg.leveraged_symbols)
+                                          is_leveraged=sym in cfg.leveraged_symbols,
+                                          shortable=shortable)
 
     risk_state = RiskState(
         peak_equity=st["peak_equity"], day_start_equity=st["day_start_equity"],
@@ -195,7 +224,10 @@ def main() -> None:
         for sym, pos in positions.items():
             px = t.latest_price(sym) or pos.current_price
             try:
-                o = t.submit_limit(sym, "sell", pos.qty, round(px * 0.997, 2))
+                if pos.is_short:
+                    o = t.submit_limit(sym, "buy", abs(pos.qty), round(px * 1.003, 2))
+                else:
+                    o = t.submit_limit(sym, "sell", pos.qty, round(px * 0.997, 2))
                 conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                              (ts, sym, "sell", "killswitch", pos.qty, pos.market_value,
                               px, 0.0, result.halt_reason or "flatten", o.get("id"), o.get("status")))
@@ -211,13 +243,16 @@ def main() -> None:
         if args.dry_run:
             continue
         try:
-            o = t.submit_limit(order.symbol, order.side, order.qty, order.limit_price,
+            # Alpaca has no "short"/"cover" sides: sell-when-flat opens a
+            # short, buy-when-short covers.
+            alpaca_side = {"short": "sell", "cover": "buy"}.get(order.side, order.side)
+            o = t.submit_limit(order.symbol, alpaca_side, order.qty, order.limit_price,
                                client_order_id=f"bot-{today:%Y%m%d}-{order.symbol}-{order.side}")
             conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                          (ts, order.symbol, order.side, order.sleeve, order.qty,
                           order.notional, order.limit_price, order.stop_price,
                           tag, o.get("id"), o.get("status")))
-            if order.side == "buy":
+            if order.side in ("buy", "short"):
                 conn.execute(
                     "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
                     (order.symbol, order.stop_price, order.limit_price,
@@ -230,7 +265,7 @@ def main() -> None:
 
     # record realised losses for the revenge-trade block
     for order in result.approved:
-        if order.side == "sell" and order.symbol in positions:
+        if order.side in ("sell", "cover") and order.symbol in positions:
             pos = positions[order.symbol]
             if pos.unrealized_pct < 0:
                 st["recent_losses"][order.symbol] = today.isoformat()
