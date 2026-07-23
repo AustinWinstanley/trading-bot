@@ -87,6 +87,22 @@ current construction remains deployed while real paper fills accumulate.
 Historical easy-to-borrow status is unavailable, making all variants optimistic
 execution bounds.
 
+A 5,000-path, 63-session block bootstrap puts useful ranges around those point
+estimates. With the deliberately severe universal-zero delisting drag applied:
+
+| Profile / horizon | CAGR p05 | Median | CAGR p95 | Chance of loss | Drawdown p05 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Base, 1 year | -4.3% | 11.5% | 30.1% | 12.1% | -15.5% |
+| Base, 3 years annualized | 1.7% | 11.6% | 22.0% | 2.3% | -19.8% |
+| 2×, 1 year | -13.1% | 17.2% | 58.5% | 18.9% | -29.9% |
+| 2×, 3 years annualized | -1.9% | 17.5% | 39.7% | 7.1% | -38.4% |
+
+These are conditional scenario ranges, not calibrated forecast probabilities.
+Resampling cannot create crises or regimes absent from the short 2020–2026
+source history, so capital planning should allow outcomes worse than p05. A
+21/63/126-session block sensitivity moved the three-year p05 CAGR to 0.6%–2.8%
+for base and -3.9%–0.1% for 2×; the 2× drawdown p05 reached -42.9%.
+
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.

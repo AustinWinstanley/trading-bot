@@ -1,0 +1,495 @@
+{
+  "conclusion": "Use ranges rather than headline CAGR as the planning estimate. The bootstrap quantifies sampling uncertainty but remains conditional on the unusually short 2020-2026 history.",
+  "method": {
+    "sampling": "circular moving-block bootstrap",
+    "block_sessions": 63,
+    "simulations": 5000,
+    "seed": 20260723,
+    "delisting_overlay_annual_return_drag": {
+      "base": 0.008400000000000005,
+      "2x": 0.016699999999999993
+    }
+  },
+  "limitations": [
+    "Resampling cannot create crashes or inflation regimes absent from 2020-2026.",
+    "The source universe remains survivorship-biased before the stress overlay.",
+    "Historical borrowability, slippage tails, taxes, and outages are unavailable.",
+    "Percentiles are scenario ranges, not calibrated forecast probabilities."
+  ],
+  "empirical": [
+    {
+      "portfolio": "base current",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1165,
+      "ann_return": 0.1256,
+      "vol": 0.124,
+      "sharpe": 1.012,
+      "sortino": 1.31,
+      "max_dd": -0.1403,
+      "x_money": 2.032
+    },
+    {
+      "portfolio": "base severe-delisting overlay",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1078,
+      "ann_return": 0.1172,
+      "vol": 0.124,
+      "sharpe": 0.944,
+      "sortino": 1.222,
+      "max_dd": -0.1416,
+      "x_money": 1.932
+    },
+    {
+      "portfolio": "2x current",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.18,
+      "ann_return": 0.2069,
+      "vol": 0.2437,
+      "sharpe": 0.849,
+      "sortino": 1.098,
+      "max_dd": -0.2622,
+      "x_money": 2.902
+    },
+    {
+      "portfolio": "2x severe-delisting overlay",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1618,
+      "ann_return": 0.1902,
+      "vol": 0.2437,
+      "sharpe": 0.781,
+      "sortino": 1.009,
+      "max_dd": -0.2649,
+      "x_money": 2.625
+    }
+  ],
+  "bootstrap": {
+    "base current": {
+      "1y": {
+        "years": 1,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0351,
+          "p25": 0.0548,
+          "p50": 0.1248,
+          "p75": 0.2004,
+          "p95": 0.3117
+        },
+        "sharpe": {
+          "p05": -0.1981,
+          "p25": 0.4855,
+          "p50": 1.0373,
+          "p75": 1.6461,
+          "p95": 2.529
+        },
+        "max_drawdown": {
+          "p05": -0.1517,
+          "p25": -0.1113,
+          "p50": -0.0852,
+          "p75": -0.0682,
+          "p95": -0.0466
+        },
+        "probability_negative_cagr": 0.1024,
+        "probability_drawdown_over_20pct": 0.0068,
+        "probability_drawdown_over_30pct": 0.0
+      },
+      "3y": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0256,
+          "p25": 0.0841,
+          "p50": 0.125,
+          "p75": 0.1687,
+          "p95": 0.23
+        },
+        "sharpe": {
+          "p05": 0.2585,
+          "p25": 0.701,
+          "p50": 1.0183,
+          "p75": 1.3541,
+          "p95": 1.8583
+        },
+        "max_drawdown": {
+          "p05": -0.1927,
+          "p25": -0.1466,
+          "p50": -0.1212,
+          "p75": -0.1027,
+          "p95": -0.0731
+        },
+        "probability_negative_cagr": 0.0154,
+        "probability_drawdown_over_20pct": 0.0402,
+        "probability_drawdown_over_30pct": 0.0
+      }
+    },
+    "base severe-delisting overlay": {
+      "1y": {
+        "years": 1,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0432,
+          "p25": 0.046,
+          "p50": 0.1154,
+          "p75": 0.1904,
+          "p95": 0.3008
+        },
+        "sharpe": {
+          "p05": -0.2574,
+          "p25": 0.4195,
+          "p50": 0.9692,
+          "p75": 1.5746,
+          "p95": 2.4464
+        },
+        "max_drawdown": {
+          "p05": -0.155,
+          "p25": -0.1125,
+          "p50": -0.0866,
+          "p75": -0.0696,
+          "p95": -0.0477
+        },
+        "probability_negative_cagr": 0.1214,
+        "probability_drawdown_over_20pct": 0.0078,
+        "probability_drawdown_over_30pct": 0.0
+      },
+      "3y": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0171,
+          "p25": 0.075,
+          "p50": 0.1156,
+          "p75": 0.1589,
+          "p95": 0.2198
+        },
+        "sharpe": {
+          "p05": 0.1946,
+          "p25": 0.6345,
+          "p50": 0.9515,
+          "p75": 1.2831,
+          "p95": 1.783
+        },
+        "max_drawdown": {
+          "p05": -0.1981,
+          "p25": -0.1502,
+          "p50": -0.124,
+          "p75": -0.1056,
+          "p95": -0.0744
+        },
+        "probability_negative_cagr": 0.023,
+        "probability_drawdown_over_20pct": 0.047,
+        "probability_drawdown_over_30pct": 0.0002
+      }
+    },
+    "2x current": {
+      "1y": {
+        "years": 1,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.1163,
+          "p25": 0.0542,
+          "p50": 0.1917,
+          "p75": 0.3543,
+          "p95": 0.6111
+        },
+        "sharpe": {
+          "p05": -0.3297,
+          "p25": 0.3398,
+          "p50": 0.8747,
+          "p75": 1.4636,
+          "p95": 2.2998
+        },
+        "max_drawdown": {
+          "p05": -0.2933,
+          "p25": -0.2234,
+          "p50": -0.1683,
+          "p75": -0.1311,
+          "p95": -0.096
+        },
+        "probability_negative_cagr": 0.1656,
+        "probability_drawdown_over_20pct": 0.3478,
+        "probability_drawdown_over_30pct": 0.0432
+      },
+      "3y": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0023,
+          "p25": 0.1107,
+          "p50": 0.195,
+          "p75": 0.2857,
+          "p95": 0.4204
+        },
+        "sharpe": {
+          "p05": 0.1225,
+          "p25": 0.5481,
+          "p50": 0.8541,
+          "p75": 1.1795,
+          "p95": 1.655
+        },
+        "max_drawdown": {
+          "p05": -0.3739,
+          "p25": -0.2879,
+          "p50": -0.2433,
+          "p75": -0.2048,
+          "p95": -0.1449
+        },
+        "probability_negative_cagr": 0.0524,
+        "probability_drawdown_over_20pct": 0.77,
+        "probability_drawdown_over_30pct": 0.2088
+      }
+    },
+    "2x severe-delisting overlay": {
+      "1y": {
+        "years": 1,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.131,
+          "p25": 0.0368,
+          "p50": 0.172,
+          "p75": 0.3318,
+          "p95": 0.5845
+        },
+        "sharpe": {
+          "p05": -0.3982,
+          "p25": 0.2726,
+          "p50": 0.8054,
+          "p75": 1.388,
+          "p95": 2.2205
+        },
+        "max_drawdown": {
+          "p05": -0.2995,
+          "p25": -0.2257,
+          "p50": -0.1722,
+          "p75": -0.1324,
+          "p95": -0.0968
+        },
+        "probability_negative_cagr": 0.1892,
+        "probability_drawdown_over_20pct": 0.3692,
+        "probability_drawdown_over_30pct": 0.049
+      },
+      "3y": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0188,
+          "p25": 0.0923,
+          "p50": 0.1752,
+          "p75": 0.2644,
+          "p95": 0.3969
+        },
+        "sharpe": {
+          "p05": 0.0555,
+          "p25": 0.4818,
+          "p50": 0.7857,
+          "p75": 1.1085,
+          "p95": 1.5817
+        },
+        "max_drawdown": {
+          "p05": -0.3836,
+          "p25": -0.2952,
+          "p50": -0.2491,
+          "p75": -0.2087,
+          "p95": -0.149
+        },
+        "probability_negative_cagr": 0.0706,
+        "probability_drawdown_over_20pct": 0.7924,
+        "probability_drawdown_over_30pct": 0.2332
+      }
+    }
+  },
+  "three_year_block_size_sensitivity": {
+    "base severe-delisting overlay": {
+      "21": {
+        "years": 3,
+        "block_sessions": 21,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0063,
+          "p25": 0.0698,
+          "p50": 0.1141,
+          "p75": 0.1623,
+          "p95": 0.2333
+        },
+        "sharpe": {
+          "p05": 0.1144,
+          "p25": 0.5944,
+          "p50": 0.9466,
+          "p75": 1.3083,
+          "p95": 1.8497
+        },
+        "max_drawdown": {
+          "p05": -0.2246,
+          "p25": -0.1603,
+          "p50": -0.1285,
+          "p75": -0.1051,
+          "p95": -0.0833
+        },
+        "probability_negative_cagr": 0.0406,
+        "probability_drawdown_over_20pct": 0.0936,
+        "probability_drawdown_over_30pct": 0.0054
+      },
+      "63": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0171,
+          "p25": 0.075,
+          "p50": 0.1156,
+          "p75": 0.1589,
+          "p95": 0.2198
+        },
+        "sharpe": {
+          "p05": 0.1946,
+          "p25": 0.6345,
+          "p50": 0.9515,
+          "p75": 1.2831,
+          "p95": 1.783
+        },
+        "max_drawdown": {
+          "p05": -0.1981,
+          "p25": -0.1502,
+          "p50": -0.124,
+          "p75": -0.1056,
+          "p95": -0.0744
+        },
+        "probability_negative_cagr": 0.023,
+        "probability_drawdown_over_20pct": 0.047,
+        "probability_drawdown_over_30pct": 0.0002
+      },
+      "126": {
+        "years": 3,
+        "block_sessions": 126,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0279,
+          "p25": 0.078,
+          "p50": 0.115,
+          "p75": 0.1538,
+          "p95": 0.2135
+        },
+        "sharpe": {
+          "p05": 0.284,
+          "p25": 0.6709,
+          "p50": 0.9433,
+          "p75": 1.2489,
+          "p95": 1.706
+        },
+        "max_drawdown": {
+          "p05": -0.1814,
+          "p25": -0.1416,
+          "p50": -0.12,
+          "p75": -0.1057,
+          "p95": -0.0796
+        },
+        "probability_negative_cagr": 0.0124,
+        "probability_drawdown_over_20pct": 0.0218,
+        "probability_drawdown_over_30pct": 0.0
+      }
+    },
+    "2x severe-delisting overlay": {
+      "21": {
+        "years": 3,
+        "block_sessions": 21,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0389,
+          "p25": 0.0821,
+          "p50": 0.1716,
+          "p75": 0.2712,
+          "p95": 0.4279
+        },
+        "sharpe": {
+          "p05": -0.0267,
+          "p25": 0.4448,
+          "p50": 0.7778,
+          "p75": 1.137,
+          "p95": 1.6476
+        },
+        "max_drawdown": {
+          "p05": -0.4289,
+          "p25": -0.3144,
+          "p50": -0.2548,
+          "p75": -0.2069,
+          "p95": -0.1596
+        },
+        "probability_negative_cagr": 0.091,
+        "probability_drawdown_over_20pct": 0.7908,
+        "probability_drawdown_over_30pct": 0.3016
+      },
+      "63": {
+        "years": 3,
+        "block_sessions": 63,
+        "simulations": 5000,
+        "cagr": {
+          "p05": -0.0188,
+          "p25": 0.0923,
+          "p50": 0.1752,
+          "p75": 0.2644,
+          "p95": 0.3969
+        },
+        "sharpe": {
+          "p05": 0.0555,
+          "p25": 0.4818,
+          "p50": 0.7857,
+          "p75": 1.1085,
+          "p95": 1.5817
+        },
+        "max_drawdown": {
+          "p05": -0.3836,
+          "p25": -0.2952,
+          "p50": -0.2491,
+          "p75": -0.2087,
+          "p95": -0.149
+        },
+        "probability_negative_cagr": 0.0706,
+        "probability_drawdown_over_20pct": 0.7924,
+        "probability_drawdown_over_30pct": 0.2332
+      },
+      "126": {
+        "years": 3,
+        "block_sessions": 126,
+        "simulations": 5000,
+        "cagr": {
+          "p05": 0.0013,
+          "p25": 0.0995,
+          "p50": 0.1721,
+          "p75": 0.2541,
+          "p95": 0.3787
+        },
+        "sharpe": {
+          "p05": 0.1306,
+          "p25": 0.514,
+          "p50": 0.7819,
+          "p75": 1.0709,
+          "p95": 1.503
+        },
+        "max_drawdown": {
+          "p05": -0.3563,
+          "p25": -0.2763,
+          "p50": -0.2434,
+          "p75": -0.2079,
+          "p95": -0.1585
+        },
+        "probability_negative_cagr": 0.0496,
+        "probability_drawdown_over_20pct": 0.8214,
+        "probability_drawdown_over_30pct": 0.1662
+      }
+    }
+  }
+}
