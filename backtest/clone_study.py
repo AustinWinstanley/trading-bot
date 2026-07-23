@@ -47,8 +47,15 @@ def summarize(r: pd.Series, name: str) -> dict:
 def build_weights(holdings: pd.DataFrame, dates: pd.DatetimeIndex,
                   *, top_n: int = 10, min_funds: int = 1) -> pd.DataFrame:
     """Weight matrix from filings, forward-filled between filing events."""
+    dates = pd.DatetimeIndex(dates)
+    if dates.tz is not None:
+        dates = dates.tz_convert("UTC").tz_localize(None)
+    dates = dates.normalize()
     h = holdings.sort_values("filing_date")
-    h["avail"] = pd.DatetimeIndex(h["filing_date"] + pd.Timedelta(days=1)).normalize()
+    avail = pd.DatetimeIndex(h["filing_date"] + pd.Timedelta(days=1))
+    if avail.tz is not None:
+        avail = avail.tz_convert("UTC").tz_localize(None)
+    h["avail"] = avail.normalize()
 
     # top-N per (fund, period)
     h = h.sort_values("value", ascending=False)
@@ -96,7 +103,7 @@ def main() -> None:
 
     close, _ = xload()
     close = close.copy()
-    close.index = pd.DatetimeIndex(close.index).normalize()
+    close.index = pd.DatetimeIndex(close.index).tz_convert("UTC").tz_localize(None).normalize()
     close = close[~close.index.duplicated(keep="last")]
     rets = close.pct_change()
 
