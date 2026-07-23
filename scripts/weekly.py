@@ -35,6 +35,63 @@ def refresh_data() -> list[str]:
     return notes
 
 
+def build_mom_ls_targets() -> list[str]:
+    """Weekly momentum ranks for the market-neutral sleeve.
+
+    12-1 momentum over the operating-company universe, top-N long, bottom-N
+    short. Short candidates must be easy-to-borrow whole-share names right
+    now, verified against Alpaca per symbol — a rank list containing an
+    unborrowable name would silently under-short the sleeve.
+    """
+    import json as _json
+    import numpy as _np
+    import pandas as _pd
+    from engine.config import load_config
+    from engine.execute import Trader
+
+    notes = []
+    cfg = load_config()
+    p = cfg.sleeves_paper
+    top_n = int(p["mom_ls_top_n"])
+    min_px, min_dv = float(p["mom_ls_min_price"]), float(p["mom_ls_min_dollar_volume"])
+
+    cls = _json.loads((REPO_ROOT / "state" / "universe_classified.json").read_text())
+    stocks = cls["stocks"]
+    t = Trader()
+    end = dt.date.today()
+    start = end - dt.timedelta(days=420)
+    bars = t.get_bars(stocks, start, end)
+    close = _pd.DataFrame({s2: d["close"] for s2, d in bars.items() if len(d) >= 260})
+    volume = _pd.DataFrame({s2: d["volume"] for s2, d in bars.items() if len(d) >= 260})
+    notes.append(f"mom_ls universe priced: {close.shape[1]:,} names with >=260 bars")
+
+    mom = (close.shift(21) / close.shift(252) - 1).iloc[-1]
+    px = close.iloc[-1]
+    dv = (close * volume).rolling(20).mean().iloc[-1]
+    ok = (px >= min_px) & (dv >= min_dv) & mom.notna()
+    ranked = mom[ok].sort_values(ascending=False)
+    notes.append(f"eligible after filters: {len(ranked):,}")
+
+    longs = list(ranked.head(top_n).index)
+    shorts = []
+    for sym in ranked.index[::-1]:                 # worst momentum first
+        if len(shorts) >= top_n:
+            break
+        try:
+            a = t.get_asset(sym)
+            if a.get("shortable") and a.get("easy_to_borrow"):
+                shorts.append(sym)
+        except Exception:
+            continue
+
+    out = {"as_of": end.isoformat(), "long": longs, "short": shorts,
+           "params": {"top_n": top_n, "min_price": min_px, "min_dollar_volume": min_dv}}
+    path = REPO_ROOT / p["mom_ls_targets_file"]
+    path.write_text(_json.dumps(out, indent=2))
+    notes.append(f"mom_ls targets written: {len(longs)} long / {len(shorts)} short (easy-to-borrow)")
+    return notes
+
+
 def summarize_week() -> list[str]:
     lines = []
     if not DB.exists():
@@ -80,6 +137,10 @@ def main() -> None:
     today = dt.date.today()
     body = ["# Weekly paper report " + today.isoformat(), "", "## Data refresh"]
     body += [f"- {n}" for n in refresh_data()]
+    try:
+        body += [f"- {n}" for n in build_mom_ls_targets()]
+    except Exception as exc:
+        body += [f"- CRITICAL: mom_ls target build failed: {type(exc).__name__}: {exc}"]
     body += ["", "## Week in review"]
     body += [f"- {l}" for l in summarize_week()]
     out = REPORT_DIR / f"weekly-{today}.md"

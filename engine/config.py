@@ -35,6 +35,7 @@ class RiskLimits:
     peak_drawdown_halt_pct: float
     allow_averaging_down: bool
     loss_reentry_block_days: int
+    max_short_exposure_pct: float
 
 
 @dataclass(frozen=True)
@@ -143,6 +144,7 @@ def load_config(path: Path | str | None = None) -> Config:
         ),
         allow_averaging_down=bool(_require(r, "allow_averaging_down", "risk")),
         loss_reentry_block_days=int(_require(r, "loss_reentry_block_days", "risk")),
+        max_short_exposure_pct=float(r.get("max_short_exposure_pct", 0.0)),
     )
 
     # Averaging down is never permitted. Refuse to start rather than honour it.
@@ -188,10 +190,12 @@ def load_config(path: Path | str | None = None) -> Config:
         allow_short=bool(_require(u, "allow_short", "universe")),
         inverse_etfs=tuple(u.get("inverse_etfs", [])),
     )
-    if universe.allow_short:
+    # Shorting is an explicit opt-in (enabled 2026-07-23 for the Alpaca path,
+    # with user authorization). When enabled, a short-exposure cap is REQUIRED —
+    # shorts without a gross cap have unbounded loss.
+    if universe.allow_short and not (0 < risk.max_short_exposure_pct <= 0.5):
         raise ConfigError(
-            "universe.allow_short must be false — Robinhood shorting is unreliable and "
-            "would break paper/live parity. Use inverse ETFs instead."
+            "universe.allow_short=true requires risk.max_short_exposure_pct in (0, 0.5]"
         )
 
     sleeves = _require(raw, "sleeves", "")

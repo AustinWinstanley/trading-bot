@@ -29,6 +29,7 @@ risk:
   peak_drawdown_halt_pct: 0.18      # -18% from peak -> halt, require manual restart
   allow_averaging_down: false       # never true
   loss_reentry_block_days: 5        # no re-entry in a ticker exited at a loss
+  max_short_exposure_pct: 0.20      # total short notional cap (gross)
 
 sleeves:
   momentum:
@@ -64,9 +65,10 @@ universe:
   min_price: 5.00
   min_avg_dollar_volume: 20000000   # 20-day average dollar volume
   exclude_ipo_days: 180
-  # Bearish exposure uses inverse ETFs, never true shorts — Robinhood's
-  # shorting support is unreliable and would break paper/live parity.
-  allow_short: false
+  # Shorting enabled 2026-07-23 with user authorization, for the Alpaca
+  # paper/live path (verified shortable account). The old Robinhood-parity
+  # rationale for refusing shorts is obsolete — plan of record is Alpaca.
+  allow_short: true
   inverse_etfs: [SH, PSQ, SQQQ, SDS]
 
 execution:
@@ -83,10 +85,17 @@ execution:
 # Deferred to iterations: options overlays, MOM_LS (needs shorts), LLM veto.
 paper_portfolio:
   sleeves:
-    clone: 0.45         # 13F top-3 per fund ("conviction"), equal weight
-    tsmom: 0.30         # asset-class trend, long/flat, inverse-vol weights
-    trend: 0.25         # SPY above 200DMA, else cash
+    clone: 0.40         # 13F top-3 per fund ("conviction"), equal weight
+    tsmom: 0.25         # asset-class trend, long/flat, inverse-vol weights
+    trend: 0.20         # SPY above 200DMA, else cash
+    mom_ls: 0.15        # market-neutral momentum: 15% long AND 15% short
   clone_top_n: 3
+  mom_ls_top_n: 20
+  mom_ls_min_price: 5.0
+  mom_ls_min_dollar_volume: 5000000
+  # weekly-built target file; sleeve stands down if this goes stale
+  mom_ls_targets_file: state/mom_ls_targets.json
+  mom_ls_max_age_days: 10
   tsmom_universe: [GLD, SLV, DBC, USO, UNG, DBA, TLT, IEF, LQD, HYG, EMB, VNQ, UUP, FXE, FXY]
   trend_symbol: SPY
   trend_ma_days: 200

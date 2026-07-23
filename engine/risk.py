@@ -20,7 +20,7 @@ from typing import Any, Iterable
 
 from engine.config import Config
 
-VALID_SIDES = {"buy", "sell"}
+VALID_SIDES = {"buy", "sell", "short", "cover"}
 
 
 # --------------------------------------------------------------------------
@@ -40,10 +40,16 @@ class Position:
         return self.qty * self.current_price
 
     @property
+    def is_short(self) -> bool:
+        return self.qty < 0
+
+    @property
     def unrealized_pct(self) -> float:
+        """Signed P&L fraction. For a short, a price RISE is the loss."""
         if self.avg_entry_price <= 0:
             return 0.0
-        return (self.current_price - self.avg_entry_price) / self.avg_entry_price
+        raw = (self.current_price - self.avg_entry_price) / self.avg_entry_price
+        return -raw if self.is_short else raw
 
 
 @dataclass(frozen=True)
@@ -51,6 +57,9 @@ class AccountState:
     equity: float
     cash: float
     positions: dict[str, Position] = field(default_factory=dict)
+
+    def short_exposure(self) -> float:
+        return sum(abs(p.market_value) for p in self.positions.values() if p.is_short)
 
     def leveraged_exposure(self, leveraged_symbols: Iterable[str]) -> float:
         lev = set(leveraged_symbols)
@@ -79,6 +88,7 @@ class SymbolData:
     avg_dollar_volume_20d: float
     listed_days: int = 10_000
     is_leveraged: bool = False
+    shortable: bool = False
 
 
 @dataclass(frozen=True)
@@ -312,6 +322,26 @@ def evaluate(
         requested = clean["notional"]
         adjustments: list[str] = []
 
+        # Covers close short risk — always allowed through, like sells.
+        if clean["side"] == "cover":
+            held = account.positions.get(symbol)
+            if held is None or not held.is_short:
+                result.rejected.append(
+                    RejectedProposal(symbol, "cover proposed but no short position held", raw)
+                )
+                continue
+            result.approved.append(
+                ApprovedOrder(
+                    symbol=symbol, side="cover", sleeve=clean["sleeve"],
+                    notional=min(requested, abs(held.market_value)),
+                    qty=min(requested / clean["limit_price"], abs(held.qty)),
+                    limit_price=clean["limit_price"], stop_price=0.0,
+                    requested_notional=requested,
+                    adjustments=["capped at held quantity"] if requested > abs(held.market_value) else [],
+                )
+            )
+            continue
+
         # Sells (exits) are always allowed through — closing risk is never blocked.
         if clean["side"] == "sell":
             held = account.positions.get(symbol)
@@ -335,7 +365,80 @@ def evaluate(
             )
             continue
 
-        # --- From here: buys only ---
+        # --- From here: entries (buys and shorts) ---
+
+        if clean["side"] == "short":
+            if not cfg.universe.allow_short:
+                result.rejected.append(RejectedProposal(symbol, "shorting disabled in config", raw))
+                continue
+            if result.new_entries_blocked:
+                result.rejected.append(
+                    RejectedProposal(symbol, f"new entries blocked: {'; '.join(result.notes) or result.halt_reason}", raw)
+                )
+                continue
+            data = ctx.symbols.get(symbol)
+            if data is None:
+                result.rejected.append(RejectedProposal(symbol, "no market data for symbol; cannot validate", raw))
+                continue
+            if not data.shortable:
+                result.rejected.append(RejectedProposal(symbol, "not shortable / hard to borrow", raw))
+                continue
+            if data.price < cfg.universe.min_price:
+                result.rejected.append(
+                    RejectedProposal(symbol, f"price {data.price:.2f} below minimum {cfg.universe.min_price:.2f}", raw))
+                continue
+            held = account.positions.get(symbol)
+            if held is not None and not held.is_short:
+                result.rejected.append(RejectedProposal(symbol, "cannot short a symbol held long (would be a wash)", raw))
+                continue
+            if held is not None and held.is_short and held.unrealized_pct < 0:
+                result.rejected.append(
+                    RejectedProposal(symbol, f"averaging down is never permitted (short is {held.unrealized_pct:.2%})", raw))
+                continue
+            if held is None and open_position_count >= cfg.risk.max_positions:
+                result.rejected.append(RejectedProposal(symbol, f"already at max_positions ({cfg.risk.max_positions})", raw))
+                continue
+
+            short_cap = cfg.risk.max_short_exposure_pct * account.equity
+            cur_short = account.short_exposure() + sum(
+                committed_notional.get(f"SHORT:{k}", 0.0) for k in [symbol] for _ in [0]
+            )
+            total_committed_short = sum(v for k, v in committed_notional.items() if k.startswith("SHORT:"))
+            room = short_cap - account.short_exposure() - total_committed_short
+            if room <= 0:
+                result.rejected.append(
+                    RejectedProposal(symbol, f"short exposure cap reached ({short_cap:,.2f})", raw))
+                continue
+            approved_notional = min(requested, room)
+            adjustments = [] if approved_notional == requested else [
+                f"shrunk to max_short_exposure_pct ({requested:,.2f} -> {approved_notional:,.2f})"]
+
+            per_name_cap = cfg.risk.max_position_pct * account.equity
+            if approved_notional > per_name_cap:
+                adjustments.append(f"shrunk to max_position_pct ({approved_notional:,.2f} -> {per_name_cap:,.2f})")
+                approved_notional = per_name_cap
+
+            # Shorts must be WHOLE shares on Alpaca — floor the quantity.
+            qty = math.floor(approved_notional / clean["limit_price"])
+            if qty < 1:
+                result.rejected.append(
+                    RejectedProposal(symbol, f"short notional {approved_notional:,.2f} rounds below 1 whole share", raw))
+                continue
+            approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
+            stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
+            stop_price = round(clean["limit_price"] * (1 + stop_pct), 4)   # stop ABOVE entry
+
+            result.approved.append(
+                ApprovedOrder(symbol=symbol, side="short", sleeve=clean["sleeve"],
+                              notional=approved_notional, qty=float(qty),
+                              limit_price=clean["limit_price"], stop_price=stop_price,
+                              requested_notional=requested, adjustments=adjustments))
+            committed_notional[f"SHORT:{symbol}"] = committed_notional.get(f"SHORT:{symbol}", 0.0) + approved_notional
+            if held is None:
+                open_position_count += 1
+            continue
+
+        # --- buys ---
 
         if result.new_entries_blocked:
             result.rejected.append(
@@ -535,9 +638,19 @@ def _assert_gate_invariants(result: GateResult, cfg: Config) -> None:
                     f"GATE INVARIANT VIOLATED: {order.symbol} stop {order.stop_price} "
                     f">= entry {order.limit_price}"
                 )
+        if order.side == "short":
+            if order.stop_price <= order.limit_price:
+                raise AssertionError(
+                    f"GATE INVARIANT VIOLATED: {order.symbol} short stop {order.stop_price} "
+                    f"must be ABOVE entry {order.limit_price}"
+                )
+            if order.qty != int(order.qty):
+                raise AssertionError(
+                    f"GATE INVARIANT VIOLATED: {order.symbol} fractional short qty {order.qty}"
+                )
         if order.side not in VALID_SIDES:
             raise AssertionError(f"GATE INVARIANT VIOLATED: {order.symbol} bad side {order.side!r}")
-        if result.new_entries_blocked and order.side == "buy":
+        if result.new_entries_blocked and order.side in ("buy", "short"):
             raise AssertionError(
-                f"GATE INVARIANT VIOLATED: {order.symbol} buy approved while entries are blocked"
+                f"GATE INVARIANT VIOLATED: {order.symbol} {order.side} approved while entries are blocked"
             )

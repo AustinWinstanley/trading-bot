@@ -169,7 +169,7 @@ def test_malformed_proposal_payload_is_rejected(cfg, account, clean_risk, ctx, b
     [
         ({}, "symbol"),
         ({"symbol": "XLK"}, "side"),
-        ({"symbol": "XLK", "side": "short", "sleeve": "x", "notional": 1, "limit_price": 1}, "side"),
+        ({"symbol": "XLK", "side": "yolo", "sleeve": "x", "notional": 1, "limit_price": 1}, "side"),
         ({"symbol": "XLK", "side": "buy", "sleeve": "m", "notional": -500, "limit_price": 100}, "positive"),
         ({"symbol": "XLK", "side": "buy", "sleeve": "m", "notional": 0, "limit_price": 100}, "positive"),
         ({"symbol": "XLK", "side": "buy", "sleeve": "m", "notional": float("nan"), "limit_price": 100}, "finite"),
@@ -473,7 +473,7 @@ def _cfg_with(tmp_path, **overrides):
     "override",
     [
         {"risk.allow_averaging_down": True},
-        {"universe.allow_short": True},
+        {"universe.allow_short": True, "risk.max_short_exposure_pct": 0},
         {"execution.order_type": "market"},
         {"mode": "yolo"},
         {"risk.max_position_pct": 1.5},
@@ -493,6 +493,96 @@ def test_shipped_config_loads_and_is_sane():
     cfg = load_config()
     assert cfg.mode in {"paper", "live", "halt"}
     assert not cfg.risk.allow_averaging_down
-    assert not cfg.universe.allow_short
+    # Shorting was enabled 2026-07-23 by explicit user authorization for the
+    # Alpaca path. The invariant is no longer "no shorts" — it is "no shorts
+    # without a gross exposure cap".
+    if cfg.universe.allow_short:
+        assert 0 < cfg.risk.max_short_exposure_pct <= 0.5
     assert cfg.execution.order_type == "limit"
     assert 0 < cfg.risk.max_position_pct <= 0.25
+
+
+# --------------------------------------------------------------------------
+# Shorts — enabled 2026-07-23; the gate rules that protect them
+# --------------------------------------------------------------------------
+
+
+def short_prop(symbol="XLK", notional=500.0, limit=100.0):
+    return {"symbol": symbol, "side": "short", "sleeve": "mom_ls",
+            "notional": notional, "limit_price": limit, "rationale": "test"}
+
+
+@pytest.fixture
+def ctx_shortable(ctx):
+    symbols = dict(ctx.symbols)
+    symbols["XLK"] = SymbolData(price=100.0, atr14=2.0, avg_dollar_volume_20d=500e6, shortable=True)
+    symbols["NOBORROW"] = SymbolData(price=50.0, atr14=1.0, avg_dollar_volume_20d=100e6, shortable=False)
+    return MarketContext(now=ctx.now, is_trading_day=True, symbols=symbols)
+
+
+def test_short_carries_stop_above_entry(cfg, account, clean_risk, ctx_shortable):
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    assert len(result.approved) == 1
+    o = result.approved[0]
+    assert o.side == "short"
+    assert o.stop_price > o.limit_price          # stop ABOVE entry for shorts
+    assert o.qty == int(o.qty)                   # whole shares only
+
+
+def test_short_rejected_when_not_shortable(cfg, account, clean_risk, ctx_shortable):
+    result = evaluate([short_prop("NOBORROW", limit=50.0)], account, clean_risk, ctx_shortable, cfg)
+    assert "not shortable" in only_rejection(result)
+
+
+def test_short_gross_exposure_is_capped(cfg, account, clean_risk, ctx_shortable):
+    props = [short_prop(notional=600.0) for _ in range(4)]
+    result = evaluate(props, account, clean_risk, ctx_shortable, cfg)
+    total = sum(o.notional for o in result.approved)
+    assert total <= cfg.risk.max_short_exposure_pct * EQUITY + 100.0  # + one whole-share rounding
+
+
+def test_short_blocked_when_entries_blocked(cfg, ctx_shortable):
+    account = AccountState(equity=4370.0, cash=4370.0, positions={})
+    risk = RiskState(peak_equity=EQUITY, day_start_equity=EQUITY, month_start_equity=EQUITY)
+    result = evaluate([short_prop()], account, risk, ctx_shortable, cfg)
+    assert result.approved == []
+
+
+def test_cannot_short_a_symbol_held_long(cfg, clean_risk, ctx_shortable):
+    account = AccountState(equity=EQUITY, cash=1000.0,
+                           positions={"XLK": Position("XLK", 5, 90.0, 100.0)})
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    assert "held long" in only_rejection(result)
+
+
+def test_averaging_down_on_a_losing_short_is_rejected(cfg, clean_risk, ctx_shortable):
+    # Short from 90, price now 100 -> the short is LOSING. Adding is averaging down.
+    account = AccountState(equity=EQUITY, cash=1000.0,
+                           positions={"XLK": Position("XLK", -5, 90.0, 100.0)})
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    assert "averaging down" in only_rejection(result)
+
+
+def test_cover_always_allowed_even_when_halted(cfg, ctx_shortable):
+    account = AccountState(equity=3700.0, cash=5000.0,
+                           positions={"XLK": Position("XLK", -5, 110.0, 100.0)})
+    risk = RiskState(peak_equity=EQUITY, day_start_equity=3700.0, month_start_equity=3700.0)
+    cover = {"symbol": "XLK", "side": "cover", "sleeve": "mom_ls",
+             "notional": 500.0, "limit_price": 100.0}
+    result = evaluate([cover], account, risk, ctx_shortable, cfg)
+    assert result.halt_reason is not None
+    assert len(result.approved) == 1 and result.approved[0].side == "cover"
+
+
+def test_cover_without_a_short_is_rejected(cfg, account, clean_risk, ctx_shortable):
+    cover = {"symbol": "XLK", "side": "cover", "sleeve": "mom_ls",
+             "notional": 500.0, "limit_price": 100.0}
+    result = evaluate([cover], account, clean_risk, ctx_shortable, cfg)
+    assert "no short position" in only_rejection(result)
+
+
+def test_short_loss_sign_is_correct():
+    losing_short = Position("X", qty=-10, avg_entry_price=90.0, current_price=100.0)
+    winning_short = Position("X", qty=-10, avg_entry_price=110.0, current_price=100.0)
+    assert losing_short.unrealized_pct < 0
+    assert winning_short.unrealized_pct > 0
