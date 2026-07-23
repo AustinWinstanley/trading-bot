@@ -46,6 +46,10 @@ PROFILES = {
 DB = REPO_ROOT / "state" / "paper.db"
 RISK_STATE = REPO_ROOT / "state" / "risk_state.json"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
+TERMINAL_ORDER_STATUSES = {
+    "filled", "canceled", "expired", "rejected", "replaced", "done_for_day",
+}
+PROTECTIVE_ORDER_TYPES = {"stop", "stop_limit", "trailing_stop"}
 
 
 def set_profile(name: str) -> tuple[str, str]:
@@ -99,6 +103,77 @@ def save_risk_state(st: dict) -> None:
     RISK_STATE.write_text(json.dumps(st, indent=2))
 
 
+def is_protective_order(order: dict) -> bool:
+    return str(order.get("type", "")).lower() in PROTECTIVE_ORDER_TYPES
+
+
+def reconcile_journal_orders(conn: sqlite3.Connection, trader: Trader) -> dict[str, int]:
+    """Refresh non-terminal journal rows from Alpaca, the source of truth."""
+    counts: dict[str, int] = {}
+    rows = conn.execute(
+        "SELECT DISTINCT alpaca_id FROM orders "
+        "WHERE alpaca_id IS NOT NULL AND status NOT IN "
+        "('filled','canceled','expired','rejected','replaced','done_for_day')"
+    ).fetchall()
+    for (order_id,) in rows:
+        try:
+            remote = trader.get_order(order_id)
+        except Exception as exc:
+            print(f"  reconcile {order_id} failed: {exc}")
+            continue
+        status = str(remote.get("status", "unknown"))
+        conn.execute("UPDATE orders SET status=? WHERE alpaca_id=?", (status, order_id))
+        counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def cancel_symbol_orders(
+    trader: Trader, symbol: str, open_orders: list[dict], *, dry_run: bool
+) -> int:
+    """Cancel all live orders for a symbol before intentionally reducing it."""
+    matches = [o for o in open_orders if o.get("symbol") == symbol and o.get("id")]
+    for order in matches:
+        if not dry_run:
+            trader.cancel_order(str(order["id"]))
+    return len(matches)
+
+
+def sync_broker_stops(
+    conn: sqlite3.Connection,
+    positions: dict[str, Position],
+    open_orders: list[dict],
+    today: dt.date,
+) -> set[str]:
+    """Mirror broker-held protective stops into the software fallback table."""
+    protective_symbols: set[str] = set()
+    by_symbol: dict[str, list[float]] = {}
+    for order in open_orders:
+        if not is_protective_order(order):
+            continue
+        symbol = str(order.get("symbol", ""))
+        try:
+            stop = float(order.get("stop_price"))
+        except (TypeError, ValueError):
+            continue
+        if symbol in positions and stop > 0:
+            protective_symbols.add(symbol)
+            by_symbol.setdefault(symbol, []).append(stop)
+
+    for symbol, stops in by_symbol.items():
+        pos = positions[symbol]
+        # Multiple OTO additions can create multiple child stops. For the
+        # fallback monitor use the most protective valid boundary.
+        stop = min(stops) if pos.is_short else max(stops)
+        conn.execute(
+            "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
+            (symbol, stop, pos.avg_entry_price, today.isoformat(), "broker"),
+        )
+    for (symbol,) in conn.execute("SELECT symbol FROM stops").fetchall():
+        if symbol not in positions:
+            conn.execute("DELETE FROM stops WHERE symbol=?", (symbol,))
+    return protective_symbols
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -141,6 +216,16 @@ def main() -> None:
 
     st = load_risk_state(equity, today)
     conn = db()
+    reconciled = reconcile_journal_orders(conn, t)
+    open_orders = t.open_orders()
+    protective_symbols = sync_broker_stops(conn, positions, open_orders, today)
+    pending_symbols = {
+        str(o.get("symbol")) for o in open_orders
+        if o.get("symbol") and not is_protective_order(o)
+    }
+    if reconciled or open_orders:
+        print(f"orders: reconciled={reconciled} open={len(open_orders)} "
+              f"pending_symbols={len(pending_symbols)} stops={len(protective_symbols)}")
 
     # ---- targets ---------------------------------------------------------
     targets, diag = build_targets(cfg, t)
@@ -154,6 +239,8 @@ def main() -> None:
     # 4a. software stops — always first, always sells
     stop_rows = {r[0]: r[1] for r in conn.execute("SELECT symbol, stop_price FROM stops")}
     for sym, pos in positions.items():
+        if sym in protective_symbols:
+            continue  # broker owns the active stop; do not race it
         stop = stop_rows.get(sym)
         if not stop:
             continue
@@ -171,6 +258,8 @@ def main() -> None:
     # 4b. rebalance drift
     all_syms = sorted(set(targets) | set(positions))
     for sym in all_syms:
+        if sym in pending_symbols:
+            continue
         if any(pr["symbol"] == sym for pr in proposals):
             continue
         tgt_notional = targets.get(sym, 0.0) * equity        # negative = short target
@@ -254,22 +343,27 @@ def main() -> None:
         print(f"  HALT: {result.halt_reason}")
     if result.flatten_all and not args.dry_run:
         print("  FLATTEN: selling everything per kill switch")
+        t.cancel_all_orders()
+        open_orders = []
         for sym, pos in positions.items():
             px = t.latest_price(sym) or pos.current_price
             try:
                 if pos.is_short:
                     o = t.submit_limit(sym, "buy", abs(pos.qty), round(px * 1.003, 2))
+                    flatten_side = "cover"
                 else:
                     o = t.submit_limit(sym, "sell", pos.qty, round(px * 0.997, 2))
+                    flatten_side = "sell"
                 conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                             (ts, sym, "sell", "killswitch", pos.qty, pos.market_value,
+                             (ts, sym, flatten_side, "killswitch", abs(pos.qty), abs(pos.market_value),
                               px, 0.0, result.halt_reason or "flatten", o.get("id"), o.get("status")))
             except Exception as exc:
                 print(f"    flatten {sym} failed: {exc}")
 
     # ---- execute ---------------------------------------------------------
     submitted = 0
-    for order in result.approved:
+    orders_to_execute = [] if result.flatten_all else result.approved
+    for order in orders_to_execute:
         tag = " ".join(order.adjustments) or "clean"
         print(f"  APPROVED {order.side:4} {order.symbol:6} ${order.notional:>9,.2f} "
               f"@{order.limit_price} stop={order.stop_price} [{tag}]")
@@ -289,6 +383,11 @@ def main() -> None:
                     order.stop_price, client_order_id=order_id,
                 )
             else:
+                canceled = cancel_symbol_orders(
+                    t, order.symbol, open_orders, dry_run=False
+                )
+                if canceled:
+                    print(f"    canceled {canceled} existing {order.symbol} order(s) before exit")
                 o = t.submit_limit(
                     order.symbol, alpaca_side, order.qty, order.limit_price,
                     client_order_id=order_id,
@@ -297,12 +396,7 @@ def main() -> None:
                          (ts, order.symbol, order.side, order.sleeve, order.qty,
                           order.notional, order.limit_price, order.stop_price,
                           tag, o.get("id"), o.get("status")))
-            if order.side in ("buy", "short"):
-                conn.execute(
-                    "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
-                    (order.symbol, order.stop_price, order.limit_price,
-                     today.isoformat(), order.sleeve))
-            else:
+            if order.side not in ("buy", "short"):
                 conn.execute("DELETE FROM stops WHERE symbol=?", (order.symbol,))
             submitted += 1
         except Exception as exc:
@@ -329,6 +423,7 @@ def main() -> None:
         f"- equity ${equity:,.2f} | cash ${cash:,.2f} | positions {len(positions)}",
         f"- sleeves {diag['sleeve_counts']} | invested {diag['total_weight']:.0%} | cash target {diag['cash_weight']:.0%}",
         f"- proposals {len(proposals)} | approved {len(result.approved)} | rejected {len(result.rejected)} | submitted {submitted}",
+        f"- broker orders open {len(open_orders)} | journal reconciled {sum(reconciled.values())}",
     ]
     if result.halt_reason:
         lines.append(f"- **HALT: {result.halt_reason}**")
