@@ -29,6 +29,7 @@ import sqlite3
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from engine.attribution import build_exposure_attribution
 from engine.config import load_config
 from engine.data import REPO_ROOT, atr, load_env
 from engine.execute import Trader
@@ -67,16 +68,49 @@ def db() -> sqlite3.Connection:
     DB.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB)
     conn.executescript("""
+    BEGIN;
     CREATE TABLE IF NOT EXISTS snapshots(
         ts TEXT, equity REAL, cash REAL, positions TEXT, diag TEXT);
     CREATE TABLE IF NOT EXISTS orders(
         ts TEXT, symbol TEXT, side TEXT, sleeve TEXT, qty REAL, notional REAL,
-        limit_price REAL, stop_price REAL, reason TEXT, alpaca_id TEXT, status TEXT);
+        limit_price REAL, stop_price REAL, reason TEXT, alpaca_id TEXT, status TEXT,
+        requested_notional REAL, reference_price REAL, filled_qty REAL,
+        filled_avg_price REAL, filled_at TEXT);
     CREATE TABLE IF NOT EXISTS rejections(
-        ts TEXT, symbol TEXT, reason TEXT);
+        ts TEXT, symbol TEXT, reason TEXT, sleeve TEXT, side TEXT,
+        requested_notional REAL);
     CREATE TABLE IF NOT EXISTS stops(
         symbol TEXT PRIMARY KEY, stop_price REAL, entry_price REAL, entry_date TEXT, sleeve TEXT);
+    CREATE TABLE IF NOT EXISTS attribution_snapshots(
+        ts TEXT, equity REAL,
+        target_long REAL, target_short REAL, target_gross REAL,
+        actual_long REAL, actual_short REAL, actual_gross REAL,
+        target_by_sleeve TEXT, actual_by_sleeve TEXT,
+        targets TEXT, actual_weights TEXT, largest_symbol_gaps TEXT);
     """)
+    # Existing server journals predate attribution. Additive migrations retain
+    # every row and allow a normal pull/upgrade without rebuilding state.
+    migrations = {
+        "orders": {
+            "requested_notional": "REAL",
+            "reference_price": "REAL",
+            "filled_qty": "REAL",
+            "filled_avg_price": "REAL",
+            "filled_at": "TEXT",
+        },
+        "rejections": {
+            "sleeve": "TEXT",
+            "side": "TEXT",
+            "requested_notional": "REAL",
+        },
+    }
+    for table, columns in migrations.items():
+        existing = {
+            str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")
+        }
+        for column, kind in columns.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
     return conn
 
 
@@ -123,13 +157,34 @@ def marketable_limit(price: float, side: str, slippage: float) -> float:
     raise ValueError(f"unsupported side {side!r}")
 
 
+def broker_fill_fields(order: dict) -> tuple[float | None, float | None, str | None]:
+    """Parse optional Alpaca fill fields without turning telemetry into risk."""
+    try:
+        filled_qty = (
+            float(order["filled_qty"])
+            if order.get("filled_qty") is not None else None
+        )
+    except (TypeError, ValueError):
+        filled_qty = None
+    try:
+        filled_avg = (
+            float(order["filled_avg_price"])
+            if order.get("filled_avg_price") is not None else None
+        )
+    except (TypeError, ValueError):
+        filled_avg = None
+    return filled_qty, filled_avg, order.get("filled_at")
+
+
 def reconcile_journal_orders(conn: sqlite3.Connection, trader: Trader) -> dict[str, int]:
     """Refresh non-terminal journal rows from Alpaca, the source of truth."""
     counts: dict[str, int] = {}
     rows = conn.execute(
         "SELECT DISTINCT alpaca_id FROM orders "
-        "WHERE alpaca_id IS NOT NULL AND status NOT IN "
-        "('filled','canceled','expired','rejected','replaced','done_for_day')"
+        "WHERE alpaca_id IS NOT NULL AND (status NOT IN "
+        "('filled','canceled','expired','rejected','replaced','done_for_day') "
+        "OR (status='filled' AND "
+        "(filled_qty IS NULL OR filled_avg_price IS NULL)))"
     ).fetchall()
     for (order_id,) in rows:
         try:
@@ -138,7 +193,14 @@ def reconcile_journal_orders(conn: sqlite3.Connection, trader: Trader) -> dict[s
             print(f"  reconcile {order_id} failed: {exc}")
             continue
         status = str(remote.get("status", "unknown"))
-        conn.execute("UPDATE orders SET status=? WHERE alpaca_id=?", (status, order_id))
+        filled_qty, filled_avg, filled_at = broker_fill_fields(remote)
+        conn.execute(
+            "UPDATE orders SET status=?, "
+            "filled_qty=COALESCE(?, filled_qty), "
+            "filled_avg_price=COALESCE(?, filled_avg_price), "
+            "filled_at=COALESCE(?, filled_at) WHERE alpaca_id=?",
+            (status, filled_qty, filled_avg, filled_at, order_id),
+        )
         counts[status] = counts.get(status, 0) + 1
     return counts
 
@@ -256,7 +318,7 @@ def main() -> None:
         targets = {}
         diag = {
             "sleeve_counts": {}, "total_weight": 0.0, "cash_weight": 1.0,
-            "origin": {}, "gross_leverage": 0.0,
+            "origin": {}, "gross_leverage": 0.0, "sleeve_targets": {},
         }
     else:
         targets, diag = build_targets(cfg, t)
@@ -385,7 +447,20 @@ def main() -> None:
 
     ts = now_et.isoformat()
     for rej in result.rejected:
-        conn.execute("INSERT INTO rejections VALUES (?,?,?)", (ts, rej.symbol, rej.reason))
+        raw = rej.raw if isinstance(rej.raw, dict) else {}
+        conn.execute(
+            "INSERT INTO rejections("
+            "ts, symbol, reason, sleeve, side, requested_notional"
+            ") VALUES (?,?,?,?,?,?)",
+            (
+                ts,
+                rej.symbol,
+                rej.reason,
+                raw.get("sleeve"),
+                raw.get("side"),
+                raw.get("notional"),
+            ),
+        )
         print(f"  REJECT {rej.symbol}: {rej.reason}")
     if result.halt_reason:
         st["halted"] = True
@@ -419,9 +494,21 @@ def main() -> None:
                         client_order_id=flatten_id,
                     )
                     flatten_side = "sell"
-                conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                             (ts, sym, flatten_side, "killswitch", abs(pos.qty), abs(pos.market_value),
-                              px, 0.0, result.halt_reason or "flatten", o.get("id"), o.get("status")))
+                filled_qty, filled_avg, filled_at = broker_fill_fields(o)
+                conn.execute(
+                    "INSERT INTO orders("
+                    "ts, symbol, side, sleeve, qty, notional, limit_price, "
+                    "stop_price, reason, alpaca_id, status, requested_notional, "
+                    "reference_price, filled_qty, filled_avg_price, filled_at"
+                    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        ts, sym, flatten_side, "killswitch", abs(pos.qty),
+                        abs(pos.market_value), px, 0.0,
+                        result.halt_reason or "flatten", o.get("id"),
+                        o.get("status"), abs(pos.market_value), px, filled_qty,
+                        filled_avg, filled_at,
+                    ),
+                )
             except Exception as exc:
                 print(f"    flatten {sym} failed: {exc}")
 
@@ -473,10 +560,21 @@ def main() -> None:
                     order.symbol, alpaca_side, order.qty, order.limit_price,
                     client_order_id=order_id,
                 )
-            conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                         (ts, order.symbol, order.side, order.sleeve, order.qty,
-                          order.notional, order.limit_price, order.stop_price,
-                          tag, o.get("id"), o.get("status")))
+            filled_qty, filled_avg, filled_at = broker_fill_fields(o)
+            conn.execute(
+                "INSERT INTO orders("
+                "ts, symbol, side, sleeve, qty, notional, limit_price, "
+                "stop_price, reason, alpaca_id, status, requested_notional, "
+                "reference_price, filled_qty, filled_avg_price, filled_at"
+                ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    ts, order.symbol, order.side, order.sleeve, order.qty,
+                    order.notional, order.limit_price, order.stop_price, tag,
+                    o.get("id"), o.get("status"), order.requested_notional,
+                    reference_prices.get(order.symbol), filled_qty, filled_avg,
+                    filled_at,
+                ),
+            )
             if order.side not in ("buy", "short"):
                 conn.execute("DELETE FROM stops WHERE symbol=?", (order.symbol,))
             submitted += 1
@@ -504,6 +602,32 @@ def main() -> None:
                  (ts, equity, cash,
                   json.dumps({s: {"qty": p.qty, "px": p.current_price} for s, p in positions.items()}),
                   json.dumps(diag)))
+    attribution = build_exposure_attribution(
+        equity=equity,
+        targets=targets,
+        sleeve_targets=diag.get("sleeve_targets", {}),
+        positions=positions,
+    )
+    target_exp = attribution["target"]
+    actual_exp = attribution["actual"]
+    conn.execute(
+        "INSERT INTO attribution_snapshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            ts,
+            equity,
+            target_exp["long"],
+            target_exp["short"],
+            target_exp["gross"],
+            actual_exp["long"],
+            actual_exp["short"],
+            actual_exp["gross"],
+            json.dumps(attribution["target_by_sleeve"]),
+            json.dumps(attribution["actual_by_sleeve"]),
+            json.dumps(attribution["targets"]),
+            json.dumps(attribution["actual_weights"]),
+            json.dumps(attribution["largest_symbol_gaps"]),
+        ),
+    )
     conn.commit()
     save_risk_state(st)
 
@@ -515,6 +639,10 @@ def main() -> None:
         f"- proposals {len(proposals)} | approved {len(result.approved)} | rejected {len(result.rejected)} | submitted {submitted}",
         f"- submission failures {len(submission_failures)}",
         f"- broker orders open {len(open_orders)} | journal reconciled {sum(reconciled.values())}",
+        f"- target exposure long {target_exp['long']:.1%} | short {target_exp['short']:.1%} | "
+        f"gross {target_exp['gross']:.1%}",
+        f"- actual exposure long {actual_exp['long']:.1%} | short {actual_exp['short']:.1%} | "
+        f"gross {actual_exp['gross']:.1%}",
     ]
     if result.halt_reason:
         lines.append(f"- **HALT: {result.halt_reason}**")

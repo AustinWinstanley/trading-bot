@@ -3,7 +3,9 @@ from __future__ import annotations
 import sqlite3
 
 from engine.risk import Position
+import scripts.run_daily as runner
 from scripts.run_daily import (
+    broker_fill_fields,
     cancel_symbol_orders,
     is_liquidation_order,
     marketable_limit,
@@ -17,7 +19,8 @@ def journal() -> sqlite3.Connection:
     conn = sqlite3.connect(":memory:")
     conn.execute(
         "CREATE TABLE orders(ts, symbol, side, sleeve, qty, notional, "
-        "limit_price, stop_price, reason, alpaca_id, status)"
+        "limit_price, stop_price, reason, alpaca_id, status, "
+        "requested_notional, reference_price, filled_qty, filled_avg_price, filled_at)"
     )
     conn.execute(
         "CREATE TABLE stops(symbol PRIMARY KEY, stop_price, entry_price, entry_date, sleeve)"
@@ -45,21 +48,124 @@ def test_marketable_limit_rounds_inside_slippage_band():
     assert (price - sell_limit) / price <= 0.003
 
 
+def test_broker_fill_fields_tolerate_partial_and_malformed_payloads():
+    assert broker_fill_fields({
+        "filled_qty": "2.5",
+        "filled_avg_price": "100.25",
+        "filled_at": "t",
+    }) == (2.5, 100.25, "t")
+    assert broker_fill_fields({
+        "filled_qty": "bad",
+        "filled_avg_price": None,
+    }) == (None, None, None)
+
+
 def test_reconcile_updates_journal_from_broker():
     conn = journal()
     conn.execute(
-        "INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        ("t", "XLK", "buy", "clone", 1, 100, 100, 92, "", "abc", "accepted"),
+        "INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            "t", "XLK", "buy", "clone", 1, 100, 100, 92, "", "abc",
+            "accepted", 100, 99.5, None, None, None,
+        ),
     )
 
     class FakeTrader:
         def get_order(self, order_id):
             assert order_id == "abc"
-            return {"status": "filled"}
+            return {
+                "status": "filled",
+                "filled_qty": "1",
+                "filled_avg_price": "99.75",
+                "filled_at": "2026-07-23T14:00:00Z",
+            }
 
     counts = reconcile_journal_orders(conn, FakeTrader())
     assert counts == {"filled": 1}
-    assert conn.execute("SELECT status FROM orders").fetchone()[0] == "filled"
+    row = conn.execute(
+        "SELECT status, filled_qty, filled_avg_price, filled_at FROM orders"
+    ).fetchone()
+    assert row == ("filled", 1.0, 99.75, "2026-07-23T14:00:00Z")
+
+
+def test_reconcile_backfills_terminal_fills_missing_telemetry():
+    conn = journal()
+    conn.execute(
+        "INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            "t", "XLK", "buy", "core", 1, 100, 100, 92, "", "abc",
+            "filled", 100, 99.5, None, None, None,
+        ),
+    )
+
+    class FakeTrader:
+        def get_order(self, order_id):
+            return {
+                "status": "filled",
+                "filled_qty": "1",
+                "filled_avg_price": "99.75",
+            }
+
+    assert reconcile_journal_orders(conn, FakeTrader()) == {"filled": 1}
+    assert conn.execute(
+        "SELECT filled_avg_price FROM orders"
+    ).fetchone()[0] == 99.75
+
+
+def test_db_additively_migrates_legacy_journal(tmp_path, monkeypatch):
+    path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(path)
+    conn.executescript("""
+    CREATE TABLE snapshots(ts, equity, cash, positions, diag);
+    CREATE TABLE orders(
+        ts, symbol, side, sleeve, qty, notional, limit_price, stop_price,
+        reason, alpaca_id, status);
+    CREATE TABLE rejections(ts, symbol, reason);
+    CREATE TABLE stops(
+        symbol PRIMARY KEY, stop_price, entry_price, entry_date, sleeve);
+    INSERT INTO orders VALUES(
+        't', 'SPY', 'buy', 'core', 1, 100, 100, 90, '', 'id', 'filled');
+    """)
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(runner, "DB", path)
+    migrated = runner.db()
+    order_columns = {
+        row[1] for row in migrated.execute("PRAGMA table_info(orders)")
+    }
+    rejection_columns = {
+        row[1] for row in migrated.execute("PRAGMA table_info(rejections)")
+    }
+    assert {"requested_notional", "reference_price", "filled_qty"}.issubset(
+        order_columns
+    )
+    assert {"sleeve", "side", "requested_notional"}.issubset(
+        rejection_columns
+    )
+    assert migrated.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 1
+    migrated.rollback()
+    migrated.close()
+
+    rolled_back = sqlite3.connect(path)
+    rolled_back_columns = {
+        row[1] for row in rolled_back.execute("PRAGMA table_info(orders)")
+    }
+    assert "requested_notional" not in rolled_back_columns
+    assert rolled_back.execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name='attribution_snapshots'"
+    ).fetchone() is None
+    rolled_back.close()
+
+    persisted = runner.db()
+    persisted.commit()
+    persisted.close()
+    reopened = sqlite3.connect(path)
+    reopened_columns = {
+        row[1] for row in reopened.execute("PRAGMA table_info(orders)")
+    }
+    assert "requested_notional" in reopened_columns
 
 
 def test_sync_uses_most_protective_broker_stop_and_prunes_phantoms():

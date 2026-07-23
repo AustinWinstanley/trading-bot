@@ -171,6 +171,12 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
         "as_of": dt.date.today().isoformat(),
         "sleeve_counts": {k: len(v) for k, v in sleeves.items()},
         "sleeve_weights": {k: round(sum(v.values()), 4) for k, v in sleeves.items()},
+        # Scaled symbol detail is journaled for exposure attribution only. The
+        # combined targets above remain the sole trading input.
+        "sleeve_targets": {
+            name: {sym: round(w * lev, 8) for sym, w in weights.items()}
+            for name, weights in sleeves.items()
+        },
         "long_weight": round(long_total, 4),
         "short_weight": round(short_total, 4),
         "total_weight": round(long_total, 4),
