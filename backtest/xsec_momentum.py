@@ -44,6 +44,7 @@ def build_portfolio(
     cost_bps: float = 15.0,
     long_only: bool = True,
     short_bottom: bool = False,
+    return_overrides: pd.DataFrame | None = None,
 ) -> tuple[pd.Series, pd.DataFrame]:
     """Equal-weight the top momentum names, rebalanced every `rebalance` days."""
     dollar_volume = (close * volume).rolling(20, min_periods=10).mean()
@@ -61,6 +62,11 @@ def build_portfolio(
     )
 
     daily_returns = close.pct_change()
+    if return_overrides is not None:
+        aligned = return_overrides.reindex(
+            index=daily_returns.index, columns=daily_returns.columns
+        )
+        daily_returns = daily_returns.mask(aligned.notna(), aligned)
     rebalance_days = close.index[lookback + skip :: rebalance]
 
     weights = pd.DataFrame(0.0, index=close.index, columns=close.columns, dtype="float32")

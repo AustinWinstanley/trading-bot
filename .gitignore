@@ -18,6 +18,7 @@ state/edgar/*.parquet
 state/history/
 state/history_deep/
 state/xsec/
+state/xsec_delisted/
 state/universe_*.json
 state/cboe/
 state/fundamentals/
