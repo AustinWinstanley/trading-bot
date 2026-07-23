@@ -105,6 +105,7 @@ paper_portfolio:
   trend_symbol: SPY
   trend_ma_days: 200
   tsmom_lookback_days: 252
+  tsmom_min_dollar_volume: 1000000
   # Trade only when a position drifts >20% from target, or >= $25 absolute —
   # tiny rebalances would be pure cost.
   rebalance_band: 0.20

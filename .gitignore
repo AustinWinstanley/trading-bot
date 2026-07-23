@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 state/*.db
 state/*.json
+state/crontab-*.txt
 logs/
 .pytest_cache/
 state/edgar/*.zip

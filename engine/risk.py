@@ -519,12 +519,19 @@ def evaluate(
                 RejectedProposal(symbol, f"price {data.price:.2f} below minimum {cfg.universe.min_price:.2f}", raw)
             )
             continue
-        if data.avg_dollar_volume_20d < cfg.universe.min_avg_dollar_volume:
+        min_dollar_volume = cfg.universe.min_avg_dollar_volume
+        if "tsmom" in clean["sleeve"]:
+            min_dollar_volume = float(
+                cfg.sleeves_paper.get(
+                    "tsmom_min_dollar_volume", min_dollar_volume
+                )
+            )
+        if data.avg_dollar_volume_20d < min_dollar_volume:
             result.rejected.append(
                 RejectedProposal(
                     symbol,
                     f"20d avg dollar volume {data.avg_dollar_volume_20d:,.0f} below minimum "
-                    f"{cfg.universe.min_avg_dollar_volume:,.0f}",
+                    f"{min_dollar_volume:,.0f}",
                     raw,
                 )
             )

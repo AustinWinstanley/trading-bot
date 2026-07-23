@@ -290,6 +290,16 @@ def test_illiquid_stock_is_rejected(cfg, account, clean_risk, ctx):
     assert "dollar volume" in only_rejection(result)
 
 
+def test_tsmom_uses_its_smaller_asset_etf_liquidity_floor(
+    cfg, account, clean_risk, ctx
+):
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="tsmom")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert len(result.approved) == 1
+
+
 def test_recent_ipo_is_rejected(cfg, account, clean_risk, ctx):
     result = evaluate([buy("NEWIPO", limit=50.0)], account, clean_risk, ctx, cfg)
     assert "IPO" in only_rejection(result)
