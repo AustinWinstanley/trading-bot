@@ -6,39 +6,39 @@
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1176,
-      "ann_return": 0.1262,
-      "vol": 0.1205,
-      "sharpe": 1.047,
-      "sortino": 1.353,
+      "cagr": 0.1255,
+      "ann_return": 0.1341,
+      "vol": 0.1241,
+      "sharpe": 1.081,
+      "sortino": 1.395,
       "max_dd": -0.1323,
-      "x_money": 2.045
+      "x_money": 2.14
     },
     {
       "portfolio": "production SPY-core 2x (2.30x gross)",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1757,
-      "ann_return": 0.2023,
-      "vol": 0.2411,
-      "sharpe": 0.839,
-      "sortino": 1.085,
+      "cagr": 0.1913,
+      "ann_return": 0.2182,
+      "vol": 0.2482,
+      "sharpe": 0.879,
+      "sortino": 1.135,
       "max_dd": -0.2581,
-      "x_money": 2.834
+      "x_money": 3.086
     },
     {
       "portfolio": "invalidated clone allocation (legacy)",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.0779,
-      "ann_return": 0.0866,
-      "vol": 0.1126,
-      "sharpe": 0.769,
-      "sortino": 1.03,
+      "cagr": 0.0858,
+      "ann_return": 0.0945,
+      "vol": 0.114,
+      "sharpe": 0.829,
+      "sortino": 1.131,
       "max_dd": -0.1581,
-      "x_money": 1.621
+      "x_money": 1.699
     },
     {
       "portfolio": "SPY buy & hold",
@@ -56,13 +56,13 @@
   ],
   "yearly_returns": {
     "2020": {
-      "base": 0.057135,
-      "2x": 0.078477,
+      "base": 0.081963,
+      "2x": 0.12522,
       "SPY": 0.140775
     },
     "2021": {
-      "base": 0.153919,
-      "2x": 0.25618,
+      "base": 0.179562,
+      "2x": 0.310742,
       "SPY": 0.287442
     },
     "2022": {
@@ -95,35 +95,35 @@
     "clone": {
       "clone": 1.0,
       "tsmom": 0.2971,
-      "trend": 0.5634,
+      "trend": 0.5241,
       "mom_ls": -0.1318,
       "spy": 0.7495
     },
     "tsmom": {
       "clone": 0.2971,
       "tsmom": 1.0,
-      "trend": 0.2772,
+      "trend": 0.3053,
       "mom_ls": 0.17,
       "spy": 0.2712
     },
     "trend": {
-      "clone": 0.5634,
-      "tsmom": 0.2772,
+      "clone": 0.5241,
+      "tsmom": 0.3053,
       "trend": 1.0,
-      "mom_ls": 0.1641,
-      "spy": 0.5575
+      "mom_ls": 0.1422,
+      "spy": 0.6696
     },
     "mom_ls": {
       "clone": -0.1318,
       "tsmom": 0.17,
-      "trend": 0.1641,
+      "trend": 0.1422,
       "mom_ls": 1.0,
       "spy": 0.0053
     },
     "spy": {
       "clone": 0.7495,
       "tsmom": 0.2712,
-      "trend": 0.5575,
+      "trend": 0.6696,
       "mom_ls": 0.0053,
       "spy": 1.0
     }

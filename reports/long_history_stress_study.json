@@ -21,22 +21,22 @@
   },
   "calibration": {
     "base": {
-      "volatility_scale": 0.2914,
-      "overlap_correlation": 0.546,
+      "volatility_scale": 0.2926,
+      "overlap_correlation": 0.5502,
       "overlap_from": "2020-02-06",
       "overlap_to": "2026-05-29",
-      "actual_momentum_ann_vol": 0.0568,
-      "scaled_proxy_ann_vol": 0.0568,
-      "average_short_gross": 0.089
+      "actual_momentum_ann_vol": 0.057,
+      "scaled_proxy_ann_vol": 0.057,
+      "average_short_gross": 0.0914
     },
     "2x": {
-      "volatility_scale": 0.623,
-      "overlap_correlation": 0.5961,
+      "volatility_scale": 0.6248,
+      "overlap_correlation": 0.5994,
       "overlap_from": "2020-02-06",
       "overlap_to": "2026-05-29",
-      "actual_momentum_ann_vol": 0.1213,
-      "scaled_proxy_ann_vol": 0.1213,
-      "average_short_gross": 0.2443
+      "actual_momentum_ann_vol": 0.1217,
+      "scaled_proxy_ann_vol": 0.1217,
+      "average_short_gross": 0.2504
     }
   },
   "full_period": [
@@ -46,25 +46,25 @@
       "to": "2026-05-29",
       "years": 19.13,
       "cagr": 0.078,
-      "ann_return": 0.0805,
-      "vol": 0.1024,
-      "sharpe": 0.786,
-      "sortino": 1.033,
-      "max_dd": -0.2619,
-      "x_money": 4.208
+      "ann_return": 0.0804,
+      "vol": 0.1025,
+      "sharpe": 0.785,
+      "sortino": 1.031,
+      "max_dd": -0.2625,
+      "x_money": 4.205
     },
     {
       "portfolio": "2x long-history proxy",
       "from": "2007-04-12",
       "to": "2026-05-29",
       "years": 19.13,
-      "cagr": 0.0924,
-      "ann_return": 0.1101,
-      "vol": 0.2074,
-      "sharpe": 0.531,
-      "sortino": 0.699,
-      "max_dd": -0.5023,
-      "x_money": 5.423
+      "cagr": 0.0922,
+      "ann_return": 0.1099,
+      "vol": 0.2075,
+      "sharpe": 0.53,
+      "sortino": 0.698,
+      "max_dd": -0.503,
+      "x_money": 5.406
     }
   ],
   "stress_windows": {
@@ -74,7 +74,7 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.1563,
+        "total_return": -0.156,
         "max_drawdown": -0.2023,
         "worst_day": -0.0323
       },
@@ -83,9 +83,9 @@
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.0546,
-        "max_drawdown": -0.0846,
-        "worst_day": -0.0115
+        "total_return": -0.0553,
+        "max_drawdown": -0.0851,
+        "worst_day": -0.0116
       },
       {
         "window": "Eurozone / US downgrade",
@@ -93,7 +93,7 @@
         "to": "2011-10-03",
         "sessions": 108,
         "total_return": -0.0825,
-        "max_drawdown": -0.0988,
+        "max_drawdown": -0.0989,
         "worst_day": -0.0314
       },
       {
@@ -101,7 +101,7 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.0116,
+        "total_return": -0.0115,
         "max_drawdown": -0.0629,
         "worst_day": -0.0191
       },
@@ -112,24 +112,24 @@
         "sessions": 230,
         "total_return": -0.0796,
         "max_drawdown": -0.1172,
-        "worst_day": -0.0271
+        "worst_day": -0.0272
       },
       {
         "window": "COVID crash",
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.1651,
-        "max_drawdown": -0.1671,
-        "worst_day": -0.0487
+        "total_return": -0.165,
+        "max_drawdown": -0.167,
+        "worst_day": -0.0488
       },
       {
         "window": "inflation bear",
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.0748,
-        "max_drawdown": -0.0858,
+        "total_return": -0.0747,
+        "max_drawdown": -0.0857,
         "worst_day": -0.0183
       }
     ],
@@ -139,7 +139,7 @@
         "from": "2007-10-09",
         "to": "2009-03-09",
         "sessions": 356,
-        "total_return": -0.3414,
+        "total_return": -0.3411,
         "max_drawdown": -0.3941,
         "worst_day": -0.064
       },
@@ -148,17 +148,17 @@
         "from": "2009-03-10",
         "to": "2009-06-30",
         "sessions": 79,
-        "total_return": -0.1436,
-        "max_drawdown": -0.1916,
-        "worst_day": -0.0249
+        "total_return": -0.1446,
+        "max_drawdown": -0.1925,
+        "worst_day": -0.025
       },
       {
         "window": "Eurozone / US downgrade",
         "from": "2011-05-02",
         "to": "2011-10-03",
         "sessions": 108,
-        "total_return": -0.1823,
-        "max_drawdown": -0.1953,
+        "total_return": -0.1822,
+        "max_drawdown": -0.1954,
         "worst_day": -0.0634
       },
       {
@@ -166,8 +166,8 @@
         "from": "2015-07-01",
         "to": "2016-02-11",
         "sessions": 156,
-        "total_return": -0.054,
-        "max_drawdown": -0.1451,
+        "total_return": -0.0539,
+        "max_drawdown": -0.1452,
         "worst_day": -0.0384
       },
       {
@@ -176,16 +176,16 @@
         "to": "2018-12-24",
         "sessions": 230,
         "total_return": -0.1992,
-        "max_drawdown": -0.2335,
-        "worst_day": -0.0549
+        "max_drawdown": -0.2336,
+        "worst_day": -0.055
       },
       {
         "window": "COVID crash",
         "from": "2020-02-19",
         "to": "2020-03-23",
         "sessions": 24,
-        "total_return": -0.3126,
-        "max_drawdown": -0.3157,
+        "total_return": -0.3125,
+        "max_drawdown": -0.3156,
         "worst_day": -0.0986
       },
       {
@@ -193,9 +193,9 @@
         "from": "2022-01-03",
         "to": "2022-10-12",
         "sessions": 196,
-        "total_return": -0.1802,
+        "total_return": -0.1801,
         "max_drawdown": -0.1982,
-        "worst_day": -0.0383
+        "worst_day": -0.0384
       }
     ]
   }

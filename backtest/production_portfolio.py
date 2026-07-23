@@ -74,6 +74,20 @@ def returns_summary(r: pd.Series, label: str) -> dict:
     }
 
 
+def trend_stream(spy: pd.Series, ma_days: int = 200) -> pd.Series:
+    """Build the trend return before trimming to another sleeve's history.
+
+    Computing the moving average after a short-history reindex creates a false
+    warm-up cash period even when the underlying SPY history is available.
+    """
+    spy = norm_index(spy)
+    spy_return = spy.pct_change(fill_method=None)
+    trend_on = (
+        spy.shift(1) > spy.shift(1).rolling(ma_days, min_periods=ma_days).mean()
+    ).astype(float)
+    return trend_on * spy_return
+
+
 def clone_stream(close: pd.DataFrame) -> pd.Series:
     holdings = build_holdings().merge(cusip_ticker_map(), on="cusip", how="inner")
     holdings = holdings[holdings["symbol"].isin(close.columns)]
@@ -115,7 +129,9 @@ def build_streams() -> pd.DataFrame:
     close, volume = close_all[stocks], volume_all[stocks]
 
     spy_frame = load_parquet(["SPY"])["SPY"]
-    spy = norm_index(spy_frame["close"]).reindex(close.index).ffill()
+    spy_history = norm_index(spy_frame["close"])
+    trend = trend_stream(spy_history).reindex(close.index)
+    spy = spy_history.reindex(close.index).ffill()
     spy_ret = spy.pct_change()
 
     clone = clone_stream(close_all)
@@ -125,9 +141,6 @@ def build_streams() -> pd.DataFrame:
         short_bottom=True,
     )
     mom_ls = mom_equity.pct_change()
-    trend_on = (spy.shift(1) > spy.shift(1).rolling(200).mean()).astype(float)
-    trend = trend_on * spy_ret
-
     return pd.DataFrame({
         "clone": clone,
         "tsmom": norm_index(tsmom_stream()),

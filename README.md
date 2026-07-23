@@ -48,8 +48,8 @@ short borrow, and 5% margin financing:
 
 | Portfolio | CAGR | Sharpe | Max drawdown |
 | --- | ---: | ---: | ---: |
-| Base SPY-core profile | 11.76% | 1.047 | -13.23% |
-| 2× SPY-core profile | 17.57% | 0.839 | -25.81% |
+| Base SPY-core profile | 12.55% | 1.081 | -13.23% |
+| 2× SPY-core profile | 19.13% | 0.879 | -25.81% |
 | SPY buy and hold | 14.99% | 0.883 | -24.50% |
 
 These are estimates, not forecasts. The individual-stock universe contains
@@ -63,24 +63,24 @@ delisting a total loss bound the production estimate:
 
 | Delisting assumption | Base CAGR | Base Sharpe | 2× CAGR | 2× Sharpe |
 | --- | ---: | ---: | ---: | ---: |
-| Observed last price | 11.66% | 1.037 | 17.36% | 0.830 |
-| Every delisting loses 100% | 10.88% | 0.975 | 15.73% | 0.768 |
+| Observed last price | 12.45% | 1.072 | 18.92% | 0.871 |
+| Every delisting loses 100% | 11.66% | 1.011 | 17.26% | 0.810 |
 
 MOM_LS remains positive across those bounds, but historical borrowability and
 actual delisting proceeds are unavailable, so this reduces rather than removes
 the uncertainty.
 
 A whole-share capacity study also modeled the actual $10,000 account sizes.
-The base account realizes only 8.90% average short exposure versus its 15%
-target because 27.0% of ranked shorts round below one share. The 2× account
-realizes 24.43% versus 30%, with 5.7% rounding to zero:
+The base account realizes only 9.14% average short exposure versus its 15%
+target because 25.0% of ranked shorts round below one share. The 2× account
+realizes 25.04% versus 30%, with 3.9% rounding to zero:
 
 | Construction | Base short | Base CAGR / Sharpe | 2× short | 2× CAGR / Sharpe |
 | --- | ---: | ---: | ---: | ---: |
-| Fractional benchmark | 15.00% | 11.84% / 1.053 | 30.00% | 17.75% / 0.846 |
-| Current whole-share bottom 20 | 8.90% | 11.38% / 0.993 | 24.43% | 17.73% / 0.839 |
-| Price-aware bottom 20 | 12.11% | 11.39% / 1.010 | 25.88% | 17.50% / 0.833 |
-| Whole-share bottom 10 | 12.22% | 11.84% / 1.031 | 27.29% | 17.30% / 0.816 |
+| Fractional benchmark | 15.00% | 12.63% / 1.087 | 30.00% | 19.31% / 0.886 |
+| Current whole-share bottom 20 | 9.14% | 12.33% / 1.041 | 25.04% | 18.95% / 0.868 |
+| Price-aware bottom 20 | 12.12% | 12.30% / 1.055 | 26.06% | 18.92% / 0.868 |
+| Whole-share bottom 10 | 12.26% | 12.57% / 1.061 | 27.62% | 18.64% / 0.849 |
 
 Neither alternative dominates across the early and held-out windows, so the
 current construction remains deployed while real paper fills accumulate.
@@ -92,16 +92,16 @@ estimates. With the deliberately severe universal-zero delisting drag applied:
 
 | Profile / horizon | CAGR p05 | Median | CAGR p95 | Chance of loss | Drawdown p05 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Base, 1 year | -4.7% | 11.2% | 29.7% | 12.8% | -15.5% |
-| Base, 3 years annualized | 1.5% | 11.2% | 21.8% | 2.7% | -20.0% |
-| 2×, 1 year | -13.7% | 16.9% | 58.9% | 19.7% | -30.3% |
-| 2×, 3 years annualized | -2.3% | 17.2% | 39.8% | 7.5% | -39.0% |
+| Base, 1 year | -4.3% | 12.4% | 31.3% | 11.4% | -15.8% |
+| Base, 3 years annualized | 2.2% | 12.3% | 22.9% | 2.0% | -20.3% |
+| 2×, 1 year | -13.1% | 18.4% | 60.4% | 18.1% | -30.4% |
+| 2×, 3 years annualized | -1.2% | 18.4% | 41.1% | 6.4% | -39.1% |
 
 These are conditional scenario ranges, not calibrated forecast probabilities.
 Resampling cannot create crises or regimes absent from the short 2020–2026
 source history, so capital planning should allow outcomes worse than p05. A
-21/63/126-session block sensitivity moved the three-year p05 CAGR to 0.4%–2.3%
-for base and -4.4% to -0.7% for 2×; the 2× drawdown p05 reached -43.4%.
+21/63/126-session block sensitivity moved the three-year p05 CAGR to 1.0%–2.9%
+for base and -3.5% to 0.2% for 2×; the 2× drawdown p05 reached -43.7%.
 
 A separate 2007–2026 stress proxy reconstructs the SPY, trend, and 15-asset
 TSMOM sleeves and substitutes the point-in-time
@@ -110,8 +110,8 @@ for unavailable pre-2020 stock ranks:
 
 | Long-history proxy | CAGR | Sharpe | Max drawdown | GFC return | COVID-crash return |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Base | 7.80% | 0.786 | -26.19% | -15.63% | -16.51% |
-| 2× | 9.24% | 0.531 | -50.23% | -34.14% | -31.26% |
+| Base | 7.80% | 0.785 | -26.25% | -15.60% | -16.50% |
+| 2× | 9.22% | 0.530 | -50.30% | -34.11% | -31.25% |
 
 The proxy’s 2020–2026 correlation to the actual capacity-adjusted MOM_LS
 contribution is only 0.55–0.60. These are stress estimates, not a reconstructed
@@ -124,14 +124,14 @@ Because they trade the same sleeves, an equal-dollar split is approximately a
 
 | Capital in 2× account | Nominal combined leverage | Recent CAGR / max drawdown | 2007–2026 proxy CAGR / max drawdown |
 | ---: | ---: | ---: | ---: |
-| 0% | 1.00× | 11.38% / -13.96% | 7.80% / -26.19% |
-| 25% | 1.25× | 13.08% / -17.24% | 8.27% / -32.98% |
-| 50% (current paper split) | 1.50× | 14.71% / -20.43% | 8.67% / -39.25% |
-| 75% | 1.75× | 16.26% / -23.53% | 8.99% / -44.98% |
-| 100% | 2.00× | 17.73% / -26.53% | 9.24% / -50.23% |
+| 0% | 1.00× | 12.33% / -13.99% | 7.80% / -26.25% |
+| 25% | 1.25× | 14.10% / -17.18% | 8.26% / -33.05% |
+| 50% (current paper split) | 1.50× | 15.80% / -20.28% | 8.66% / -39.31% |
+| 75% | 1.75× | 17.42% / -23.30% | 8.98% / -45.05% |
+| 100% | 2.00× | 18.95% / -26.23% | 9.22% / -50.30% |
 
 For the current equal split, the severe recent-history bootstrap estimates a
-17.1% chance of a negative one-year CAGR and a 44.2% chance of a drawdown over
+15.5% chance of a negative one-year CAGR and a 46.1% chance of a drawdown over
 20% during a three-year path. The long-history proxy lost 25.3% through the
 GFC window and 24.1% during the COVID crash, with drawdowns of 30.3% and 24.4%
 respectively. These estimates support keeping the equal split as an aggressive
@@ -143,10 +143,10 @@ never exceeds 2×, and charges 5 bp per estimated portfolio-wide rescale:
 
 | 2× risk policy | CAGR | Sharpe | Max drawdown | Average leverage |
 | --- | ---: | ---: | ---: | ---: |
-| Fixed 2× | 9.24% | 0.531 | -50.23% | 2.00× |
-| 12% volatility target | 7.55% | 0.632 | -36.65% | 1.35× |
-| 15% volatility target | 8.09% | 0.581 | -43.58% | 1.61× |
-| 18% volatility target | 8.46% | 0.555 | -46.81% | 1.78× |
+| Fixed 2× | 9.22% | 0.530 | -50.30% | 2.00× |
+| 12% volatility target | 7.54% | 0.631 | -36.68% | 1.35× |
+| 15% volatility target | 8.08% | 0.580 | -43.63% | 1.61× |
+| 18% volatility target | 8.45% | 0.554 | -46.86% | 1.78× |
 
 The pre-selected 15% variant failed its 25%-drawdown-reduction rule. The 12%
 variant passed that same screen in both 2007–2016 and 2017+ and also improved
