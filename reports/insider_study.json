@@ -1,0 +1,234 @@
+{
+  "params": {
+    "start": "2021-01-01",
+    "end": "2026-07-22",
+    "min_insiders": 3,
+    "window_days": 30,
+    "min_value": 50000,
+    "out": "reports/insider_study.json"
+  },
+  "n_signals": 1449,
+  "n_events_priced": 1419,
+  "summary": [
+    {
+      "label": "all cluster signals",
+      "horizon_days": 1,
+      "n": 1419,
+      "mean_raw": 0.0078,
+      "mean_car": 0.0074,
+      "median_car": 0.0018,
+      "pct_positive": 0.524,
+      "t_stat": 3.79,
+      "significant": true
+    },
+    {
+      "label": "all cluster signals",
+      "horizon_days": 5,
+      "n": 1418,
+      "mean_raw": 0.0092,
+      "mean_car": 0.0067,
+      "median_car": -0.0014,
+      "pct_positive": 0.491,
+      "t_stat": 2.3,
+      "significant": true
+    },
+    {
+      "label": "all cluster signals",
+      "horizon_days": 20,
+      "n": 1413,
+      "mean_raw": 0.0144,
+      "mean_car": 0.0057,
+      "median_car": -0.0109,
+      "pct_positive": 0.468,
+      "t_stat": 0.84,
+      "significant": false
+    },
+    {
+      "label": "all cluster signals",
+      "horizon_days": 60,
+      "n": 1407,
+      "mean_raw": 0.0282,
+      "mean_car": -0.0079,
+      "median_car": -0.0494,
+      "pct_positive": 0.409,
+      "t_stat": -0.7,
+      "significant": false
+    },
+    {
+      "label": "has C-suite buyer",
+      "horizon_days": 1,
+      "n": 771,
+      "mean_raw": 0.0093,
+      "mean_car": 0.0091,
+      "median_car": 0.0033,
+      "pct_positive": 0.545,
+      "t_stat": 3.43,
+      "significant": true
+    },
+    {
+      "label": "has C-suite buyer",
+      "horizon_days": 5,
+      "n": 771,
+      "mean_raw": 0.0077,
+      "mean_car": 0.0047,
+      "median_car": -0.0015,
+      "pct_positive": 0.489,
+      "t_stat": 1.25,
+      "significant": false
+    },
+    {
+      "label": "has C-suite buyer",
+      "horizon_days": 20,
+      "n": 768,
+      "mean_raw": 0.0198,
+      "mean_car": 0.01,
+      "median_car": -0.0136,
+      "pct_positive": 0.451,
+      "t_stat": 0.91,
+      "significant": false
+    },
+    {
+      "label": "has C-suite buyer",
+      "horizon_days": 60,
+      "n": 764,
+      "mean_raw": 0.0284,
+      "mean_car": -0.0096,
+      "median_car": -0.0472,
+      "pct_positive": 0.407,
+      "t_stat": -0.7,
+      "significant": false
+    },
+    {
+      "label": "cluster value > $1M",
+      "horizon_days": 1,
+      "n": 678,
+      "mean_raw": 0.0072,
+      "mean_car": 0.0066,
+      "median_car": 0.0013,
+      "pct_positive": 0.513,
+      "t_stat": 2.13,
+      "significant": true
+    },
+    {
+      "label": "cluster value > $1M",
+      "horizon_days": 5,
+      "n": 678,
+      "mean_raw": 0.0064,
+      "mean_car": 0.0039,
+      "median_car": -0.0032,
+      "pct_positive": 0.472,
+      "t_stat": 0.9,
+      "significant": false
+    },
+    {
+      "label": "cluster value > $1M",
+      "horizon_days": 20,
+      "n": 677,
+      "mean_raw": -0.0048,
+      "mean_car": -0.0124,
+      "median_car": -0.0136,
+      "pct_positive": 0.458,
+      "t_stat": -1.83,
+      "significant": false
+    },
+    {
+      "label": "cluster value > $1M",
+      "horizon_days": 60,
+      "n": 671,
+      "mean_raw": 0.009,
+      "mean_car": -0.0244,
+      "median_car": -0.0654,
+      "pct_positive": 0.395,
+      "t_stat": -1.38,
+      "significant": false
+    },
+    {
+      "label": "price >= $5",
+      "horizon_days": 1,
+      "n": 1208,
+      "mean_raw": 0.0048,
+      "mean_car": 0.0045,
+      "median_car": 0.0013,
+      "pct_positive": 0.518,
+      "t_stat": 2.29,
+      "significant": true
+    },
+    {
+      "label": "price >= $5",
+      "horizon_days": 5,
+      "n": 1208,
+      "mean_raw": 0.0046,
+      "mean_car": 0.0022,
+      "median_car": -0.0024,
+      "pct_positive": 0.478,
+      "t_stat": 0.75,
+      "significant": false
+    },
+    {
+      "label": "price >= $5",
+      "horizon_days": 20,
+      "n": 1204,
+      "mean_raw": 0.0046,
+      "mean_car": -0.0047,
+      "median_car": -0.0122,
+      "pct_positive": 0.461,
+      "t_stat": -0.94,
+      "significant": false
+    },
+    {
+      "label": "price >= $5",
+      "horizon_days": 60,
+      "n": 1198,
+      "mean_raw": 0.0082,
+      "mean_car": -0.0271,
+      "median_car": -0.0491,
+      "pct_positive": 0.402,
+      "t_stat": -3.19,
+      "significant": true
+    },
+    {
+      "label": "price < $5 (microcap)",
+      "horizon_days": 1,
+      "n": 211,
+      "mean_raw": 0.0246,
+      "mean_car": 0.0237,
+      "median_car": 0.0104,
+      "pct_positive": 0.559,
+      "t_stat": 3.65,
+      "significant": true
+    },
+    {
+      "label": "price < $5 (microcap)",
+      "horizon_days": 5,
+      "n": 210,
+      "mean_raw": 0.0356,
+      "mean_car": 0.0325,
+      "median_car": 0.0094,
+      "pct_positive": 0.562,
+      "t_stat": 3.14,
+      "significant": true
+    },
+    {
+      "label": "price < $5 (microcap)",
+      "horizon_days": 20,
+      "n": 209,
+      "mean_raw": 0.071,
+      "mean_car": 0.0658,
+      "median_car": 0.0012,
+      "pct_positive": 0.507,
+      "t_stat": 1.83,
+      "significant": false
+    },
+    {
+      "label": "price < $5 (microcap)",
+      "horizon_days": 60,
+      "n": 209,
+      "mean_raw": 0.1427,
+      "mean_car": 0.1023,
+      "median_car": -0.0601,
+      "pct_positive": 0.45,
+      "t_stat": 1.8,
+      "significant": false
+    }
+  ]
+}

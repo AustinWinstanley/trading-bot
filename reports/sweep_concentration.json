@@ -1,0 +1,317 @@
+[
+  {
+    "variant": "baseline",
+    "cagr": 0.0249,
+    "sharpe": 0.354,
+    "sortino": 0.39,
+    "max_dd": -0.1955,
+    "vol": 0.0784,
+    "final": 6913.23,
+    "trades": 1990,
+    "win_rate": 0.495,
+    "profit_factor": 1.223,
+    "neg_months": 0.444,
+    "best_month": 0.0612,
+    "worst_month": -0.0789,
+    "mo_ge_10pct": 0,
+    "halts": 19,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 313,
+        "total_pnl": 1430.43,
+        "win_rate": 0.518,
+        "avg_return": 0.0169,
+        "avg_days": 14.7
+      },
+      {
+        "sleeve": "mean_reversion",
+        "trades": 415,
+        "total_pnl": 29.14,
+        "win_rate": 0.641,
+        "avg_return": 0.0002,
+        "avg_days": 5.0
+      },
+      {
+        "sleeve": "momentum",
+        "trades": 1262,
+        "total_pnl": 812.63,
+        "win_rate": 0.441,
+        "avg_return": 0.0013,
+        "avg_days": 14.4
+      }
+    ],
+    "overrides": {}
+  },
+  {
+    "variant": "no-meanrev 60/40",
+    "cagr": 0.025,
+    "sharpe": 0.288,
+    "sortino": 0.313,
+    "max_dd": -0.2523,
+    "vol": 0.1053,
+    "final": 6921.11,
+    "trades": 1581,
+    "win_rate": 0.4535,
+    "profit_factor": 1.168,
+    "neg_months": 0.48,
+    "best_month": 0.0855,
+    "worst_month": -0.0897,
+    "mo_ge_10pct": 0,
+    "halts": 13,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 283,
+        "total_pnl": 1360.29,
+        "win_rate": 0.509,
+        "avg_return": 0.0153,
+        "avg_days": 14.0
+      },
+      {
+        "sleeve": "momentum",
+        "trades": 1298,
+        "total_pnl": 903.82,
+        "win_rate": 0.441,
+        "avg_return": 0.0011,
+        "avg_days": 14.1
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 0.6,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.4
+    }
+  },
+  {
+    "variant": "no-meanrev top2",
+    "cagr": 0.0134,
+    "sharpe": 0.209,
+    "sortino": 0.217,
+    "max_dd": -0.1299,
+    "vol": 0.0785,
+    "final": 5729.56,
+    "trades": 1247,
+    "win_rate": 0.4467,
+    "profit_factor": 1.123,
+    "neg_months": 0.51,
+    "best_month": 0.0777,
+    "worst_month": -0.0633,
+    "mo_ge_10pct": 0,
+    "halts": 0,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 282,
+        "total_pnl": 1369.24,
+        "win_rate": 0.511,
+        "avg_return": 0.0178,
+        "avg_days": 14.2
+      },
+      {
+        "sleeve": "momentum",
+        "trades": 965,
+        "total_pnl": -275.9,
+        "win_rate": 0.428,
+        "avg_return": -0.0003,
+        "avg_days": 9.5
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 0.6,
+      "sleeves.momentum.hold_top_n": 2,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.4
+    }
+  },
+  {
+    "variant": "no-meanrev top3",
+    "cagr": 0.0236,
+    "sharpe": 0.3,
+    "sortino": 0.324,
+    "max_dd": -0.1483,
+    "vol": 0.0918,
+    "final": 6761.62,
+    "trades": 1449,
+    "win_rate": 0.4589,
+    "profit_factor": 1.194,
+    "neg_months": 0.47,
+    "best_month": 0.0857,
+    "worst_month": -0.0729,
+    "mo_ge_10pct": 0,
+    "halts": 0,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 282,
+        "total_pnl": 1555.05,
+        "win_rate": 0.514,
+        "avg_return": 0.0173,
+        "avg_days": 14.2
+      },
+      {
+        "sleeve": "momentum",
+        "trades": 1167,
+        "total_pnl": 623.62,
+        "win_rate": 0.446,
+        "avg_return": 0.0008,
+        "avg_days": 11.9
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 0.6,
+      "sleeves.momentum.hold_top_n": 3,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.4
+    }
+  },
+  {
+    "variant": "momentum-only top2",
+    "cagr": -0.0031,
+    "sharpe": -0.057,
+    "sortino": -0.068,
+    "max_dd": -0.1425,
+    "vol": 0.0401,
+    "final": 4370.21,
+    "trades": 965,
+    "win_rate": 0.428,
+    "profit_factor": 0.949,
+    "neg_months": 0.52,
+    "best_month": 0.0284,
+    "worst_month": -0.0374,
+    "mo_ge_10pct": 0,
+    "halts": 0,
+    "attribution": [
+      {
+        "sleeve": "momentum",
+        "trades": 965,
+        "total_pnl": -257.41,
+        "win_rate": 0.428,
+        "avg_return": -0.0003,
+        "avg_days": 9.5
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 1.0,
+      "sleeves.momentum.hold_top_n": 2,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.0
+    }
+  },
+  {
+    "variant": "momentum-only top4",
+    "cagr": 0.0113,
+    "sharpe": 0.193,
+    "sortino": 0.228,
+    "max_dd": -0.2208,
+    "vol": 0.0716,
+    "final": 5537.78,
+    "trades": 1304,
+    "win_rate": 0.441,
+    "profit_factor": 1.1,
+    "neg_months": 0.475,
+    "best_month": 0.0784,
+    "worst_month": -0.0616,
+    "mo_ge_10pct": 0,
+    "halts": 2,
+    "attribution": [
+      {
+        "sleeve": "momentum",
+        "trades": 1304,
+        "total_pnl": 890.21,
+        "win_rate": 0.441,
+        "avg_return": 0.0011,
+        "avg_days": 14.1
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 1.0,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.0
+    }
+  },
+  {
+    "variant": "leveraged-only",
+    "cagr": 0.0868,
+    "sharpe": 0.483,
+    "sortino": 0.338,
+    "max_dd": -0.3367,
+    "vol": 0.2266,
+    "final": 18222.53,
+    "trades": 312,
+    "win_rate": 0.5096,
+    "profit_factor": 1.514,
+    "neg_months": 0.283,
+    "best_month": 0.3653,
+    "worst_month": -0.1554,
+    "mo_ge_10pct": 13,
+    "halts": 102,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 312,
+        "total_pnl": 13622.53,
+        "win_rate": 0.51,
+        "avg_return": 0.0169,
+        "avg_days": 14.7
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 0.0,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 1.0,
+      "risk.max_leveraged_exposure_pct": 1.0,
+      "risk.max_position_pct": 0.4
+    }
+  },
+  {
+    "variant": "aggressive 40/60 top3",
+    "cagr": 0.0636,
+    "sharpe": 0.466,
+    "sortino": 0.468,
+    "max_dd": -0.2718,
+    "vol": 0.1605,
+    "final": 12755.49,
+    "trades": 1467,
+    "win_rate": 0.4588,
+    "profit_factor": 1.396,
+    "neg_months": 0.495,
+    "best_month": 0.2263,
+    "worst_month": -0.0982,
+    "mo_ge_10pct": 9,
+    "halts": 37,
+    "attribution": [
+      {
+        "sleeve": "leveraged",
+        "trades": 316,
+        "total_pnl": 7298.84,
+        "win_rate": 0.516,
+        "avg_return": 0.0169,
+        "avg_days": 14.6
+      },
+      {
+        "sleeve": "momentum",
+        "trades": 1151,
+        "total_pnl": 885.2,
+        "win_rate": 0.443,
+        "avg_return": 0.001,
+        "avg_days": 11.9
+      }
+    ],
+    "overrides": {
+      "sleeves.momentum.allocation": 0.4,
+      "sleeves.momentum.hold_top_n": 3,
+      "sleeves.mean_reversion.allocation": 0.0,
+      "sleeves.pead.allocation": 0.0,
+      "sleeves.leveraged.allocation": 0.6,
+      "risk.max_leveraged_exposure_pct": 0.6,
+      "risk.max_position_pct": 0.25
+    }
+  }
+]

@@ -230,6 +230,10 @@ def run_backtest(
     cash = bt.initial_equity
     positions: dict[str, OpenPosition] = {}
     trades: list[Trade] = []
+    # symbol -> its currently-open Trade. Scanning `trades` for the open one
+    # on every exit and every daily invariant check made the whole backtest
+    # O(n^2) in trade count; this keeps both O(1).
+    open_trades: dict[str, Trade] = {}
     equity_dates, equity_values = [], []
     rejections: list[dict] = []
     notes: list[str] = []
@@ -298,22 +302,21 @@ def run_backtest(
                     symbol=order["symbol"], sleeve=order["sleeve"], qty=qty,
                     entry_price=px, entry_date=today, stop_price=px * (1 - stop_pct),
                 )
-                trades.append(
-                    Trade(order["symbol"], order["sleeve"], today, px, qty)
-                )
+                tr = Trade(order["symbol"], order["sleeve"], today, px, qty)
+                trades.append(tr)
+                open_trades[order["symbol"]] = tr
             else:
                 pos = positions.pop(order["symbol"], None)
                 if pos is None:
                     continue
                 px = _fill_price(open_px, "sell", bt)
                 cash += pos.qty * px
-                for t in reversed(trades):
-                    if t.symbol == pos.symbol and t.exit_price is None:
-                        t.exit_date, t.exit_price = today, px
-                        t.exit_reason = order.get("reason", "signal exit")
-                        if t.pnl <= 0:
-                            recent_losses[pos.symbol] = today
-                        break
+                t = open_trades.pop(pos.symbol, None)
+                if t is not None:
+                    t.exit_date, t.exit_price = today, px
+                    t.exit_reason = order.get("reason", "signal exit")
+                    if t.pnl <= 0:
+                        recent_losses[pos.symbol] = today
         pending = []
 
         # ---- 2. intraday stops, checked against the low ----------------
@@ -328,12 +331,11 @@ def run_backtest(
                 px = _fill_price(raw, "sell", bt)
                 cash += pos.qty * px
                 del positions[symbol]
-                for t in reversed(trades):
-                    if t.symbol == symbol and t.exit_price is None:
-                        t.exit_date, t.exit_price = today, px
-                        t.exit_reason = "stop loss"
-                        recent_losses[symbol] = today
-                        break
+                t = open_trades.pop(symbol, None)
+                if t is not None:
+                    t.exit_date, t.exit_price = today, px
+                    t.exit_reason = "stop loss"
+                    recent_losses[symbol] = today
 
         for pos in positions.values():
             pos.days_held += 1
@@ -346,10 +348,7 @@ def run_backtest(
         # Accounting invariant: every trade still marked open must correspond to
         # a live position. A mismatch means shares were destroyed somewhere —
         # exactly the bug where a second sleeve overwrote another's position.
-        orphans = [
-            t.symbol for t in trades
-            if t.exit_price is None and t.symbol not in positions
-        ]
+        orphans = set(open_trades) - set(positions)
         if orphans:
             raise AssertionError(
                 f"{today}: BACKTEST ACCOUNTING LEAK — open trades with no position: {orphans}"
