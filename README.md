@@ -192,6 +192,21 @@ showing that neither confirmation nor delay was robust. No paper feature flag
 was added; the result does not rule out strategy-level allocation after a
 pilot accumulates many independent experimental trades.
 
+Options are not currently traded by the system. The original options study
+rejected only passive cash-secured put writing and fully covered calls. A
+broader Cboe benchmark screen subsequently tested protective puts, collars,
+put-spread collars, iron condors, iron butterflies, partial covered calls, and
+alternative put-write schedules as 20% replacements for the SPY core.
+
+No strategy passed its pre-specified cross-window promotion rule. Protection
+was nevertheless meaningfully different from premium selling: a 20% CLL
+collar replacement reduced the 2007–2026 proxy drawdown from -26.25% to
+-14.73%, while CAGR declined from 7.80% to 7.03%. A 20% PPUT protective-put
+replacement improved 2017+ Sharpe from 1.020 to 1.050 and drawdown from
+-16.70% to -11.99%, but slightly reduced 2007–2016 Sharpe. Passive condors,
+butterflies, and alternative put-writing variants did not improve robustly.
+These are hypothetical SPX benchmark results, not simulated SPY option fills.
+
 ## Setup
 
 ```bash
@@ -219,6 +234,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.defensive_rotation_study
 .venv/bin/python -m backtest.momentum_sleeve_overlay_study
 .venv/bin/python -m backtest.pilot_follower_study
+.venv/bin/python -m backtest.options_strategy_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
