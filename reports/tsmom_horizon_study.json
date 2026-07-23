@@ -1,0 +1,111 @@
+{
+  "conclusion": "Keep deployed 12-month long/flat. Multi-horizon and long/short variants do not improve the production portfolio.",
+  "standalone": [
+    {
+      "portfolio": "12m long_flat",
+      "from": "2006-01-03",
+      "to": "2026-07-22",
+      "years": 20.55,
+      "cagr": 0.0219,
+      "ann_return": 0.0232,
+      "vol": 0.0559,
+      "sharpe": 0.416,
+      "sortino": 0.512,
+      "max_dd": -0.1676,
+      "x_money": 1.559
+    },
+    {
+      "portfolio": "ensemble fractional long_flat",
+      "from": "2006-01-03",
+      "to": "2026-07-22",
+      "years": 20.55,
+      "cagr": 0.0214,
+      "ann_return": 0.0226,
+      "vol": 0.053,
+      "sharpe": 0.428,
+      "sortino": 0.548,
+      "max_dd": -0.1857,
+      "x_money": 1.546
+    },
+    {
+      "portfolio": "ensemble majority long_flat",
+      "from": "2006-01-03",
+      "to": "2026-07-22",
+      "years": 20.55,
+      "cagr": 0.0174,
+      "ann_return": 0.0189,
+      "vol": 0.0578,
+      "sharpe": 0.328,
+      "sortino": 0.411,
+      "max_dd": -0.219,
+      "x_money": 1.425
+    },
+    {
+      "portfolio": "ensemble long_short",
+      "from": "2006-01-03",
+      "to": "2026-07-22",
+      "years": 20.55,
+      "cagr": 0.0128,
+      "ann_return": 0.0144,
+      "vol": 0.0582,
+      "sharpe": 0.248,
+      "sortino": 0.311,
+      "max_dd": -0.2452,
+      "x_money": 1.298
+    }
+  ],
+  "production_portfolio": [
+    {
+      "portfolio": "12m long_flat",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.119,
+      "ann_return": 0.1275,
+      "vol": 0.1206,
+      "sharpe": 1.057,
+      "sortino": 1.365,
+      "max_dd": -0.133,
+      "x_money": 2.062
+    },
+    {
+      "portfolio": "ensemble fractional long_flat",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1156,
+      "ann_return": 0.1242,
+      "vol": 0.1197,
+      "sharpe": 1.037,
+      "sortino": 1.332,
+      "max_dd": -0.1344,
+      "x_money": 2.022
+    },
+    {
+      "portfolio": "ensemble majority long_flat",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1147,
+      "ann_return": 0.1233,
+      "vol": 0.1198,
+      "sharpe": 1.029,
+      "sortino": 1.323,
+      "max_dd": -0.1329,
+      "x_money": 2.011
+    },
+    {
+      "portfolio": "ensemble long_short",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1088,
+      "ann_return": 0.1172,
+      "vol": 0.116,
+      "sharpe": 1.01,
+      "sortino": 1.288,
+      "max_dd": -0.1347,
+      "x_money": 1.944
+    }
+  ]
+}
