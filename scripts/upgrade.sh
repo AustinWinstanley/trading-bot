@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 # Fail-closed server upgrade verification.
 #
-# Run after `git pull --ff-only origin main`. The script pauses only crontab
-# lines that invoke this project's paper wrapper, verifies the checkout
-# against both Alpaca paper profiles, and restores the exact original crontab
-# only after every check passes.
+# The script runs itself from a temporary copy, pauses only crontab lines that
+# invoke this project's paper wrapper, stashes tracked runtime reports, pulls
+# main, verifies the checkout against both Alpaca paper profiles, and restores
+# the exact original crontab only after every check passes.
 set -Eeuo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "${TRADING_BOT_UPGRADE_BOOTSTRAPPED:-0}" != "1" ]]; then
+  bootstrap_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  bootstrap_tmp="$(mktemp -d "${TMPDIR:-/tmp}/trading-bot-upgrade.XXXXXX")"
+  cp "${BASH_SOURCE[0]}" "$bootstrap_tmp/upgrade.sh"
+  chmod 700 "$bootstrap_tmp/upgrade.sh"
+  export TRADING_BOT_UPGRADE_BOOTSTRAPPED=1
+  export TRADING_BOT_UPGRADE_REPO_ROOT="$bootstrap_root"
+  export TRADING_BOT_UPGRADE_TEMP_DIR="$bootstrap_tmp"
+  exec bash "$bootstrap_tmp/upgrade.sh" "$@"
+fi
+
+REPO_ROOT="${TRADING_BOT_UPGRADE_REPO_ROOT:?missing upgrade repository root}"
+UPGRADE_TEMP_DIR="${TRADING_BOT_UPGRADE_TEMP_DIR:-}"
 PYTHON="$REPO_ROOT/.venv/bin/python"
 PIP="$REPO_ROOT/.venv/bin/pip"
 STATE_DIR="$REPO_ROOT/state"
@@ -21,6 +33,13 @@ REPORT_STASHED=0
 REPORT_STASH_REF=""
 REPORT_STASH_NEEDS_MANUAL=0
 UPGRADE_SUCCEEDED=0
+
+cleanup_temp_copy() {
+  if [[ -n "$UPGRADE_TEMP_DIR" && -d "$UPGRADE_TEMP_DIR" ]]; then
+    rm -f "$UPGRADE_TEMP_DIR/upgrade.sh"
+    rmdir "$UPGRADE_TEMP_DIR" 2>/dev/null || true
+  fi
+}
 
 restore_report_stash() {
   if [[ "$REPORT_STASHED" -ne 1 ]]; then
@@ -45,6 +64,7 @@ restore_report_stash() {
 on_exit() {
   rc=$?
   if [[ "$UPGRADE_SUCCEEDED" -eq 1 ]]; then
+    cleanup_temp_copy
     exit "$rc"
   fi
   if [[ "$REPORT_STASHED" -eq 1 ]]; then
@@ -67,6 +87,7 @@ on_exit() {
     echo "The paper-report stash remains available as $REPORT_STASH_REF."
   fi
   echo "No orders were submitted by this upgrade script."
+  cleanup_temp_copy
   exit "$rc"
 }
 trap on_exit EXIT
@@ -95,6 +116,10 @@ if [[ ! -x "$PYTHON" || ! -x "$PIP" ]]; then
 fi
 if [[ ! -f "$REPO_ROOT/.env" ]]; then
   echo "Missing $REPO_ROOT/.env" >&2
+  exit 1
+fi
+if [[ "$(git branch --show-current)" != "main" ]]; then
+  echo "Upgrade must run from the main branch." >&2
   exit 1
 fi
 
@@ -142,6 +167,9 @@ if ! git diff --quiet HEAD -- reports/paper; then
   REPORT_STASH_REF="stash@{0}"
   REPORT_STASHED=1
 fi
+
+echo "==> Fast-forwarding from origin/main"
+git pull --ff-only origin main
 
 echo "==> Installing declared dependencies"
 "$PIP" install -r "$REPO_ROOT/requirements.txt"
