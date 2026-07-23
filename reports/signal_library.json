@@ -1,0 +1,304 @@
+{
+  "note": "survivorship-biased universe (currently-listed only) \u2014 upper bound",
+  "params": {
+    "rebalance": 5,
+    "decile": 0.1,
+    "cost_bps": 15.0,
+    "out": "reports/signal_library.json"
+  },
+  "signals": [
+    {
+      "signal": "mom_12_1",
+      "sharpe": 0.679,
+      "ann_ret": 0.2426,
+      "vol": 0.3575,
+      "max_dd": -0.3796,
+      "hit_rate": 0.545
+    },
+    {
+      "signal": "mom_6_1",
+      "sharpe": 0.274,
+      "ann_ret": 0.0952,
+      "vol": 0.3474,
+      "max_dd": -0.4662,
+      "hit_rate": 0.539
+    },
+    {
+      "signal": "reversal_1m",
+      "sharpe": -0.405,
+      "ann_ret": -0.1193,
+      "vol": 0.2946,
+      "max_dd": -0.6516,
+      "hit_rate": 0.461
+    },
+    {
+      "signal": "reversal_1w",
+      "sharpe": -0.353,
+      "ann_ret": -0.0988,
+      "vol": 0.28,
+      "max_dd": -0.679,
+      "hit_rate": 0.473
+    },
+    {
+      "signal": "low_vol",
+      "sharpe": -0.231,
+      "ann_ret": -0.1045,
+      "vol": 0.452,
+      "max_dd": -0.8744,
+      "hit_rate": 0.488
+    },
+    {
+      "signal": "max_lottery",
+      "sharpe": -0.56,
+      "ann_ret": -0.1896,
+      "vol": 0.3385,
+      "max_dd": -0.8697,
+      "hit_rate": 0.471
+    },
+    {
+      "signal": "idio_vol",
+      "sharpe": -0.291,
+      "ann_ret": -0.1061,
+      "vol": 0.3647,
+      "max_dd": -0.8198,
+      "hit_rate": 0.481
+    },
+    {
+      "signal": "high_52w",
+      "sharpe": -0.113,
+      "ann_ret": -0.0414,
+      "vol": 0.3657,
+      "max_dd": -0.7641,
+      "hit_rate": 0.512
+    },
+    {
+      "signal": "volume_shock",
+      "sharpe": -2.188,
+      "ann_ret": -0.2535,
+      "vol": 0.1159,
+      "max_dd": -0.7301,
+      "hit_rate": 0.433
+    },
+    {
+      "signal": "illiquidity",
+      "sharpe": -0.059,
+      "ann_ret": -0.0139,
+      "vol": 0.2349,
+      "max_dd": -0.4878,
+      "hit_rate": 0.493
+    },
+    {
+      "signal": "acceleration",
+      "sharpe": -0.805,
+      "ann_ret": -0.1902,
+      "vol": 0.2361,
+      "max_dd": -0.7073,
+      "hit_rate": 0.459
+    },
+    {
+      "signal": "downside_vol",
+      "sharpe": -0.19,
+      "ann_ret": -0.0768,
+      "vol": 0.4047,
+      "max_dd": -0.8253,
+      "hit_rate": 0.482
+    }
+  ],
+  "combined": [
+    {
+      "signal": "COMBO equal-weight (all 12)",
+      "sharpe": -0.495,
+      "ann_ret": -0.0714,
+      "vol": 0.1441,
+      "max_dd": -0.5372,
+      "hit_rate": 0.477
+    },
+    {
+      "signal": "COMBO risk-parity (all)",
+      "sharpe": -0.983,
+      "ann_ret": -0.099,
+      "vol": 0.1007,
+      "max_dd": -0.5126,
+      "hit_rate": 0.468
+    },
+    {
+      "signal": "COMBO top-6 by Sharpe ['mom_12_1', 'mom_6_1', 'illiquidity', 'high_52w', 'downside_vol', 'low_vol']",
+      "sharpe": 0.076,
+      "ann_ret": 0.0169,
+      "vol": 0.2212,
+      "max_dd": -0.4856,
+      "hit_rate": 0.515
+    }
+  ],
+  "mean_pairwise_corr": 0.0502,
+  "correlation_matrix": {
+    "mom_12_1": {
+      "mom_12_1": 1.0,
+      "mom_6_1": 0.8799,
+      "reversal_1m": -0.263,
+      "reversal_1w": -0.0577,
+      "low_vol": -0.0007,
+      "max_lottery": -0.0396,
+      "idio_vol": -0.0459,
+      "high_52w": 0.5383,
+      "volume_shock": -0.0614,
+      "illiquidity": 0.0208,
+      "acceleration": -0.2043,
+      "downside_vol": 0.079
+    },
+    "mom_6_1": {
+      "mom_12_1": 0.8799,
+      "mom_6_1": 1.0,
+      "reversal_1m": -0.2676,
+      "reversal_1w": -0.0808,
+      "low_vol": 0.0686,
+      "max_lottery": 0.0338,
+      "idio_vol": 0.0154,
+      "high_52w": 0.5713,
+      "volume_shock": -0.0428,
+      "illiquidity": -0.0482,
+      "acceleration": -0.2471,
+      "downside_vol": 0.1562
+    },
+    "reversal_1m": {
+      "mom_12_1": -0.263,
+      "mom_6_1": -0.2676,
+      "reversal_1m": 1.0,
+      "reversal_1w": 0.5848,
+      "low_vol": -0.2172,
+      "max_lottery": -0.0847,
+      "idio_vol": -0.1762,
+      "high_52w": -0.5905,
+      "volume_shock": -0.023,
+      "illiquidity": 0.1574,
+      "acceleration": -0.576,
+      "downside_vol": -0.2799
+    },
+    "reversal_1w": {
+      "mom_12_1": -0.0577,
+      "mom_6_1": -0.0808,
+      "reversal_1m": 0.5848,
+      "reversal_1w": 1.0,
+      "low_vol": -0.2208,
+      "max_lottery": -0.129,
+      "idio_vol": -0.199,
+      "high_52w": -0.3885,
+      "volume_shock": -0.1028,
+      "illiquidity": 0.2253,
+      "acceleration": -0.3482,
+      "downside_vol": -0.2552
+    },
+    "low_vol": {
+      "mom_12_1": -0.0007,
+      "mom_6_1": 0.0686,
+      "reversal_1m": -0.2172,
+      "reversal_1w": -0.2208,
+      "low_vol": 1.0,
+      "max_lottery": 0.9594,
+      "idio_vol": 0.9669,
+      "high_52w": 0.7282,
+      "volume_shock": 0.02,
+      "illiquidity": -0.8861,
+      "acceleration": 0.1147,
+      "downside_vol": 0.9826
+    },
+    "max_lottery": {
+      "mom_12_1": -0.0396,
+      "mom_6_1": 0.0338,
+      "reversal_1m": -0.0847,
+      "reversal_1w": -0.129,
+      "low_vol": 0.9594,
+      "max_lottery": 1.0,
+      "idio_vol": 0.9447,
+      "high_52w": 0.6501,
+      "volume_shock": 0.0209,
+      "illiquidity": -0.874,
+      "acceleration": 0.0094,
+      "downside_vol": 0.9418
+    },
+    "idio_vol": {
+      "mom_12_1": -0.0459,
+      "mom_6_1": 0.0154,
+      "reversal_1m": -0.1762,
+      "reversal_1w": -0.199,
+      "low_vol": 0.9669,
+      "max_lottery": 0.9447,
+      "idio_vol": 1.0,
+      "high_52w": 0.6752,
+      "volume_shock": 0.0072,
+      "illiquidity": -0.8578,
+      "acceleration": 0.1165,
+      "downside_vol": 0.9513
+    },
+    "high_52w": {
+      "mom_12_1": 0.5383,
+      "mom_6_1": 0.5713,
+      "reversal_1m": -0.5905,
+      "reversal_1w": -0.3885,
+      "low_vol": 0.7282,
+      "max_lottery": 0.6501,
+      "idio_vol": 0.6752,
+      "high_52w": 1.0,
+      "volume_shock": -0.0044,
+      "illiquidity": -0.6374,
+      "acceleration": 0.1313,
+      "downside_vol": 0.7851
+    },
+    "volume_shock": {
+      "mom_12_1": -0.0614,
+      "mom_6_1": -0.0428,
+      "reversal_1m": -0.023,
+      "reversal_1w": -0.1028,
+      "low_vol": 0.02,
+      "max_lottery": 0.0209,
+      "idio_vol": 0.0072,
+      "high_52w": -0.0044,
+      "volume_shock": 1.0,
+      "illiquidity": -0.0775,
+      "acceleration": 0.0979,
+      "downside_vol": 0.0249
+    },
+    "illiquidity": {
+      "mom_12_1": 0.0208,
+      "mom_6_1": -0.0482,
+      "reversal_1m": 0.1574,
+      "reversal_1w": 0.2253,
+      "low_vol": -0.8861,
+      "max_lottery": -0.874,
+      "idio_vol": -0.8578,
+      "high_52w": -0.6374,
+      "volume_shock": -0.0775,
+      "illiquidity": 1.0,
+      "acceleration": -0.0933,
+      "downside_vol": -0.8775
+    },
+    "acceleration": {
+      "mom_12_1": -0.2043,
+      "mom_6_1": -0.2471,
+      "reversal_1m": -0.576,
+      "reversal_1w": -0.3482,
+      "low_vol": 0.1147,
+      "max_lottery": 0.0094,
+      "idio_vol": 0.1165,
+      "high_52w": 0.1313,
+      "volume_shock": 0.0979,
+      "illiquidity": -0.0933,
+      "acceleration": 1.0,
+      "downside_vol": 0.1145
+    },
+    "downside_vol": {
+      "mom_12_1": 0.079,
+      "mom_6_1": 0.1562,
+      "reversal_1m": -0.2799,
+      "reversal_1w": -0.2552,
+      "low_vol": 0.9826,
+      "max_lottery": 0.9418,
+      "idio_vol": 0.9513,
+      "high_52w": 0.7851,
+      "volume_shock": 0.0249,
+      "illiquidity": -0.8775,
+      "acceleration": 0.1145,
+      "downside_vol": 1.0
+    }
+  }
+}
