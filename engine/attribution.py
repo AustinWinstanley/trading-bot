@@ -218,6 +218,32 @@ def execution_summary(
                 "largest_symbol_gaps": json.loads(row["largest_symbol_gaps"]),
             }
 
+    leverage = None
+    leverage_columns = _table_columns(conn, "leverage_recommendations")
+    if {
+        "ts", "mode", "observations", "target_vol", "realized_vol",
+        "recommended_leverage", "ready", "reason",
+    }.issubset(leverage_columns):
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT ts, mode, observations, target_vol, realized_vol, "
+            "recommended_leverage, ready, reason "
+            "FROM leverage_recommendations WHERE ts > ? "
+            "ORDER BY ts DESC LIMIT 1",
+            (since,),
+        ).fetchone()
+        if row:
+            leverage = {
+                "ts": row["ts"],
+                "mode": row["mode"],
+                "observations": row["observations"],
+                "target_vol": row["target_vol"],
+                "realized_vol": row["realized_vol"],
+                "recommended_leverage": row["recommended_leverage"],
+                "ready": bool(row["ready"]),
+                "reason": row["reason"],
+            }
+
     return {
         "overall": summarize(orders),
         "by_sleeve": by_sleeve,
@@ -237,4 +263,5 @@ def execution_summary(
             ),
         },
         "latest_exposure": exposure,
+        "latest_leverage_recommendation": leverage,
     }

@@ -54,6 +54,9 @@ def _journal() -> sqlite3.Connection:
         ts, equity, target_long, target_short, target_gross, actual_long,
         actual_short, actual_gross, target_by_sleeve, actual_by_sleeve,
         targets, actual_weights, largest_symbol_gaps);
+    CREATE TABLE leverage_recommendations(
+        ts, profile, mode, observations, target_vol, realized_vol,
+        recommended_scale, recommended_leverage, ready, reason);
     """)
     return conn
 
@@ -87,6 +90,13 @@ def test_execution_summary_reports_fill_shrink_and_adverse_slippage():
             "{}", json.dumps(attribution), "{}", "{}", "[]",
         ),
     )
+    conn.execute(
+        "INSERT INTO leverage_recommendations VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            "2026-07-23", "2x", "shadow", 40, 0.12, 0.20, 0.60, 1.20, 1,
+            "shadow recommendation only",
+        ),
+    )
     result = execution_summary(conn, "2026-07-22")
     assert result["overall"]["approval_pct"] == 80.0
     assert result["overall"]["fill_pct"] == 100.0
@@ -94,3 +104,6 @@ def test_execution_summary_reports_fill_shrink_and_adverse_slippage():
     assert result["rejections"]["whole_share_rounding"] == 1
     assert result["rejections"]["requested_notional"] == 75
     assert result["latest_exposure"]["actual_short"] == 0.09
+    assert result["latest_leverage_recommendation"][
+        "recommended_leverage"
+    ] == 1.20

@@ -166,6 +166,18 @@ def summarize_week(db_path: Path = DB) -> list[str]:
                 f"net {row['net']:+.1%}, unrealized P&L "
                 f"${row['unrealized_pl']:+,.2f}"
             )
+    leverage = attribution["latest_leverage_recommendation"]
+    if leverage and leverage["mode"] != "off":
+        vol_text = (
+            f"{leverage['realized_vol']:.1%}"
+            if leverage["realized_vol"] is not None else "pending"
+        )
+        lines.append(
+            f"volatility overlay {leverage['mode']}: "
+            f"{leverage['observations']} observations, realized {vol_text}, "
+            f"recommended {leverage['recommended_leverage']:.2f}× "
+            f"({leverage['reason']})"
+        )
 
     # CRITICAL lines from this week's logs
     log_dir = REPO_ROOT / "logs"
