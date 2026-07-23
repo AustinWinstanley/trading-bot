@@ -3,11 +3,16 @@
   "method": {
     "sampling": "circular moving-block bootstrap",
     "block_sessions": 63,
+    "block_sensitivity_sessions": [
+      21,
+      63,
+      126
+    ],
     "simulations": 5000,
     "seed": 20260723,
     "delisting_overlay_annual_return_drag": {
       "base": 0.008400000000000005,
-      "2x": 0.016699999999999993
+      "2x": 0.01670000000000002
     }
   },
   "limitations": [
@@ -22,52 +27,52 @@
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1165,
-      "ann_return": 0.1256,
-      "vol": 0.124,
-      "sharpe": 1.012,
-      "sortino": 1.31,
-      "max_dd": -0.1403,
-      "x_money": 2.032
+      "cagr": 0.1138,
+      "ann_return": 0.123,
+      "vol": 0.1238,
+      "sharpe": 0.993,
+      "sortino": 1.287,
+      "max_dd": -0.1396,
+      "x_money": 2.001
     },
     {
       "portfolio": "base severe-delisting overlay",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1078,
-      "ann_return": 0.1172,
-      "vol": 0.124,
-      "sharpe": 0.944,
-      "sortino": 1.222,
-      "max_dd": -0.1416,
-      "x_money": 1.932
+      "cagr": 0.1051,
+      "ann_return": 0.1146,
+      "vol": 0.1238,
+      "sharpe": 0.925,
+      "sortino": 1.199,
+      "max_dd": -0.1408,
+      "x_money": 1.903
     },
     {
       "portfolio": "2x current",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.18,
-      "ann_return": 0.2069,
-      "vol": 0.2437,
-      "sharpe": 0.849,
-      "sortino": 1.098,
-      "max_dd": -0.2622,
-      "x_money": 2.902
+      "cagr": 0.1773,
+      "ann_return": 0.2045,
+      "vol": 0.2438,
+      "sharpe": 0.839,
+      "sortino": 1.084,
+      "max_dd": -0.2653,
+      "x_money": 2.86
     },
     {
       "portfolio": "2x severe-delisting overlay",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
-      "cagr": 0.1618,
-      "ann_return": 0.1902,
-      "vol": 0.2437,
-      "sharpe": 0.781,
-      "sortino": 1.009,
-      "max_dd": -0.2649,
-      "x_money": 2.625
+      "cagr": 0.1591,
+      "ann_return": 0.1878,
+      "vol": 0.2438,
+      "sharpe": 0.77,
+      "sortino": 0.996,
+      "max_dd": -0.2704,
+      "x_money": 2.587
     }
   ],
   "bootstrap": {
@@ -77,27 +82,27 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0351,
-          "p25": 0.0548,
-          "p50": 0.1248,
-          "p75": 0.2004,
-          "p95": 0.3117
+          "p05": -0.0387,
+          "p25": 0.0526,
+          "p50": 0.1218,
+          "p75": 0.1976,
+          "p95": 0.3083
         },
         "sharpe": {
-          "p05": -0.1981,
-          "p25": 0.4855,
-          "p50": 1.0373,
-          "p75": 1.6461,
-          "p95": 2.529
+          "p05": -0.2252,
+          "p25": 0.4625,
+          "p50": 1.0235,
+          "p75": 1.6314,
+          "p95": 2.5021
         },
         "max_drawdown": {
-          "p05": -0.1517,
-          "p25": -0.1113,
+          "p05": -0.1521,
+          "p25": -0.1111,
           "p50": -0.0852,
-          "p75": -0.0682,
-          "p95": -0.0466
+          "p75": -0.0686,
+          "p95": -0.0475
         },
-        "probability_negative_cagr": 0.1024,
+        "probability_negative_cagr": 0.1088,
         "probability_drawdown_over_20pct": 0.0068,
         "probability_drawdown_over_30pct": 0.0
       },
@@ -106,28 +111,28 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0256,
-          "p25": 0.0841,
-          "p50": 0.125,
-          "p75": 0.1687,
-          "p95": 0.23
+          "p05": 0.0231,
+          "p25": 0.0819,
+          "p50": 0.1218,
+          "p75": 0.1657,
+          "p95": 0.228
         },
         "sharpe": {
-          "p05": 0.2585,
-          "p25": 0.701,
-          "p50": 1.0183,
-          "p75": 1.3541,
-          "p95": 1.8583
+          "p05": 0.2455,
+          "p25": 0.6826,
+          "p50": 0.9993,
+          "p75": 1.3364,
+          "p95": 1.847
         },
         "max_drawdown": {
-          "p05": -0.1927,
-          "p25": -0.1466,
-          "p50": -0.1212,
-          "p75": -0.1027,
-          "p95": -0.0731
+          "p05": -0.1938,
+          "p25": -0.1472,
+          "p50": -0.1216,
+          "p75": -0.1039,
+          "p95": -0.0735
         },
-        "probability_negative_cagr": 0.0154,
-        "probability_drawdown_over_20pct": 0.0402,
+        "probability_negative_cagr": 0.0166,
+        "probability_drawdown_over_20pct": 0.0418,
         "probability_drawdown_over_30pct": 0.0
       }
     },
@@ -137,28 +142,28 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0432,
-          "p25": 0.046,
-          "p50": 0.1154,
-          "p75": 0.1904,
-          "p95": 0.3008
+          "p05": -0.0467,
+          "p25": 0.0438,
+          "p50": 0.1124,
+          "p75": 0.1876,
+          "p95": 0.2974
         },
         "sharpe": {
-          "p05": -0.2574,
-          "p25": 0.4195,
-          "p50": 0.9692,
-          "p75": 1.5746,
-          "p95": 2.4464
+          "p05": -0.2814,
+          "p25": 0.3979,
+          "p50": 0.9472,
+          "p75": 1.5555,
+          "p95": 2.4244
         },
         "max_drawdown": {
-          "p05": -0.155,
-          "p25": -0.1125,
-          "p50": -0.0866,
-          "p75": -0.0696,
-          "p95": -0.0477
+          "p05": -0.1553,
+          "p25": -0.1123,
+          "p50": -0.0867,
+          "p75": -0.0695,
+          "p95": -0.0485
         },
-        "probability_negative_cagr": 0.1214,
-        "probability_drawdown_over_20pct": 0.0078,
+        "probability_negative_cagr": 0.1284,
+        "probability_drawdown_over_20pct": 0.0076,
         "probability_drawdown_over_30pct": 0.0
       },
       "3y": {
@@ -166,29 +171,29 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0171,
-          "p25": 0.075,
-          "p50": 0.1156,
-          "p75": 0.1589,
-          "p95": 0.2198
+          "p05": 0.0145,
+          "p25": 0.0729,
+          "p50": 0.1125,
+          "p75": 0.156,
+          "p95": 0.2177
         },
         "sharpe": {
-          "p05": 0.1946,
-          "p25": 0.6345,
-          "p50": 0.9515,
-          "p75": 1.2831,
-          "p95": 1.783
+          "p05": 0.1779,
+          "p25": 0.6153,
+          "p50": 0.9322,
+          "p75": 1.265,
+          "p95": 1.7673
         },
         "max_drawdown": {
-          "p05": -0.1981,
-          "p25": -0.1502,
-          "p50": -0.124,
-          "p75": -0.1056,
-          "p95": -0.0744
+          "p05": -0.1997,
+          "p25": -0.1509,
+          "p50": -0.1247,
+          "p75": -0.1065,
+          "p95": -0.0742
         },
-        "probability_negative_cagr": 0.023,
-        "probability_drawdown_over_20pct": 0.047,
-        "probability_drawdown_over_30pct": 0.0002
+        "probability_negative_cagr": 0.0268,
+        "probability_drawdown_over_20pct": 0.049,
+        "probability_drawdown_over_30pct": 0.0
       }
     },
     "2x current": {
@@ -197,58 +202,58 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.1163,
-          "p25": 0.0542,
-          "p50": 0.1917,
-          "p75": 0.3543,
-          "p95": 0.6111
+          "p05": -0.1229,
+          "p25": 0.0499,
+          "p50": 0.1889,
+          "p75": 0.3544,
+          "p95": 0.6155
         },
         "sharpe": {
-          "p05": -0.3297,
-          "p25": 0.3398,
-          "p50": 0.8747,
-          "p75": 1.4636,
-          "p95": 2.2998
+          "p05": -0.3631,
+          "p25": 0.3238,
+          "p50": 0.8628,
+          "p75": 1.4597,
+          "p95": 2.2943
         },
         "max_drawdown": {
-          "p05": -0.2933,
-          "p25": -0.2234,
-          "p50": -0.1683,
-          "p75": -0.1311,
-          "p95": -0.096
+          "p05": -0.2975,
+          "p25": -0.2247,
+          "p50": -0.1691,
+          "p75": -0.1325,
+          "p95": -0.0961
         },
-        "probability_negative_cagr": 0.1656,
-        "probability_drawdown_over_20pct": 0.3478,
-        "probability_drawdown_over_30pct": 0.0432
+        "probability_negative_cagr": 0.1748,
+        "probability_drawdown_over_20pct": 0.3608,
+        "probability_drawdown_over_30pct": 0.0472
       },
       "3y": {
         "years": 3,
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0023,
-          "p25": 0.1107,
-          "p50": 0.195,
-          "p75": 0.2857,
-          "p95": 0.4204
+          "p05": -0.007,
+          "p25": 0.107,
+          "p50": 0.1914,
+          "p75": 0.2833,
+          "p95": 0.4213
         },
         "sharpe": {
-          "p05": 0.1225,
-          "p25": 0.5481,
-          "p50": 0.8541,
-          "p75": 1.1795,
-          "p95": 1.655
+          "p05": 0.1015,
+          "p25": 0.5387,
+          "p50": 0.8435,
+          "p75": 1.1753,
+          "p95": 1.6566
         },
         "max_drawdown": {
-          "p05": -0.3739,
-          "p25": -0.2879,
-          "p50": -0.2433,
-          "p75": -0.2048,
-          "p95": -0.1449
+          "p05": -0.3784,
+          "p25": -0.291,
+          "p50": -0.2459,
+          "p75": -0.2086,
+          "p95": -0.1456
         },
-        "probability_negative_cagr": 0.0524,
-        "probability_drawdown_over_20pct": 0.77,
-        "probability_drawdown_over_30pct": 0.2088
+        "probability_negative_cagr": 0.0576,
+        "probability_drawdown_over_20pct": 0.7808,
+        "probability_drawdown_over_30pct": 0.2226
       }
     },
     "2x severe-delisting overlay": {
@@ -257,58 +262,58 @@
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.131,
-          "p25": 0.0368,
-          "p50": 0.172,
-          "p75": 0.3318,
-          "p95": 0.5845
+          "p05": -0.1374,
+          "p25": 0.0325,
+          "p50": 0.1692,
+          "p75": 0.332,
+          "p95": 0.5888
         },
         "sharpe": {
-          "p05": -0.3982,
-          "p25": 0.2726,
-          "p50": 0.8054,
-          "p75": 1.388,
-          "p95": 2.2205
+          "p05": -0.4306,
+          "p25": 0.2565,
+          "p50": 0.7898,
+          "p75": 1.3834,
+          "p95": 2.2145
         },
         "max_drawdown": {
-          "p05": -0.2995,
-          "p25": -0.2257,
-          "p50": -0.1722,
-          "p75": -0.1324,
-          "p95": -0.0968
+          "p05": -0.3032,
+          "p25": -0.2272,
+          "p50": -0.1723,
+          "p75": -0.1345,
+          "p95": -0.0979
         },
-        "probability_negative_cagr": 0.1892,
-        "probability_drawdown_over_20pct": 0.3692,
-        "probability_drawdown_over_30pct": 0.049
+        "probability_negative_cagr": 0.1966,
+        "probability_drawdown_over_20pct": 0.372,
+        "probability_drawdown_over_30pct": 0.0546
       },
       "3y": {
         "years": 3,
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0188,
-          "p25": 0.0923,
-          "p50": 0.1752,
-          "p75": 0.2644,
-          "p95": 0.3969
+          "p05": -0.0234,
+          "p25": 0.0886,
+          "p50": 0.1716,
+          "p75": 0.262,
+          "p95": 0.3977
         },
         "sharpe": {
-          "p05": 0.0555,
-          "p25": 0.4818,
-          "p50": 0.7857,
-          "p75": 1.1085,
-          "p95": 1.5817
+          "p05": 0.0366,
+          "p25": 0.4724,
+          "p50": 0.775,
+          "p75": 1.104,
+          "p95": 1.5828
         },
         "max_drawdown": {
-          "p05": -0.3836,
-          "p25": -0.2952,
-          "p50": -0.2491,
-          "p75": -0.2087,
-          "p95": -0.149
+          "p05": -0.3901,
+          "p25": -0.2992,
+          "p50": -0.2518,
+          "p75": -0.2109,
+          "p95": -0.1495
         },
-        "probability_negative_cagr": 0.0706,
-        "probability_drawdown_over_20pct": 0.7924,
-        "probability_drawdown_over_30pct": 0.2332
+        "probability_negative_cagr": 0.0748,
+        "probability_drawdown_over_20pct": 0.7974,
+        "probability_drawdown_over_30pct": 0.2476
       }
     }
   },
@@ -319,86 +324,86 @@
         "block_sessions": 21,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0063,
-          "p25": 0.0698,
-          "p50": 0.1141,
-          "p75": 0.1623,
-          "p95": 0.2333
+          "p05": 0.0043,
+          "p25": 0.067,
+          "p50": 0.1116,
+          "p75": 0.1587,
+          "p95": 0.2294
         },
         "sharpe": {
-          "p05": 0.1144,
-          "p25": 0.5944,
-          "p50": 0.9466,
-          "p75": 1.3083,
-          "p95": 1.8497
+          "p05": 0.0984,
+          "p25": 0.5763,
+          "p50": 0.9233,
+          "p75": 1.2897,
+          "p95": 1.8264
         },
         "max_drawdown": {
-          "p05": -0.2246,
-          "p25": -0.1603,
-          "p50": -0.1285,
-          "p75": -0.1051,
-          "p95": -0.0833
+          "p05": -0.2258,
+          "p25": -0.1609,
+          "p50": -0.1293,
+          "p75": -0.1054,
+          "p95": -0.0837
         },
-        "probability_negative_cagr": 0.0406,
-        "probability_drawdown_over_20pct": 0.0936,
-        "probability_drawdown_over_30pct": 0.0054
+        "probability_negative_cagr": 0.0438,
+        "probability_drawdown_over_20pct": 0.0972,
+        "probability_drawdown_over_30pct": 0.0058
       },
       "63": {
         "years": 3,
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0171,
-          "p25": 0.075,
-          "p50": 0.1156,
-          "p75": 0.1589,
-          "p95": 0.2198
+          "p05": 0.0145,
+          "p25": 0.0729,
+          "p50": 0.1125,
+          "p75": 0.156,
+          "p95": 0.2177
         },
         "sharpe": {
-          "p05": 0.1946,
-          "p25": 0.6345,
-          "p50": 0.9515,
-          "p75": 1.2831,
-          "p95": 1.783
+          "p05": 0.1779,
+          "p25": 0.6153,
+          "p50": 0.9322,
+          "p75": 1.265,
+          "p95": 1.7673
         },
         "max_drawdown": {
-          "p05": -0.1981,
-          "p25": -0.1502,
-          "p50": -0.124,
-          "p75": -0.1056,
-          "p95": -0.0744
+          "p05": -0.1997,
+          "p25": -0.1509,
+          "p50": -0.1247,
+          "p75": -0.1065,
+          "p95": -0.0742
         },
-        "probability_negative_cagr": 0.023,
-        "probability_drawdown_over_20pct": 0.047,
-        "probability_drawdown_over_30pct": 0.0002
+        "probability_negative_cagr": 0.0268,
+        "probability_drawdown_over_20pct": 0.049,
+        "probability_drawdown_over_30pct": 0.0
       },
       "126": {
         "years": 3,
         "block_sessions": 126,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0279,
-          "p25": 0.078,
-          "p50": 0.115,
-          "p75": 0.1538,
-          "p95": 0.2135
+          "p05": 0.023,
+          "p25": 0.0743,
+          "p50": 0.1122,
+          "p75": 0.1518,
+          "p95": 0.2125
         },
         "sharpe": {
-          "p05": 0.284,
-          "p25": 0.6709,
-          "p50": 0.9433,
-          "p75": 1.2489,
-          "p95": 1.706
+          "p05": 0.246,
+          "p25": 0.6473,
+          "p50": 0.926,
+          "p75": 1.2391,
+          "p95": 1.6961
         },
         "max_drawdown": {
-          "p05": -0.1814,
-          "p25": -0.1416,
-          "p50": -0.12,
-          "p75": -0.1057,
-          "p95": -0.0796
+          "p05": -0.1839,
+          "p25": -0.1408,
+          "p50": -0.1222,
+          "p75": -0.1073,
+          "p95": -0.078
         },
-        "probability_negative_cagr": 0.0124,
-        "probability_drawdown_over_20pct": 0.0218,
+        "probability_negative_cagr": 0.0158,
+        "probability_drawdown_over_20pct": 0.0258,
         "probability_drawdown_over_30pct": 0.0
       }
     },
@@ -408,87 +413,87 @@
         "block_sessions": 21,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0389,
-          "p25": 0.0821,
-          "p50": 0.1716,
-          "p75": 0.2712,
-          "p95": 0.4279
+          "p05": -0.0437,
+          "p25": 0.0796,
+          "p50": 0.169,
+          "p75": 0.2685,
+          "p95": 0.4256
         },
         "sharpe": {
-          "p05": -0.0267,
-          "p25": 0.4448,
-          "p50": 0.7778,
-          "p75": 1.137,
-          "p95": 1.6476
+          "p05": -0.0419,
+          "p25": 0.4308,
+          "p50": 0.7677,
+          "p75": 1.1306,
+          "p95": 1.6494
         },
         "max_drawdown": {
-          "p05": -0.4289,
-          "p25": -0.3144,
-          "p50": -0.2548,
-          "p75": -0.2069,
-          "p95": -0.1596
+          "p05": -0.4343,
+          "p25": -0.3175,
+          "p50": -0.2573,
+          "p75": -0.2088,
+          "p95": -0.1604
         },
-        "probability_negative_cagr": 0.091,
-        "probability_drawdown_over_20pct": 0.7908,
-        "probability_drawdown_over_30pct": 0.3016
+        "probability_negative_cagr": 0.0982,
+        "probability_drawdown_over_20pct": 0.7974,
+        "probability_drawdown_over_30pct": 0.3088
       },
       "63": {
         "years": 3,
         "block_sessions": 63,
         "simulations": 5000,
         "cagr": {
-          "p05": -0.0188,
-          "p25": 0.0923,
-          "p50": 0.1752,
-          "p75": 0.2644,
-          "p95": 0.3969
+          "p05": -0.0234,
+          "p25": 0.0886,
+          "p50": 0.1716,
+          "p75": 0.262,
+          "p95": 0.3977
         },
         "sharpe": {
-          "p05": 0.0555,
-          "p25": 0.4818,
-          "p50": 0.7857,
-          "p75": 1.1085,
-          "p95": 1.5817
+          "p05": 0.0366,
+          "p25": 0.4724,
+          "p50": 0.775,
+          "p75": 1.104,
+          "p95": 1.5828
         },
         "max_drawdown": {
-          "p05": -0.3836,
-          "p25": -0.2952,
-          "p50": -0.2491,
-          "p75": -0.2087,
-          "p95": -0.149
+          "p05": -0.3901,
+          "p25": -0.2992,
+          "p50": -0.2518,
+          "p75": -0.2109,
+          "p95": -0.1495
         },
-        "probability_negative_cagr": 0.0706,
-        "probability_drawdown_over_20pct": 0.7924,
-        "probability_drawdown_over_30pct": 0.2332
+        "probability_negative_cagr": 0.0748,
+        "probability_drawdown_over_20pct": 0.7974,
+        "probability_drawdown_over_30pct": 0.2476
       },
       "126": {
         "years": 3,
         "block_sessions": 126,
         "simulations": 5000,
         "cagr": {
-          "p05": 0.0013,
-          "p25": 0.0995,
-          "p50": 0.1721,
-          "p75": 0.2541,
-          "p95": 0.3787
+          "p05": -0.0065,
+          "p25": 0.0945,
+          "p50": 0.1694,
+          "p75": 0.2531,
+          "p95": 0.3825
         },
         "sharpe": {
-          "p05": 0.1306,
-          "p25": 0.514,
-          "p50": 0.7819,
-          "p75": 1.0709,
-          "p95": 1.503
+          "p05": 0.0999,
+          "p25": 0.4951,
+          "p50": 0.7698,
+          "p75": 1.0682,
+          "p95": 1.5149
         },
         "max_drawdown": {
-          "p05": -0.3563,
-          "p25": -0.2763,
-          "p50": -0.2434,
-          "p75": -0.2079,
-          "p95": -0.1585
+          "p05": -0.364,
+          "p25": -0.2818,
+          "p50": -0.2482,
+          "p75": -0.2122,
+          "p95": -0.1583
         },
-        "probability_negative_cagr": 0.0496,
-        "probability_drawdown_over_20pct": 0.8214,
-        "probability_drawdown_over_30pct": 0.1662
+        "probability_negative_cagr": 0.0566,
+        "probability_drawdown_over_20pct": 0.8274,
+        "probability_drawdown_over_30pct": 0.182
       }
     }
   }

@@ -31,6 +31,19 @@ SHORT_BORROW = 0.03
 MARGIN_RATE = 0.05
 
 
+def require_history(
+    symbols: list[str],
+    frames: dict[str, pd.DataFrame],
+    *,
+    label: str,
+) -> None:
+    missing = sorted(set(symbols) - set(frames))
+    if missing:
+        raise FileNotFoundError(
+            f"{label} research cache missing configured symbols: {missing}"
+        )
+
+
 def norm_index(obj: pd.Series | pd.DataFrame):
     out = obj.copy()
     idx = pd.DatetimeIndex(out.index)
@@ -76,6 +89,7 @@ def tsmom_stream() -> pd.Series:
     cfg = load_config()
     symbols = cfg.sleeves_paper["tsmom_universe"]
     frames = load_parquet(symbols, Path("state/history_assets"))
+    require_history(symbols, frames, label="TSMOM")
     close = pd.DataFrame({
         symbol: norm_index(frame["close"])
         for symbol, frame in frames.items()

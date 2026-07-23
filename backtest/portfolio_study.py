@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from backtest.xsec_data import load as xload
-from backtest.xsec_momentum import build_portfolio
+from backtest.xsec_momentum import build_portfolio, operating_stock_symbols
 from engine.cboe import series
 from engine.tiingo import load_parquet
 
@@ -59,7 +59,9 @@ def build_streams() -> pd.DataFrame:
 
     close, volume = xload()
     cls = json.loads(Path("state/universe_classified.json").read_text())
-    stocks = [s for s in cls["stocks"] if s in close.columns]
+    stocks = operating_stock_symbols(
+        cls["stocks"], close.columns, exclude={"SPY"}
+    )
     c, v = close[stocks + ["SPY"]], volume[stocks + ["SPY"]]
     kw = dict(lookback=252, skip=21, top_n=20, rebalance=21, cost_bps=15)
     mom_long, _ = build_portfolio(c, v, **kw)

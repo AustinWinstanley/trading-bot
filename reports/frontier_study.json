@@ -2,12 +2,12 @@
   "standalone": [
     {
       "stream": "TSMOM_assets",
-      "from": "2002-07-26",
+      "from": "2007-04-12",
       "to": "2026-07-22",
-      "ann_ret": 0.0229,
-      "sharpe": 0.481,
-      "vol": 0.0475,
-      "max_dd": -0.1584
+      "ann_ret": 0.0261,
+      "sharpe": 0.432,
+      "vol": 0.0605,
+      "max_dd": -0.1626
     },
     {
       "stream": "SPY_overnight",
@@ -48,17 +48,17 @@
     {
       "stream": "BTC_hold",
       "from": "2021-01-02",
-      "to": "2026-07-23",
-      "ann_ret": 0.2146,
-      "sharpe": 0.447,
-      "vol": 0.48,
+      "to": "2026-07-22",
+      "ann_ret": 0.2157,
+      "sharpe": 0.449,
+      "vol": 0.4801,
       "max_dd": -0.7668
     },
     {
       "stream": "BTC_trend100",
       "from": "2021-01-01",
-      "to": "2026-07-23",
-      "ann_ret": 0.1303,
+      "to": "2026-07-22",
+      "ann_ret": 0.1304,
       "sharpe": 0.444,
       "vol": 0.2934,
       "max_dd": -0.385
@@ -66,102 +66,102 @@
     {
       "stream": "ETH_hold",
       "from": "2021-01-02",
-      "to": "2026-07-23",
-      "ann_ret": 0.3289,
-      "sharpe": 0.508,
-      "vol": 0.6472,
+      "to": "2026-07-22",
+      "ann_ret": 0.3301,
+      "sharpe": 0.51,
+      "vol": 0.6473,
       "max_dd": -0.7931
     },
     {
       "stream": "ETH_trend100",
       "from": "2021-01-01",
-      "to": "2026-07-23",
-      "ann_ret": 0.1154,
+      "to": "2026-07-22",
+      "ann_ret": 0.1155,
       "sharpe": 0.273,
-      "vol": 0.4226,
+      "vol": 0.4227,
       "max_dd": -0.7454
     },
     {
       "stream": "EXISTING 4-way combo",
-      "from": "2020-02-06",
+      "from": "2020-02-13",
       "to": "2026-07-22",
-      "ann_ret": 0.1473,
-      "sharpe": 1.361,
-      "vol": 0.1082,
-      "max_dd": -0.1329
+      "ann_ret": 0.1368,
+      "sharpe": 1.252,
+      "vol": 0.1093,
+      "max_dd": -0.1266
     }
   ],
   "marginal": [
     {
       "stream": "TSMOM_assets",
-      "corr_to_combo": 0.326,
-      "combo_sharpe_alone": 1.361,
-      "sharpe_with_20pct": 1.343,
+      "corr_to_combo": 0.349,
+      "combo_sharpe_alone": 1.252,
+      "sharpe_with_20pct": 1.233,
       "marginal": -0.019,
-      "overlap_days": 1518
+      "overlap_days": 1517
     },
     {
       "stream": "SPY_overnight",
-      "corr_to_combo": 0.463,
-      "combo_sharpe_alone": 1.361,
-      "sharpe_with_20pct": 1.437,
-      "marginal": 0.076,
-      "overlap_days": 1518
+      "corr_to_combo": 0.469,
+      "combo_sharpe_alone": 1.252,
+      "sharpe_with_20pct": 1.331,
+      "marginal": 0.079,
+      "overlap_days": 1517
     },
     {
       "stream": "SPY_intraday",
-      "corr_to_combo": 0.639,
-      "combo_sharpe_alone": 1.361,
-      "sharpe_with_20pct": 1.221,
-      "marginal": -0.14,
-      "overlap_days": 1518
+      "corr_to_combo": 0.645,
+      "combo_sharpe_alone": 1.252,
+      "sharpe_with_20pct": 1.121,
+      "marginal": -0.131,
+      "overlap_days": 1517
     },
     {
       "stream": "QQQ_overnight",
-      "corr_to_combo": 0.464,
-      "combo_sharpe_alone": 1.361,
-      "sharpe_with_20pct": 1.435,
-      "marginal": 0.074,
-      "overlap_days": 1518
+      "corr_to_combo": 0.472,
+      "combo_sharpe_alone": 1.252,
+      "sharpe_with_20pct": 1.331,
+      "marginal": 0.079,
+      "overlap_days": 1517
     },
     {
       "stream": "QQQ_intraday",
       "corr_to_combo": 0.604,
-      "combo_sharpe_alone": 1.361,
-      "sharpe_with_20pct": 1.156,
-      "marginal": -0.206,
-      "overlap_days": 1518
+      "combo_sharpe_alone": 1.252,
+      "sharpe_with_20pct": 1.062,
+      "marginal": -0.19,
+      "overlap_days": 1517
     },
     {
       "stream": "BTC_hold",
       "corr_to_combo": 0.322,
-      "combo_sharpe_alone": 1.253,
-      "sharpe_with_20pct": 0.927,
-      "marginal": -0.327,
+      "combo_sharpe_alone": 1.208,
+      "sharpe_with_20pct": 0.902,
+      "marginal": -0.306,
       "overlap_days": 1393
     },
     {
       "stream": "BTC_trend100",
-      "corr_to_combo": 0.171,
-      "combo_sharpe_alone": 1.253,
-      "sharpe_with_20pct": 1.057,
-      "marginal": -0.196,
+      "corr_to_combo": 0.173,
+      "combo_sharpe_alone": 1.208,
+      "sharpe_with_20pct": 1.024,
+      "marginal": -0.184,
       "overlap_days": 1393
     },
     {
       "stream": "ETH_hold",
-      "corr_to_combo": 0.345,
-      "combo_sharpe_alone": 1.253,
-      "sharpe_with_20pct": 0.768,
-      "marginal": -0.485,
+      "corr_to_combo": 0.344,
+      "combo_sharpe_alone": 1.208,
+      "sharpe_with_20pct": 0.748,
+      "marginal": -0.46,
       "overlap_days": 1393
     },
     {
       "stream": "ETH_trend100",
-      "corr_to_combo": 0.179,
-      "combo_sharpe_alone": 1.253,
-      "sharpe_with_20pct": 0.83,
-      "marginal": -0.424,
+      "corr_to_combo": 0.18,
+      "combo_sharpe_alone": 1.208,
+      "sharpe_with_20pct": 0.801,
+      "marginal": -0.407,
       "overlap_days": 1393
     }
   ]
