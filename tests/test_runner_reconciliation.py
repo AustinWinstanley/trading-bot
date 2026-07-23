@@ -76,6 +76,20 @@ def test_sync_uses_most_protective_broker_stop_and_prunes_phantoms():
     assert conn.execute("SELECT 1 FROM stops WHERE symbol='PHANTOM'").fetchone() is None
 
 
+def test_sync_retains_fractional_fallback_while_entry_is_pending():
+    conn = journal()
+    conn.execute(
+        "INSERT INTO stops VALUES ('XLK', 92, 100, '2026-01-01', 'fractional-entry')"
+    )
+    sync_broker_stops(
+        conn,
+        positions={},
+        open_orders=[{"symbol": "XLK", "type": "limit", "side": "buy"}],
+        today=__import__("datetime").date.today(),
+    )
+    assert conn.execute("SELECT stop_price FROM stops WHERE symbol='XLK'").fetchone()[0] == 92
+
+
 def test_cancel_symbol_orders_is_scoped_and_dry_run_safe():
     canceled = []
 

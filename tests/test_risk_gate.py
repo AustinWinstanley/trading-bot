@@ -548,6 +548,19 @@ def test_short_rejected_when_not_shortable(cfg, account, clean_risk, ctx_shortab
     assert "not shortable" in only_rejection(result)
 
 
+def test_short_rejected_when_account_does_not_permit_it(
+    cfg, clean_risk, ctx_shortable
+):
+    account = AccountState(
+        equity=EQUITY,
+        cash=EQUITY,
+        positions={},
+        shorting_enabled=False,
+    )
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    assert "account does not permit shorting" in only_rejection(result)
+
+
 def test_short_rejects_illiquid_symbol(cfg, account, clean_risk, ctx_shortable):
     result = evaluate([short_prop("THINSHORT", limit=50.0)], account, clean_risk, ctx_shortable, cfg)
     assert "dollar volume" in only_rejection(result)

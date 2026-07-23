@@ -184,8 +184,13 @@ def sync_broker_stops(
             "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
             (symbol, stop, pos.avg_entry_price, today.isoformat(), "broker"),
         )
+    pending_entry_symbols = {
+        str(order.get("symbol"))
+        for order in open_orders
+        if order.get("symbol") and not is_protective_order(order)
+    }
     for (symbol,) in conn.execute("SELECT symbol FROM stops").fetchall():
-        if symbol not in positions:
+        if symbol not in positions and symbol not in pending_entry_symbols:
             conn.execute("DELETE FROM stops WHERE symbol=?", (symbol,))
     return protective_symbols
 
@@ -220,6 +225,9 @@ def main() -> None:
 
     account = t.get_account()
     equity, cash = float(account["equity"]), float(account["cash"])
+    shorting_enabled = account.get("shorting_enabled") is True or str(
+        account.get("shorting_enabled", "")
+    ).lower() == "true"
     raw_positions = t.get_positions()
     positions = {
         p["symbol"]: Position(p["symbol"], float(p["qty"]),
@@ -371,7 +379,8 @@ def main() -> None:
         long_exposure = sum(p2.market_value for p2 in positions.values() if not p2.is_short)
         buying_power = max(lev * equity - long_exposure, 0.0)
     result = evaluate(proposals, AccountState(equity=equity, cash=cash, positions=positions,
-                                              buying_power=buying_power),
+                                              buying_power=buying_power,
+                                              shorting_enabled=shorting_enabled),
                       risk_state, ctx, cfg)
 
     ts = now_et.isoformat()
@@ -418,6 +427,7 @@ def main() -> None:
 
     # ---- execute ---------------------------------------------------------
     submitted = 0
+    submission_failures: list[str] = []
     orders_to_execute = [] if result.flatten_all else result.approved
     for order in orders_to_execute:
         tag = " ".join(order.adjustments) or "clean"
@@ -431,13 +441,28 @@ def main() -> None:
             alpaca_side = {"short": "sell", "cover": "buy"}.get(order.side, order.side)
             order_id = f"bot-{today:%Y%m%d}-{order.symbol}-{order.side}"
             if order.side in ("buy", "short"):
-                # OTO: Alpaca activates the protective stop only after the
-                # parent entry fills. The SQLite stop remains a monitoring
-                # fallback, not the primary protection.
-                o = t.submit_protected_limit(
+                o, broker_protected = t.submit_entry(
                     order.symbol, alpaca_side, order.qty, order.limit_price,
                     order.stop_price, client_order_id=order_id,
                 )
+                if not broker_protected:
+                    # Alpaca permits fractional entries only as simple orders.
+                    # Persist the stop before committing the order journal so a
+                    # later fill is protected by the software monitor.
+                    conn.execute(
+                        "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
+                        (
+                            order.symbol,
+                            order.stop_price,
+                            order.limit_price,
+                            today.isoformat(),
+                            "fractional-entry",
+                        ),
+                    )
+                    print(
+                        f"    {order.symbol}: fractional simple order; "
+                        "software fallback stop recorded"
+                    )
             else:
                 canceled = cancel_symbol_orders(
                     t, order.symbol, open_orders, dry_run=False
@@ -457,6 +482,7 @@ def main() -> None:
             submitted += 1
         except Exception as exc:
             print(f"    submit {order.symbol} FAILED: {exc}")
+            submission_failures.append(f"{order.symbol}: {exc}")
 
     # record realised losses for the revenge-trade block
     for order in result.approved:
@@ -487,6 +513,7 @@ def main() -> None:
         f"- equity ${equity:,.2f} | cash ${cash:,.2f} | positions {len(positions)}",
         f"- sleeves {diag['sleeve_counts']} | invested {diag['total_weight']:.0%} | cash target {diag['cash_weight']:.0%}",
         f"- proposals {len(proposals)} | approved {len(result.approved)} | rejected {len(result.rejected)} | submitted {submitted}",
+        f"- submission failures {len(submission_failures)}",
         f"- broker orders open {len(open_orders)} | journal reconciled {sum(reconciled.values())}",
     ]
     if result.halt_reason:
@@ -495,6 +522,9 @@ def main() -> None:
         lines.append(f"- note: {n}")
     (REPORT_DIR / f"{today}.md").write_text("\n".join(lines) + "\n")
     print(f"done: {submitted} orders submitted")
+    if submission_failures:
+        print(f"CRITICAL: {len(submission_failures)} broker submission(s) failed")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
