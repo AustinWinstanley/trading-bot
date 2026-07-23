@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import sqlite3
 from pathlib import Path
@@ -111,6 +112,15 @@ def is_liquidation_order(order: dict) -> bool:
     return str(order.get("client_order_id", "")).startswith("bot-") and str(
         order.get("client_order_id", "")
     ).endswith("-flatten")
+
+
+def marketable_limit(price: float, side: str, slippage: float) -> float:
+    """Round toward the touch so cents cannot breach the configured band."""
+    if side in ("buy", "cover"):
+        return math.floor(price * (1 + slippage) * 100) / 100
+    if side in ("sell", "short"):
+        return math.ceil(price * (1 - slippage) * 100) / 100
+    raise ValueError(f"unsupported side {side!r}")
 
 
 def reconcile_journal_orders(conn: sqlite3.Connection, trader: Trader) -> dict[str, int]:
@@ -248,6 +258,10 @@ def main() -> None:
     p = cfg.sleeves_paper
     band, min_notional = float(p["rebalance_band"]), float(p["min_order_notional"])
     proposals = []
+    # The gate must validate against the same quote snapshot used to construct
+    # each limit. A second live quote can move by a cent between API calls and
+    # make an exactly-on-policy order appear outside the slippage band.
+    reference_prices: dict[str, float] = {}
 
     # 4a. software stops — always first, always sells
     stop_rows = {r[0]: r[1] for r in conn.execute("SELECT symbol, stop_price FROM stops")}
@@ -258,14 +272,22 @@ def main() -> None:
         if not stop:
             continue
         if pos.is_short and pos.current_price >= stop:
+            reference_prices[sym] = pos.current_price
             proposals.append({"symbol": sym, "side": "cover", "sleeve": "stop",
                               "notional": abs(pos.market_value),
-                              "limit_price": round(pos.current_price * 1.003, 2),
+                              "limit_price": marketable_limit(
+                                  pos.current_price, "cover",
+                                  cfg.execution.max_limit_slippage_pct,
+                              ),
                               "rationale": f"short stop: {pos.current_price} >= {stop}"})
         elif not pos.is_short and pos.current_price <= stop:
+            reference_prices[sym] = pos.current_price
             proposals.append({"symbol": sym, "side": "sell", "sleeve": "stop",
                               "notional": pos.market_value,
-                              "limit_price": round(pos.current_price * 0.997, 2),
+                              "limit_price": marketable_limit(
+                                  pos.current_price, "sell",
+                                  cfg.execution.max_limit_slippage_pct,
+                              ),
                               "rationale": f"software stop: {pos.current_price} <= {stop}"})
 
     # 4b. rebalance drift
@@ -284,6 +306,7 @@ def main() -> None:
         px = t.latest_price(sym)
         if px is None or px <= 0:
             continue
+        reference_prices[sym] = px
 
         # Map the sign geometry to a side. Crossing zero (long target while
         # short, or vice versa) is handled by closing first; the opening leg
@@ -298,9 +321,9 @@ def main() -> None:
                 diff = max(diff, -cur_notional)              # sell at most what we hold
         if abs(diff) < min_notional:
             continue
-        buyish = side in ("buy", "cover")
-        limit = round(px * (1 + cfg.execution.max_limit_slippage_pct), 2) if buyish \
-            else round(px * (1 - cfg.execution.max_limit_slippage_pct), 2)
+        limit = marketable_limit(
+            px, side, cfg.execution.max_limit_slippage_pct
+        )
         proposals.append({"symbol": sym, "side": side,
                           "sleeve": diag["origin"].get(sym, "rebalance"),
                           "notional": abs(diff), "limit_price": limit,
@@ -315,7 +338,11 @@ def main() -> None:
         bars = t.get_bars(need, today - dt.timedelta(days=90), today)
         for sym in need:
             df = bars.get(sym)
-            px = t.latest_price(sym) or (float(df["close"].iloc[-1]) if df is not None and len(df) else 0.0)
+            px = reference_prices.get(sym) or (
+                float(df["close"].iloc[-1])
+                if df is not None and len(df)
+                else 0.0
+            )
             a = float(atr(df, 14).iloc[-1]) if df is not None and len(df) >= 15 else px * 0.02
             adv = float((df["close"] * df["volume"]).tail(20).mean()) if df is not None and len(df) >= 20 else 0.0
             shortable = False
@@ -439,6 +466,14 @@ def main() -> None:
                 st["recent_losses"][order.symbol] = today.isoformat()
 
     # ---- journal + report ------------------------------------------------
+    if args.dry_run:
+        # Dry runs may read the real journal for stop/reconciliation context,
+        # but must not make a healthy-looking snapshot, rewrite tracked
+        # reports, or otherwise hide a stale production cron job.
+        conn.rollback()
+        print("done: dry run; no orders or local state changes")
+        return
+
     conn.execute("INSERT INTO snapshots VALUES (?,?,?,?,?)",
                  (ts, equity, cash,
                   json.dumps({s: {"qty": p.qty, "px": p.current_price} for s, p in positions.items()}),

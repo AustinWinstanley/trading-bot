@@ -6,6 +6,7 @@ from engine.risk import Position
 from scripts.run_daily import (
     cancel_symbol_orders,
     is_liquidation_order,
+    marketable_limit,
     is_protective_order,
     reconcile_journal_orders,
     sync_broker_stops,
@@ -34,6 +35,14 @@ def test_only_dedicated_flatten_client_ids_are_liquidations():
     assert is_liquidation_order({"client_order_id": "bot-20260723-XLK-flatten"})
     assert not is_liquidation_order({"client_order_id": "bot-20260723-XLK-sell"})
     assert not is_liquidation_order({"client_order_id": "manual-flatten"})
+
+
+def test_marketable_limit_rounds_inside_slippage_band():
+    price = 739.73
+    buy_limit = marketable_limit(price, "buy", 0.003)
+    sell_limit = marketable_limit(price, "sell", 0.003)
+    assert (buy_limit - price) / price <= 0.003
+    assert (price - sell_limit) / price <= 0.003
 
 
 def test_reconcile_updates_journal_from_broker():

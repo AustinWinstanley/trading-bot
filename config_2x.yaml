@@ -117,6 +117,7 @@ paper_portfolio:
   trend_symbol: SPY
   trend_ma_days: 200
   tsmom_lookback_days: 252
+  tsmom_min_dollar_volume: 1000000
   rebalance_band: 0.2
   min_order_notional: 25.0
   gross_leverage: 2.0

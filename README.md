@@ -105,6 +105,19 @@ To rebuild the survivorship-biased cross-sectional research matrix:
 The server wrapper expects the checkout at `/home/austin/trading-bot`:
 
 ```bash
+git pull --ff-only origin main
+scripts/upgrade.sh
+```
+
+`upgrade.sh` backs up the user crontab, pauses only `scripts/paper.sh` jobs,
+installs dependencies, runs tests, executes both mutation-free dry runs, checks
+both paper accounts, and restores the exact original crontab only on success.
+If any check fails, trading cron remains paused and the script prints the
+one-line recovery command using its timestamped backup in `state/`.
+
+Individual wrapper jobs remain available:
+
+```bash
 scripts/paper.sh daily
 scripts/paper.sh daily2x
 scripts/paper.sh weekly
