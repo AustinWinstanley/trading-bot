@@ -279,8 +279,20 @@ def main() -> None:
             # Alpaca has no "short"/"cover" sides: sell-when-flat opens a
             # short, buy-when-short covers.
             alpaca_side = {"short": "sell", "cover": "buy"}.get(order.side, order.side)
-            o = t.submit_limit(order.symbol, alpaca_side, order.qty, order.limit_price,
-                               client_order_id=f"bot-{today:%Y%m%d}-{order.symbol}-{order.side}")
+            order_id = f"bot-{today:%Y%m%d}-{order.symbol}-{order.side}"
+            if order.side in ("buy", "short"):
+                # OTO: Alpaca activates the protective stop only after the
+                # parent entry fills. The SQLite stop remains a monitoring
+                # fallback, not the primary protection.
+                o = t.submit_protected_limit(
+                    order.symbol, alpaca_side, order.qty, order.limit_price,
+                    order.stop_price, client_order_id=order_id,
+                )
+            else:
+                o = t.submit_limit(
+                    order.symbol, alpaca_side, order.qty, order.limit_price,
+                    client_order_id=order_id,
+                )
             conn.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                          (ts, order.symbol, order.side, order.sleeve, order.qty,
                           order.notional, order.limit_price, order.stop_price,

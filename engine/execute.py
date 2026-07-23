@@ -71,3 +71,43 @@ class Trader(AlpacaClient):
         if client_order_id:
             payload["client_order_id"] = client_order_id[:48]
         return self._post("/v2/orders", payload)
+
+    def submit_protected_limit(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        limit_price: float,
+        stop_price: float,
+        *,
+        client_order_id: str | None = None,
+    ) -> dict:
+        """Submit an entry with a broker-held stop activated after its fill.
+
+        Alpaca's OTO order keeps the stop dormant until the parent entry fills,
+        eliminating both the unprotected interval and phantom local stops for
+        entries that never fill. Fractional stop orders require DAY TIF.
+        """
+        assert side in ("buy", "sell")
+        qty = math.floor(qty * 1e6) / 1e6
+        if qty <= 0:
+            raise AlpacaError(f"{symbol}: qty rounds to zero")
+        if stop_price <= 0:
+            raise AlpacaError(f"{symbol}: stop price must be positive")
+        if side == "buy" and stop_price >= limit_price:
+            raise AlpacaError(f"{symbol}: long stop must be below entry")
+        if side == "sell" and stop_price <= limit_price:
+            raise AlpacaError(f"{symbol}: short stop must be above entry")
+        payload = {
+            "symbol": symbol,
+            "side": side,
+            "type": "limit",
+            "qty": str(qty),
+            "limit_price": str(round(limit_price, 2)),
+            "time_in_force": "day",
+            "order_class": "oto",
+            "stop_loss": {"stop_price": str(round(stop_price, 2))},
+        }
+        if client_order_id:
+            payload["client_order_id"] = client_order_id[:48]
+        return self._post("/v2/orders", payload)
