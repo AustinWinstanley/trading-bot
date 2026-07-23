@@ -103,6 +103,21 @@ source history, so capital planning should allow outcomes worse than p05. A
 21/63/126-session block sensitivity moved the three-year p05 CAGR to 0.6%–2.8%
 for base and -3.9%–0.1% for 2×; the 2× drawdown p05 reached -42.9%.
 
+A separate 2007–2026 stress proxy reconstructs the SPY, trend, and 15-asset
+TSMOM sleeves and substitutes the point-in-time
+[Kenneth French daily momentum factor](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/det_mom_factor_daily.html)
+for unavailable pre-2020 stock ranks:
+
+| Long-history proxy | CAGR | Sharpe | Max drawdown | GFC return | COVID-crash return |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Base | 7.80% | 0.786 | -26.19% | -15.63% | -16.51% |
+| 2× | 9.23% | 0.531 | -50.23% | -34.14% | -31.26% |
+
+The proxy’s 2020–2026 correlation to the actual capacity-adjusted MOM_LS
+contribution is only 0.55–0.60. These are stress estimates, not a reconstructed
+production backtest, but the limited incremental return and much larger
+drawdown keep 2× strictly experimental.
+
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.
