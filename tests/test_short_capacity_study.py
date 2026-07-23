@@ -84,3 +84,5 @@ def test_capacity_summary_reports_account_level_short_gross():
     assert summary["target_short_gross"] == 0.15
     assert summary["average_realized_short_gross"] == 0.15
     assert summary["average_capacity_pct"] == 100.0
+    assert result.weights.index.equals(close.index)
+    assert result.weights.columns.equals(close.columns)

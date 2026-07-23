@@ -182,6 +182,16 @@ return from -15.6% to -18.5%, did not improve 2017+ maximum drawdown, and
 reduced exact 2020–2022 Sharpe from 0.615 to 0.589. It therefore failed its
 pre-specified cross-window rule and is not promoted to paper shadow.
 
+A $5,000 pilot / $10,000 2× follower simulation tested whether the larger
+account should wait for individual pilot MOM_LS positions to turn
+directionally positive. The pre-selected one-session rule retained only 35.4%
+of follower momentum exposure, reduced full-sample CAGR from 18.95% to 13.49%,
+and worsened drawdown from -26.23% to -32.14%. A five-session variant improved
+2023+ results but failed badly in 2020–2022. Delaying every trade also failed,
+showing that neither confirmation nor delay was robust. No paper feature flag
+was added; the result does not rule out strategy-level allocation after a
+pilot accumulates many independent experimental trades.
+
 ## Setup
 
 ```bash
@@ -208,6 +218,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.capital_split_study
 .venv/bin/python -m backtest.defensive_rotation_study
 .venv/bin/python -m backtest.momentum_sleeve_overlay_study
+.venv/bin/python -m backtest.pilot_follower_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```

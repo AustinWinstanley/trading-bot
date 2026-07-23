@@ -42,6 +42,7 @@ class CapacityResult:
     returns: pd.Series
     short_gross: pd.Series
     rebalances: pd.DataFrame
+    weights: pd.DataFrame
 
 
 def build_capacity_stream(
@@ -140,7 +141,12 @@ def build_capacity_stream(
 
     if not rows:
         empty = pd.Series(0.0, index=close.index)
-        return CapacityResult(empty, empty, pd.DataFrame(logs))
+        return CapacityResult(
+            empty,
+            empty,
+            pd.DataFrame(logs),
+            pd.DataFrame(0.0, index=close.index, columns=close.columns),
+        )
 
     rebalance_weights = pd.DataFrame(rows)
     weights = rebalance_weights.reindex(close.index).ffill().fillna(0.0)
@@ -148,7 +154,12 @@ def build_capacity_stream(
     turnover = weights.diff().abs().sum(axis=1)
     returns = gross - turnover * cost_bps / 10_000.0
     short_gross = -weights.clip(upper=0).sum(axis=1).shift(1).fillna(0.0)
-    return CapacityResult(returns, short_gross, pd.DataFrame(logs))
+    return CapacityResult(
+        returns,
+        short_gross,
+        pd.DataFrame(logs),
+        weights,
+    )
 
 
 def profile_returns(
