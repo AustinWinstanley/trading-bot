@@ -34,6 +34,38 @@ from engine.data import REPO_ROOT, AlpacaClient
 OUT_DIR = REPO_ROOT / "state" / "xsec"
 
 
+def build_current_universe() -> dict[str, list[str]]:
+    """Classify active Alpaca equities using the SEC operating-company list.
+
+    This is intentionally labelled *current*: it excludes delisted companies
+    and therefore remains survivorship-biased. Persisting the exact list makes
+    that bias reproducible instead of silently changing on every backtest.
+    """
+    from engine.fundamentals import cik_map
+
+    client = AlpacaClient()
+    assets = client.list_assets()
+    active = {
+        str(a["symbol"]).upper()
+        for a in assets
+        if a.get("tradable") and a.get("status") == "active"
+    }
+    sec_symbols = set(cik_map()["symbol"])
+    stocks = sorted(active & sec_symbols)
+    funds = sorted(active - sec_symbols)
+    classified = {"stocks": stocks, "funds": funds}
+    (REPO_ROOT / "state" / "universe_active.json").write_text(
+        json.dumps(sorted(active), indent=2)
+    )
+    (REPO_ROOT / "state" / "universe_classified.json").write_text(
+        json.dumps(classified, indent=2)
+    )
+    (REPO_ROOT / "state" / "universe_stocks.json").write_text(
+        json.dumps(stocks, indent=2)
+    )
+    return classified
+
+
 def build_matrices(
     symbols: list[str], start: dt.date, end: dt.date, *, chunk: int = 50
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -88,9 +120,15 @@ def main() -> None:
     ap.add_argument("--start", default="2020-01-01")
     ap.add_argument("--end", default=dt.date.today().isoformat())
     ap.add_argument("--universe", default="state/universe_active.json")
+    ap.add_argument("--build-universe", action="store_true",
+                    help="refresh active/current operating-company classification")
     ap.add_argument("--limit", type=int, default=None, help="cap symbol count (for a smoke test)")
     args = ap.parse_args()
 
+    if args.build_universe:
+        classified = build_current_universe()
+        print(f"Universe: {len(classified['stocks']):,} operating companies, "
+              f"{len(classified['funds']):,} funds/other equities")
     symbols = json.loads(Path(args.universe).read_text())
     if args.limit:
         symbols = symbols[: args.limit]

@@ -128,6 +128,11 @@ class AlpacaClient:
     def get_asset(self, symbol: str) -> dict:
         return self._get(self.trading_base, f"/v2/assets/{symbol}")
 
+    def list_assets(self, *, status: str = "active") -> list[dict]:
+        return self._get(  # type: ignore[return-value]
+            self.trading_base, "/v2/assets", {"status": status, "asset_class": "us_equity"}
+        )
+
     # -- calendar ---------------------------------------------------------
 
     def get_calendar(self, start: dt.date, end: dt.date) -> list[dict]:
