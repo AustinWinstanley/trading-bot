@@ -263,6 +263,31 @@ An optimistic flat-VIX pricing sensitivity still produced only 6.27% CAGR and
 assumption, but not a fill-quality validation. No anticipatory options feature
 was added.
 
+A defined-risk bullish study then tested a 60-DTE 105%/110% SPY call spread as
+a convex return satellite. The pre-selected rule entered monthly only while
+SPY was above its 200-day average and 20-session realized volatility was below
+20%, risking at most 4% per trade and 8% per calendar year:
+
+| Bull call-spread test | CAGR | Sharpe | Max drawdown |
+| --- | ---: | ---: | ---: |
+| Exact 2024-02–2026-06, no overlay | 41.50% | 1.410 | -26.23% |
+| Exact budgeted call spread | 38.93% | 1.299 | -28.23% |
+| 2007–2026 2× proxy, no overlay | 9.22% | 0.530 | -50.30% |
+| 2007–2026 synthetic call spread | 8.14% | 0.470 | -50.30% |
+
+One currently quoted SPY spread fit the $10,000 account at roughly $399 maximum
+modeled loss including friction, but historical one-contract sizing was often
+too large. Only 6 exact spreads cleared the limits; 2 won, and their combined
+option P&L was -$606. Always buying the spread increased 2024 CAGR but worsened
+full-period drawdown to -32.86% and reduced Sharpe. Smaller synthetic budgets
+did not uncover an edge: a 2% annual budget still lowered CAGR from 9.22% to
+8.97% and Sharpe from 0.530 to 0.516.
+
+The synthetic model priced the completed exact entries at a median 1.55 times
+their observed trade-bar debits, but a cheaper flat-VIX sensitivity still
+failed. Lower-notional ETF alternatives lacked sufficiently complete listed
+chains in the feasibility snapshot. No bullish options feature was added.
+
 ## Setup
 
 ```bash
@@ -293,6 +318,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.options_strategy_study
 .venv/bin/python -m backtest.spy_put_spread_study
 .venv/bin/python -m backtest.anticipatory_tail_hedge_study
+.venv/bin/python -m backtest.bull_call_spread_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
