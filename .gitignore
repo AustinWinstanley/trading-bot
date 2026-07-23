@@ -11,3 +11,7 @@ state/*.db
 state/*.json
 logs/
 .pytest_cache/
+state/edgar/*.zip
+state/edgar/*.parquet
+state/history/
+state/history_deep/
