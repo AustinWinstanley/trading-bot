@@ -57,6 +57,19 @@ currently listed companies and is survivorship-biased. Positive MOM_LS results
 are therefore an optimistic upper bound. The sample is also short and dominated
 by the post-2020 market.
 
+A Tiingo-metadata/Alpaca-bars sensitivity test added 1,481 delisted listings.
+The observed-last-price case and a deliberately severe case that assigns every
+delisting a total loss bound the production estimate:
+
+| Delisting assumption | Base CAGR | Base Sharpe | 2× CAGR | 2× Sharpe |
+| --- | ---: | ---: | ---: | ---: |
+| Observed last price | 11.80% | 1.048 | 17.65% | 0.841 |
+| Every delisting loses 100% | 11.02% | 0.985 | 16.01% | 0.778 |
+
+MOM_LS remains positive across those bounds, but historical borrowability and
+actual delisting proceeds are unavailable, so this reduces rather than removes
+the uncertainty.
+
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.
