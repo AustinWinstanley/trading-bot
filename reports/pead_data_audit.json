@@ -1,0 +1,63 @@
+{
+  "decision": "defer_true_pead_reject_gap_proxy",
+  "strategy": "post-earnings-announcement drift",
+  "research_basis": {
+    "paper": "Information Diffusion and Post-Earnings-Announcement Drift",
+    "url": "https://academic.oup.com/rfs/article-abstract/28/4/1242/1928671",
+    "context": "The literature supports drift but also documents attenuation as information dissemination improves."
+  },
+  "existing_repository_evidence": {
+    "gap_and_volume_proxy": {
+      "report": "reports/drift_study.json",
+      "liquid_up_gap_20_day_mean_abnormal_return": -0.0047,
+      "liquid_up_gap_60_day_mean_abnormal_return": -0.0154,
+      "interpretation": "Buying generic high-volume upside gaps at the next tradable close is not a viable PEAD proxy."
+    },
+    "earnings_release_llm_filter": {
+      "report": "reports/earnings_llm.json",
+      "events_with_forward_prices": 66,
+      "reported_group_results": 0,
+      "source_events_and_verdicts_present": false,
+      "reproducible_now": false,
+      "interpretation": "The experiment is inconclusive, not evidence for promotion. It also carries model-training contamination risk."
+    }
+  },
+  "data_feasibility": {
+    "timestamped_earnings_announcement_calendar_present": false,
+    "pre_announcement_consensus_estimates_present": false,
+    "reported_actual_eps_and_revenue_present": false,
+    "point_in_time_guidance_history_present": false,
+    "sec_8k_filing_dates_sufficient": false,
+    "safe_to_backtest_true_pead_now": false
+  },
+  "minimum_data_contract": {
+    "required_fields": [
+      "symbol and stable issuer identifier",
+      "announcement timestamp and before-open/after-close flag",
+      "consensus EPS and revenue captured before announcement",
+      "reported EPS and revenue",
+      "estimate contributor count",
+      "restatement/version timestamp"
+    ],
+    "universe": "Include delisted firms and preserve the eligible universe as known on each announcement date.",
+    "entry": "First regular-session close that is tradable after the announcement; never the pre-reaction close.",
+    "costs": "15 bps one-way plus conservative gap slippage sensitivity.",
+    "quality_checks": [
+      "No consensus snapshot timestamp may be after the announcement.",
+      "Announcement timing must determine whether same-day or next-day reaction is excluded.",
+      "Duplicate/preliminary announcements must be resolved by a frozen rule.",
+      "At least 500 eligible events and 100 events in each evaluation window."
+    ]
+  },
+  "pre_registered_test_when_data_exists": {
+    "signal": "standardized unexpected earnings using the pre-announcement consensus; revenue surprise is a required same-sign confirmation",
+    "candidate": "long top surprise decile for 20 sessions, equal weighted, with no overlapping issuer position",
+    "control": "eligible announcement universe and SPY-adjusted event returns",
+    "windows": [
+      "2020 through 2022",
+      "2023 onward held out"
+    ],
+    "promotion_rule": "Positive net abnormal return with |t| >= 1.96 in both windows, positive portfolio CAGR, Sharpe above 0.75, and no result dependent on microcaps or the top five events."
+  },
+  "next_action": "Do not implement earnings gap chasing or the LLM classifier. Acquire a licensed/versioned point-in-time earnings dataset before reconsidering true PEAD."
+}
