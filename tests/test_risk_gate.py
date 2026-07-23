@@ -586,3 +586,24 @@ def test_short_loss_sign_is_correct():
     winning_short = Position("X", qty=-10, avg_entry_price=110.0, current_price=100.0)
     assert losing_short.unrealized_pct < 0
     assert winning_short.unrealized_pct > 0
+
+
+# --------------------------------------------------------------------------
+# Margin / leverage (the 2x profile)
+# --------------------------------------------------------------------------
+
+
+def test_buys_cap_at_buying_power_when_margined(cfg, clean_risk, ctx):
+    """With buying_power set, buys spend margin headroom — not raw cash —
+    but the gate still shrinks, never enlarges."""
+    account = AccountState(equity=EQUITY, cash=0.0, positions={},
+                           buying_power=2000.0)
+    result = evaluate([buy("XLK", notional=5000.0)], account, clean_risk, ctx, cfg)
+    assert len(result.approved) == 1
+    assert result.approved[0].notional <= 2000.0
+
+
+def test_cash_account_semantics_unchanged_when_buying_power_none(cfg, clean_risk, ctx):
+    account = AccountState(equity=EQUITY, cash=100.0, positions={})
+    result = evaluate([buy("XLK", notional=690.0)], account, clean_risk, ctx, cfg)
+    assert result.approved[0].notional <= 100.0

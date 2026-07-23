@@ -20,7 +20,10 @@ account:
 risk:
   max_position_pct: 0.15            # max single position as fraction of equity
   max_leveraged_exposure_pct: 0.20  # max total leveraged-ETF exposure
-  max_positions: 8
+  # Position count is not the binding risk control in the sleeve portfolio
+  # (~79 names by design); per-name and gross caps are. 8 was a relic of the
+  # original concentrated design and would have blocked the launch.
+  max_positions: 120
   stop_loss_pct: 0.08               # floor stop distance
   stop_atr_multiple: 2.0            # ATR14-based stop distance
   max_stop_distance_pct: 0.15       # hard cap so a wild ATR can't create an absurd stop
@@ -104,3 +107,5 @@ paper_portfolio:
   # tiny rebalances would be pure cost.
   rebalance_band: 0.20
   min_order_notional: 25.0
+  # Gross exposure multiplier applied to all sleeve weights. 1.0 = unlevered.
+  gross_leverage: 1.0

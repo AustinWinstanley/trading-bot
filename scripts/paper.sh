@@ -15,12 +15,13 @@ JOB=${1:-daily}
   flock -n 200 || { echo "CRITICAL: previous run still holds the lock"; exit 1; }
   cd "$BOT"
   case "$JOB" in
-    daily)  timeout 1500 .venv/bin/python -m scripts.run_daily ;;
-    weekly) timeout 3000 .venv/bin/python -m scripts.weekly ;;
+    daily)    timeout 1500 .venv/bin/python -m scripts.run_daily ;;
+    daily2x)  timeout 1500 .venv/bin/python -m scripts.run_daily --profile 2x ;;
+    weekly)   timeout 3000 .venv/bin/python -m scripts.weekly ;;
     *) echo "unknown job $JOB"; exit 2 ;;
   esac
   rc=$?
   [ $rc -ne 0 ] && echo "CRITICAL: job=$JOB exited rc=$rc"
   echo "=== end rc=$rc ==="
   exit $rc
-} 200>"$BOT/state/paper.lock" >>"$LOG" 2>&1
+} 200>"$BOT/state/paper-$JOB.lock" >>"$LOG" 2>&1

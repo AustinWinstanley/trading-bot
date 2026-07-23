@@ -1,0 +1,120 @@
+# 2x LEVERED paper profile — the parallel experiment.
+# Same sleeves and signals as config.yaml, gross exposure doubled, kill
+# switches scaled to the levered path (daily -8%, monthly -20%, halt -35%).
+# Starting equity $10,000. Uses ALPACA_API_KEY_2X / ALPACA_API_SECRET_2X.
+mode: paper
+account:
+  starting_equity: 10000.0
+risk:
+  max_position_pct: 0.3
+  max_leveraged_exposure_pct: 0.4
+  max_positions: 120
+  stop_loss_pct: 0.08
+  stop_atr_multiple: 2.0
+  max_stop_distance_pct: 0.15
+  daily_loss_limit_pct: 0.08
+  monthly_kill_switch_pct: 0.2
+  peak_drawdown_halt_pct: 0.35
+  allow_averaging_down: false
+  loss_reentry_block_days: 5
+  max_short_exposure_pct: 0.4
+sleeves:
+  momentum:
+    allocation: 0.45
+    lookback_months: 6
+    skip_months: 1
+    hold_top_n: 4
+    universe:
+    - XLK
+    - XLE
+    - XLV
+    - XLF
+    - XLI
+    - XLY
+    - XLP
+    - XLU
+    - XLB
+    - XLRE
+    - XLC
+    - QQQ
+    - IWM
+    - EFA
+    - EEM
+    - GLD
+    - TLT
+    risk_off_symbol: SHY
+  pead:
+    allocation: 0.2
+    min_gap_pct: 0.04
+    min_volume_multiple: 2.0
+    min_close_range_pct: 0.67
+    max_positions: 2
+    max_hold_days: 20
+    profit_target_pct: 0.15
+  mean_reversion:
+    allocation: 0.2
+    rsi_period: 2
+    rsi_entry: 5
+    rsi_exit: 70
+    max_hold_days: 6
+    stop_pct: 0.06
+  leveraged:
+    allocation: 0.15
+    symbols:
+    - TQQQ
+    - SOXL
+    - UPRO
+    max_vix: 22.0
+    trend_symbol: QQQ
+universe:
+  min_price: 5.0
+  min_avg_dollar_volume: 20000000
+  exclude_ipo_days: 180
+  allow_short: true
+  inverse_etfs:
+  - SH
+  - PSQ
+  - SQQQ
+  - SDS
+execution:
+  order_type: limit
+  max_limit_slippage_pct: 0.003
+  no_entry_first_minutes: 10
+  no_entry_last_minutes: 10
+  market_open: 09:30
+  market_close: '16:00'
+  timezone: America/New_York
+paper_portfolio:
+  sleeves:
+    clone: 0.4
+    tsmom: 0.25
+    trend: 0.2
+    mom_ls: 0.15
+  clone_top_n: 3
+  mom_ls_top_n: 20
+  mom_ls_min_price: 5.0
+  mom_ls_min_dollar_volume: 5000000
+  mom_ls_targets_file: state/mom_ls_targets.json
+  mom_ls_max_age_days: 10
+  tsmom_universe:
+  - GLD
+  - SLV
+  - DBC
+  - USO
+  - UNG
+  - DBA
+  - TLT
+  - IEF
+  - LQD
+  - HYG
+  - EMB
+  - VNQ
+  - UUP
+  - FXE
+  - FXY
+  trend_symbol: SPY
+  trend_ma_days: 200
+  tsmom_lookback_days: 252
+  rebalance_band: 0.2
+  min_order_notional: 25.0
+  gross_leverage: 2.0
