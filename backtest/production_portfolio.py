@@ -127,18 +127,26 @@ def main() -> None:
     streams = build_streams()
     # build_portfolio is 50% long / 50% short (100% gross). Multiplying by
     # 0.30 produces the deployed 15% long + 15% short sleeve.
-    raw = (
+    legacy_raw = (
         0.40 * streams["clone"]
+        + 0.25 * streams["tsmom"]
+        + 0.20 * streams["trend"]
+        + 0.30 * streams["mom_ls"]
+    )
+    raw = (
+        0.40 * streams["spy"]
         + 0.25 * streams["tsmom"]
         + 0.20 * streams["trend"]
         + 0.30 * streams["mom_ls"]
     )
     base = raw - (0.15 * SHORT_BORROW / TD)
     levered = 2 * raw - (MARGIN_RATE / TD) - (0.30 * SHORT_BORROW / TD)
+    legacy = legacy_raw - (0.15 * SHORT_BORROW / TD)
 
     results = [
-        returns_summary(base, "production base (1.15x gross)"),
-        returns_summary(levered, "production 2x (2.30x gross)"),
+        returns_summary(base, "production SPY-core base (1.15x gross)"),
+        returns_summary(levered, "production SPY-core 2x (2.30x gross)"),
+        returns_summary(legacy, "invalidated clone allocation (legacy)"),
         returns_summary(streams["spy"], "SPY buy & hold"),
     ]
     yearly = pd.DataFrame({

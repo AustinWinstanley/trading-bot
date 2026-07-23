@@ -2,7 +2,33 @@
   "note": "Currently-listed cross-sectional universe: survivorship-biased upper bound. Includes 15bps cross-sectional/clone costs, 8bps TSMOM costs, 3% short borrow, and 5% 2x margin financing.",
   "results": [
     {
-      "portfolio": "production base (1.15x gross)",
+      "portfolio": "production SPY-core base (1.15x gross)",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.119,
+      "ann_return": 0.1275,
+      "vol": 0.1206,
+      "sharpe": 1.057,
+      "sortino": 1.365,
+      "max_dd": -0.133,
+      "x_money": 2.062
+    },
+    {
+      "portfolio": "production SPY-core 2x (2.30x gross)",
+      "from": "2020-02-13",
+      "to": "2026-07-22",
+      "years": 6.44,
+      "cagr": 0.1786,
+      "ann_return": 0.205,
+      "vol": 0.2413,
+      "sharpe": 0.85,
+      "sortino": 1.098,
+      "max_dd": -0.2593,
+      "x_money": 2.88
+    },
+    {
+      "portfolio": "invalidated clone allocation (legacy)",
       "from": "2020-02-13",
       "to": "2026-07-22",
       "years": 6.44,
@@ -13,19 +39,6 @@
       "sortino": 1.043,
       "max_dd": -0.1486,
       "x_money": 1.634
-    },
-    {
-      "portfolio": "production 2x (2.30x gross)",
-      "from": "2020-02-13",
-      "to": "2026-07-22",
-      "years": 6.44,
-      "cagr": 0.0984,
-      "ann_return": 0.1258,
-      "vol": 0.2255,
-      "sharpe": 0.558,
-      "sortino": 0.747,
-      "max_dd": -0.3583,
-      "x_money": 1.829
     },
     {
       "portfolio": "SPY buy & hold",
@@ -43,38 +56,38 @@
   ],
   "yearly_returns": {
     "2020": {
-      "base": -0.002396,
-      "2x": -0.029033,
+      "base": 0.059488,
+      "2x": 0.083227,
       "SPY": 0.140775
     },
     "2021": {
-      "base": 0.07413,
-      "2x": 0.08707,
+      "base": 0.156909,
+      "2x": 0.262721,
       "SPY": 0.287442
     },
     "2022": {
-      "base": -0.036509,
-      "2x": -0.131243,
+      "base": -0.007458,
+      "2x": -0.076448,
       "SPY": -0.181717
     },
     "2023": {
-      "base": 0.020034,
-      "2x": -0.017388,
+      "base": 0.039226,
+      "2x": 0.020592,
       "SPY": 0.261896
     },
     "2024": {
-      "base": 0.180542,
-      "2x": 0.311271,
+      "base": 0.214584,
+      "2x": 0.387003,
       "SPY": 0.248851
     },
     "2025": {
-      "base": 0.127454,
-      "2x": 0.187808,
+      "base": 0.14245,
+      "2x": 0.216904,
       "SPY": 0.177151
     },
     "2026": {
-      "base": 0.165557,
-      "2x": 0.303612,
+      "base": 0.175188,
+      "2x": 0.323253,
       "SPY": 0.101876
     }
   },

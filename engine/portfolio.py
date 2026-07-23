@@ -3,8 +3,7 @@
 Four sleeves, all reproducible from data on this box (shorts enabled
 2026-07-23 by user authorization for the Alpaca path):
 
-  clone   top-N filed positions per fund from state/thirteenf/holdings.parquet
-          (the "conviction" variant that tested best), equal weight
+  equity_core  unconditional SPY allocation
   tsmom   each asset-class ETF long iff its own trailing 12m return > 0,
           inverse-vol weighted within the sleeve; unlit assets stay cash
   trend   the trend symbol iff above its 200DMA, else cash
@@ -24,6 +23,11 @@ import pandas as pd
 
 from engine.config import Config
 from engine.data import AlpacaClient, sma
+
+
+def equity_core_targets(cfg: Config) -> dict[str, float]:
+    sleeve = float(cfg.sleeves_paper["sleeves"].get("equity_core", 0.0))
+    return {"SPY": sleeve} if sleeve > 0 else {}
 
 
 def clone_targets(cfg: Config, tradable: set[str]) -> dict[str, float]:
@@ -126,24 +130,29 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
     start = dt.date.today() - dt.timedelta(days=int(lookback * 1.9) + 30)
     bars = client.get_bars(need, start, dt.date.today())
 
-    # Only clone names that are actually tradable and fractionable get weights.
     tradable: set[str] = set()
-    from engine.thirteenf import build_holdings, cusip_ticker_map
-    h = build_holdings().merge(cusip_ticker_map(), on="cusip", how="inner")
-    for sym in sorted(set(h["symbol"])):
-        try:
-            a = client.get_asset(sym)
-            if a.get("tradable") and a.get("fractionable"):
-                tradable.add(sym)
-        except Exception:
-            continue
+    clone_allocation = float(p["sleeves"].get("clone", 0.0))
+    if clone_allocation > 0:
+        # Legacy/experimental clone support. Do not make these ~1,000 broker
+        # asset calls when the production allocation is zero.
+        from engine.thirteenf import build_holdings, cusip_ticker_map
+        h = build_holdings().merge(cusip_ticker_map(), on="cusip", how="inner")
+        for sym in sorted(set(h["symbol"])):
+            try:
+                a = client.get_asset(sym)
+                if a.get("tradable") and a.get("fractionable"):
+                    tradable.add(sym)
+            except Exception:
+                continue
 
     sleeves = {
-        "clone": clone_targets(cfg, tradable),
+        "equity_core": equity_core_targets(cfg),
         "tsmom": tsmom_targets(cfg, bars),
         "trend": trend_targets(cfg, bars),
         "mom_ls": mom_ls_targets(cfg),
     }
+    if clone_allocation > 0:
+        sleeves["clone"] = clone_targets(cfg, tradable)
 
     lev = float(p.get("gross_leverage", 1.0))
     combined: dict[str, float] = {}
