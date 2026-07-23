@@ -24,14 +24,23 @@ def assess_health(
     last_snapshot: dt.datetime | None,
     now: dt.datetime,
     max_age_hours: float,
+    allow_pristine: bool = False,
+    journal_is_pristine: bool = False,
 ) -> list[str]:
     problems: list[str] = []
     if account_status != "ACTIVE":
         problems.append(f"account status is {account_status!r}, expected ACTIVE")
 
-    if last_snapshot is None:
+    pristine_profile = (
+        allow_pristine
+        and journal_is_pristine
+        and not positions
+        and not open_orders
+        and not fallback_stops
+    )
+    if last_snapshot is None and not pristine_profile:
         problems.append("no journal snapshot exists")
-    else:
+    elif last_snapshot is not None:
         if last_snapshot.tzinfo is None:
             last_snapshot = last_snapshot.replace(tzinfo=ET)
         age_hours = (now - last_snapshot.astimezone(now.tzinfo)).total_seconds() / 3600
@@ -72,6 +81,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=list(PROFILES), default="base")
     parser.add_argument("--max-age-hours", type=float, default=72.0)
+    parser.add_argument(
+        "--allow-pristine",
+        action="store_true",
+        help="allow a completely unused account/journal to bootstrap an upgrade",
+    )
     args = parser.parse_args()
 
     _, env_suffix, state_suffix = PROFILES[args.profile]
@@ -88,6 +102,7 @@ def main() -> None:
 
     last_snapshot = None
     fallback_stops: set[str] = set()
+    journal_is_pristine = True
     if db_path.exists():
         conn = sqlite3.connect(db_path)
         row = conn.execute("SELECT MAX(ts) FROM snapshots").fetchone()
@@ -96,6 +111,10 @@ def main() -> None:
         fallback_stops = {
             str(row[0]) for row in conn.execute("SELECT symbol FROM stops").fetchall()
         }
+        journal_is_pristine = all(
+            conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
+            for table in ("snapshots", "orders", "stops")
+        )
 
     now = dt.datetime.now(ET)
     problems = assess_health(
@@ -106,6 +125,8 @@ def main() -> None:
         last_snapshot=last_snapshot,
         now=now,
         max_age_hours=args.max_age_hours,
+        allow_pristine=args.allow_pristine,
+        journal_is_pristine=journal_is_pristine,
     )
     print(
         f"profile={args.profile} equity={account.get('equity')} "
@@ -115,7 +136,10 @@ def main() -> None:
         for problem in problems:
             print(f"CRITICAL: {problem}")
         raise SystemExit(1)
-    print("HEALTHY")
+    if args.allow_pristine and journal_is_pristine and not positions and not orders:
+        print("HEALTHY (pristine profile; first live run must create a snapshot)")
+    else:
+        print("HEALTHY")
 
 
 if __name__ == "__main__":
