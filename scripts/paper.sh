@@ -18,6 +18,8 @@ JOB=${1:-daily}
     daily)    timeout 1500 .venv/bin/python -m scripts.run_daily ;;
     daily2x)  timeout 1500 .venv/bin/python -m scripts.run_daily --profile 2x ;;
     weekly)   timeout 3000 .venv/bin/python -m scripts.weekly ;;
+    health)   timeout 120 .venv/bin/python -m scripts.healthcheck ;;
+    health2x) timeout 120 .venv/bin/python -m scripts.healthcheck --profile 2x ;;
     *) echo "unknown job $JOB"; exit 2 ;;
   esac
   rc=$?
