@@ -286,13 +286,18 @@ def spread_pnl(
     *,
     mode: str,
     friction_per_leg: float,
+    maximum_loss_per_trade: float | None = None,
+    annual_loss_budget: float | None = None,
 ) -> tuple[pd.Series, list[dict]]:
-    if mode not in {"always", "conditional", "trend_only", "vol_only"}:
+    if mode not in {
+        "always", "conditional", "trend_only", "vol_only", "calm",
+    }:
         raise ValueError(f"unknown hedge mode {mode!r}")
     panels = bar_panels(bars)
     dates = spy.loc[START:LAST_COMPLETE_ROLL].index
     pnl = pd.Series(0.0, index=dates)
     logs = []
+    loss_budget_used: dict[int, float] = {}
     for number, plan in enumerate(plans):
         roll = pd.Timestamp(plan.roll_date)
         if roll not in dates:
@@ -303,6 +308,10 @@ def spread_pnl(
             "conditional": signal["below_trend"] or signal["high_vol"],
             "trend_only": signal["below_trend"],
             "vol_only": signal["high_vol"],
+            "calm": (
+                not signal["below_trend"]
+                and signal["realized_vol_20d"] < 0.15
+            ),
         }[mode]
         next_roll = (
             pd.Timestamp(plans[number + 1].roll_date)
@@ -344,6 +353,35 @@ def spread_pnl(
             record["rejected"] = "non-positive entry debit"
             logs.append(record)
             continue
+        maximum_loss = (entry_value + 4 * friction_per_leg) * 100
+        year = entry_date.year
+        used = loss_budget_used.get(year, 0.0)
+        if (
+            maximum_loss_per_trade is not None
+            and maximum_loss > maximum_loss_per_trade
+        ):
+            record.update({
+                "entry_date": entry_date.date().isoformat(),
+                "entry_debit": round(entry_value, 4),
+                "maximum_loss_dollars": round(maximum_loss, 2),
+                "rejected": "maximum loss exceeds per-trade budget",
+            })
+            logs.append(record)
+            continue
+        if (
+            annual_loss_budget is not None
+            and used + maximum_loss > annual_loss_budget
+        ):
+            record.update({
+                "entry_date": entry_date.date().isoformat(),
+                "entry_debit": round(entry_value, 4),
+                "maximum_loss_dollars": round(maximum_loss, 2),
+                "annual_loss_budget_used": round(used, 2),
+                "rejected": "annual loss budget exhausted",
+            })
+            logs.append(record)
+            continue
+        loss_budget_used[year] = used + maximum_loss
 
         active_dates = dates[
             (dates >= entry_date) & (dates <= exit_date)
@@ -404,8 +442,9 @@ def spread_pnl(
                 dates.get_loc(entry_date) - dates.get_loc(roll)
             ),
             "entry_debit": round(entry_value, 4),
-            "maximum_loss_dollars": round(
-                (entry_value + 4 * friction_per_leg) * 100, 2
+            "maximum_loss_dollars": round(maximum_loss, 2),
+            "annual_loss_budget_used": round(
+                loss_budget_used[year], 2
             ),
             "pnl_dollars": round(float(trade_pnl.sum()), 2),
         })
