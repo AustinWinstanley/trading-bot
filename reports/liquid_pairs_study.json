@@ -1,0 +1,189 @@
+{
+  "pre_registration": {
+    "pairs": [
+      [
+        "SPY",
+        "IVV"
+      ],
+      [
+        "GLD",
+        "IAU"
+      ]
+    ],
+    "rules": {
+      "ratio_lookback": 60,
+      "entry_z": 2.0,
+      "exit_z": 0.5,
+      "stop_z": 4.0,
+      "max_hold_sessions": 20,
+      "maximum_total_gross": 0.2
+    },
+    "promotion_rule": "Higher base CAGR and Sharpe with no worse max drawdown in both early and held-out windows."
+  },
+  "decision": "reject",
+  "gates": {
+    "early_2020_2022": {
+      "cagr_improves": true,
+      "sharpe_improves": true,
+      "max_drawdown_not_worse": true
+    },
+    "heldout_2023_plus": {
+      "cagr_improves": false,
+      "sharpe_improves": false,
+      "max_drawdown_not_worse": false
+    }
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base control",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.062,
+        "ann_return": 0.0775,
+        "vol": 0.126,
+        "sharpe": 0.615,
+        "sortino": 0.722,
+        "max_dd": -0.1148,
+        "x_money": 1.189
+      },
+      {
+        "portfolio": "base plus liquid pairs",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0628,
+        "ann_return": 0.0784,
+        "vol": 0.1262,
+        "sharpe": 0.621,
+        "sortino": 0.731,
+        "max_dd": -0.1148,
+        "x_money": 1.191
+      },
+      {
+        "portfolio": "pairs standalone",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0008,
+        "ann_return": 0.0009,
+        "vol": 0.0008,
+        "sharpe": 1.095,
+        "sortino": 1.205,
+        "max_dd": -0.0007,
+        "x_money": 1.002
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.176,
+        "ann_return": 0.1711,
+        "vol": 0.1281,
+        "sharpe": 1.336,
+        "sortino": 1.872,
+        "max_dd": -0.1399,
+        "x_money": 1.777
+      },
+      {
+        "portfolio": "base plus liquid pairs",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1752,
+        "ann_return": 0.1706,
+        "vol": 0.1293,
+        "sharpe": 1.319,
+        "sortino": 1.838,
+        "max_dd": -0.1438,
+        "x_money": 1.773
+      },
+      {
+        "portfolio": "pairs standalone",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": -0.0005,
+        "ann_return": -0.0005,
+        "vol": 0.003,
+        "sharpe": -0.182,
+        "sortino": -0.125,
+        "max_dd": -0.0065,
+        "x_money": 0.998
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base control",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1233,
+        "ann_return": 0.1324,
+        "vol": 0.1272,
+        "sharpe": 1.041,
+        "sortino": 1.348,
+        "max_dd": -0.1399,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "base plus liquid pairs",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1232,
+        "ann_return": 0.1325,
+        "vol": 0.128,
+        "sharpe": 1.035,
+        "sortino": 1.338,
+        "max_dd": -0.1438,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "pairs standalone",
+        "from": "2020-02-06",
+        "to": "2026-07-22",
+        "years": 6.46,
+        "cagr": 0.0001,
+        "ann_return": 0.0001,
+        "vol": 0.0023,
+        "sharpe": 0.029,
+        "sortino": 0.018,
+        "max_dd": -0.0065,
+        "x_money": 1.0
+      }
+    ]
+  },
+  "diagnostics": {
+    "SPY/IVV": {
+      "active_days": 180,
+      "entries": 65,
+      "max_abs_z": 5.274
+    },
+    "GLD/IAU": {
+      "active_days": 260,
+      "entries": 72,
+      "max_abs_z": 6.557
+    },
+    "portfolio": {
+      "one_way_turnover": 23.47,
+      "average_gross": 0.0247,
+      "average_short_gross": 0.0102,
+      "zero_short_pair_days": 86
+    }
+  },
+  "limitations": [
+    "ETF adjusted closes are used; intraday entry slippage is not modeled beyond 2 bps turnover cost.",
+    "Whole-share capacity is modeled only for shorts; Alpaca permits fractional ETF longs.",
+    "Historical easy-to-borrow availability is unavailable.",
+    "A fixed $10,000 account is used for pair short capacity rather than iterating capacity with equity."
+  ],
+  "research_basis": {
+    "paper": "Pairs Trading: Performance of a Relative-Value Arbitrage Rule",
+    "url": "https://www.nber.org/papers/w7032"
+  }
+}
