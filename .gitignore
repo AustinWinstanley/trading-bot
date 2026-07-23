@@ -20,3 +20,4 @@ state/universe_*.json
 state/cboe/
 state/fundamentals/
 state/thirteenf/*.zip
+state/earnings_llm/
