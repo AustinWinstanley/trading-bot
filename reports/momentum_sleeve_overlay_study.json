@@ -1,0 +1,864 @@
+{
+  "conclusion": "Keep the MOM_LS sleeve fixed; its volatility overlay failed.",
+  "promotion_rule_passed": false,
+  "failure_reasons": [
+    "heldout_2017_plus: drawdown reduction was below 10%",
+    "early_2020_2022: exact Sharpe regressed"
+  ],
+  "preselected_target": 0.15,
+  "method": {
+    "lookback_sessions": 63,
+    "rebalance_sessions": 5,
+    "minimum_sleeve_scale": 0.25,
+    "maximum_sleeve_scale": 1.0,
+    "overlay_cost_bps": 5.0
+  },
+  "recent_exact": {
+    "base": {
+      "full": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1233,
+          "ann_return": 0.1324,
+          "vol": 0.1272,
+          "sharpe": 1.041,
+          "sortino": 1.348,
+          "max_dd": -0.1399,
+          "x_money": 2.113,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1129,
+          "ann_return": 0.1213,
+          "vol": 0.1169,
+          "sharpe": 1.037,
+          "sortino": 1.341,
+          "max_dd": -0.1274,
+          "x_money": 1.991,
+          "average_sleeve_scale": 0.826,
+          "pct_sessions_de_risked": 0.6078
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1166,
+          "ann_return": 0.1253,
+          "vol": 0.1212,
+          "sharpe": 1.034,
+          "sortino": 1.338,
+          "max_dd": -0.1359,
+          "x_money": 2.034,
+          "average_sleeve_scale": 0.917,
+          "pct_sessions_de_risked": 0.3441
+        }
+      ],
+      "early_2020_2022": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.062,
+          "ann_return": 0.0775,
+          "vol": 0.126,
+          "sharpe": 0.615,
+          "sortino": 0.722,
+          "max_dd": -0.1148,
+          "x_money": 1.189,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0574,
+          "ann_return": 0.0721,
+          "vol": 0.1226,
+          "sharpe": 0.589,
+          "sortino": 0.692,
+          "max_dd": -0.1075,
+          "x_money": 1.174,
+          "average_sleeve_scale": 0.87,
+          "pct_sessions_de_risked": 0.4498
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0587,
+          "ann_return": 0.0737,
+          "vol": 0.1244,
+          "sharpe": 0.593,
+          "sortino": 0.697,
+          "max_dd": -0.1086,
+          "x_money": 1.178,
+          "average_sleeve_scale": 0.944,
+          "pct_sessions_de_risked": 0.2663
+        }
+      ],
+      "heldout_2023_plus": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.176,
+          "ann_return": 0.1711,
+          "vol": 0.1281,
+          "sharpe": 1.336,
+          "sortino": 1.872,
+          "max_dd": -0.1399,
+          "x_money": 1.777,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1605,
+          "ann_return": 0.1559,
+          "vol": 0.1128,
+          "sharpe": 1.382,
+          "sortino": 1.973,
+          "max_dd": -0.1274,
+          "x_money": 1.696,
+          "average_sleeve_scale": 0.796,
+          "pct_sessions_de_risked": 0.7191
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1662,
+          "ann_return": 0.1616,
+          "vol": 0.119,
+          "sharpe": 1.359,
+          "sortino": 1.93,
+          "max_dd": -0.1359,
+          "x_money": 1.726,
+          "average_sleeve_scale": 0.899,
+          "pct_sessions_de_risked": 0.3989
+        }
+      ]
+    },
+    "2x": {
+      "full": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1895,
+          "ann_return": 0.2172,
+          "vol": 0.2502,
+          "sharpe": 0.868,
+          "sortino": 1.12,
+          "max_dd": -0.2623,
+          "x_money": 3.056,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1668,
+          "ann_return": 0.1911,
+          "vol": 0.2276,
+          "sharpe": 0.84,
+          "sortino": 1.079,
+          "max_dd": -0.2557,
+          "x_money": 2.699,
+          "average_sleeve_scale": 0.804,
+          "pct_sessions_de_risked": 0.6012
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1743,
+          "ann_return": 0.1998,
+          "vol": 0.2356,
+          "sharpe": 0.848,
+          "sortino": 1.093,
+          "max_dd": -0.2568,
+          "x_money": 2.813,
+          "average_sleeve_scale": 0.895,
+          "pct_sessions_de_risked": 0.3902
+        }
+      ],
+      "early_2020_2022": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0923,
+          "ann_return": 0.1336,
+          "vol": 0.2493,
+          "sharpe": 0.536,
+          "sortino": 0.629,
+          "max_dd": -0.2084,
+          "x_money": 1.289,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0754,
+          "ann_return": 0.1134,
+          "vol": 0.2402,
+          "sharpe": 0.472,
+          "sortino": 0.552,
+          "max_dd": -0.2123,
+          "x_money": 1.233,
+          "average_sleeve_scale": 0.84,
+          "pct_sessions_de_risked": 0.4498
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0815,
+          "ann_return": 0.1207,
+          "vol": 0.2433,
+          "sharpe": 0.496,
+          "sortino": 0.581,
+          "max_dd": -0.2017,
+          "x_money": 1.253,
+          "average_sleeve_scale": 0.91,
+          "pct_sessions_de_risked": 0.3142
+        }
+      ],
+      "heldout_2023_plus": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2754,
+          "ann_return": 0.276,
+          "vol": 0.251,
+          "sharpe": 1.1,
+          "sortino": 1.539,
+          "max_dd": -0.2623,
+          "x_money": 2.371,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2472,
+          "ann_return": 0.2458,
+          "vol": 0.2183,
+          "sharpe": 1.126,
+          "sortino": 1.604,
+          "max_dd": -0.2484,
+          "x_money": 2.19,
+          "average_sleeve_scale": 0.778,
+          "pct_sessions_de_risked": 0.7079
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.256,
+          "ann_return": 0.2556,
+          "vol": 0.2301,
+          "sharpe": 1.111,
+          "sortino": 1.575,
+          "max_dd": -0.2568,
+          "x_money": 2.245,
+          "average_sleeve_scale": 0.884,
+          "pct_sessions_de_risked": 0.4438
+        }
+      ]
+    }
+  },
+  "long_history_proxy": {
+    "base": {
+      "full": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.078,
+          "ann_return": 0.0804,
+          "vol": 0.1025,
+          "sharpe": 0.785,
+          "sortino": 1.031,
+          "max_dd": -0.2624,
+          "x_money": 4.205,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0852,
+          "ann_return": 0.0871,
+          "vol": 0.1017,
+          "sharpe": 0.857,
+          "sortino": 1.114,
+          "max_dd": -0.2143,
+          "x_money": 4.78,
+          "average_sleeve_scale": 0.898,
+          "pct_sessions_de_risked": 0.3332
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0836,
+          "ann_return": 0.0856,
+          "vol": 0.1021,
+          "sharpe": 0.839,
+          "sortino": 1.093,
+          "max_dd": -0.216,
+          "x_money": 4.644,
+          "average_sleeve_scale": 0.948,
+          "pct_sessions_de_risked": 0.1681
+        }
+      ],
+      "design_2007_2016": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0487,
+          "ann_return": 0.0523,
+          "vol": 0.0974,
+          "sharpe": 0.537,
+          "sortino": 0.726,
+          "max_dd": -0.2624,
+          "x_money": 1.587,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0599,
+          "ann_return": 0.0631,
+          "vol": 0.0994,
+          "sharpe": 0.635,
+          "sortino": 0.846,
+          "max_dd": -0.2143,
+          "x_money": 1.761,
+          "average_sleeve_scale": 0.909,
+          "pct_sessions_de_risked": 0.2796
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0579,
+          "ann_return": 0.0612,
+          "vol": 0.0986,
+          "sharpe": 0.62,
+          "sortino": 0.829,
+          "max_dd": -0.216,
+          "x_money": 1.729,
+          "average_sleeve_scale": 0.95,
+          "pct_sessions_de_risked": 0.1388
+        }
+      ],
+      "heldout_2017_plus": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1092,
+          "ann_return": 0.1097,
+          "vol": 0.1075,
+          "sharpe": 1.02,
+          "sortino": 1.308,
+          "max_dd": -0.167,
+          "x_money": 2.649,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1121,
+          "ann_return": 0.1119,
+          "vol": 0.104,
+          "sharpe": 1.076,
+          "sortino": 1.369,
+          "max_dd": -0.167,
+          "x_money": 2.715,
+          "average_sleeve_scale": 0.887,
+          "pct_sessions_de_risked": 0.3887
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1109,
+          "ann_return": 0.111,
+          "vol": 0.1055,
+          "sharpe": 1.052,
+          "sortino": 1.34,
+          "max_dd": -0.167,
+          "x_money": 2.687,
+          "average_sleeve_scale": 0.946,
+          "pct_sessions_de_risked": 0.1984
+        }
+      ]
+    },
+    "2x": {
+      "full": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0922,
+          "ann_return": 0.1099,
+          "vol": 0.2075,
+          "sharpe": 0.53,
+          "sortino": 0.698,
+          "max_dd": -0.503,
+          "x_money": 5.406,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.1094,
+          "ann_return": 0.125,
+          "vol": 0.2046,
+          "sharpe": 0.611,
+          "sortino": 0.796,
+          "max_dd": -0.4246,
+          "x_money": 7.289,
+          "average_sleeve_scale": 0.883,
+          "pct_sessions_de_risked": 0.381
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.1059,
+          "ann_return": 0.1221,
+          "vol": 0.2059,
+          "sharpe": 0.593,
+          "sortino": 0.774,
+          "max_dd": -0.4184,
+          "x_money": 6.858,
+          "average_sleeve_scale": 0.94,
+          "pct_sessions_de_risked": 0.2002
+        }
+      ],
+      "design_2007_2016": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0337,
+          "ann_return": 0.0524,
+          "vol": 0.1963,
+          "sharpe": 0.267,
+          "sortino": 0.362,
+          "max_dd": -0.503,
+          "x_money": 1.38,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0587,
+          "ann_return": 0.077,
+          "vol": 0.2,
+          "sharpe": 0.385,
+          "sortino": 0.513,
+          "max_dd": -0.4246,
+          "x_money": 1.74,
+          "average_sleeve_scale": 0.897,
+          "pct_sessions_de_risked": 0.302
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0543,
+          "ann_return": 0.0727,
+          "vol": 0.1987,
+          "sharpe": 0.366,
+          "sortino": 0.489,
+          "max_dd": -0.4184,
+          "x_money": 1.672,
+          "average_sleeve_scale": 0.943,
+          "pct_sessions_de_risked": 0.1653
+        }
+      ],
+      "heldout_2017_plus": [
+        {
+          "portfolio": "fixed sleeve",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1563,
+          "ann_return": 0.1696,
+          "vol": 0.2185,
+          "sharpe": 0.776,
+          "sortino": 0.999,
+          "max_dd": -0.3156,
+          "x_money": 3.917,
+          "average_sleeve_scale": 1.0,
+          "pct_sessions_de_risked": 0.0
+        },
+        {
+          "portfolio": "15% sleeve vol target",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1646,
+          "ann_return": 0.1747,
+          "vol": 0.2093,
+          "sharpe": 0.835,
+          "sortino": 1.065,
+          "max_dd": -0.3156,
+          "x_money": 4.189,
+          "average_sleeve_scale": 0.868,
+          "pct_sessions_de_risked": 0.4628
+        },
+        {
+          "portfolio": "20% sleeve vol target",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.162,
+          "ann_return": 0.1733,
+          "vol": 0.213,
+          "sharpe": 0.813,
+          "sortino": 1.04,
+          "max_dd": -0.3156,
+          "x_money": 4.101,
+          "average_sleeve_scale": 0.936,
+          "pct_sessions_de_risked": 0.2365
+        }
+      ]
+    }
+  },
+  "stress_windows": {
+    "base": {
+      "fixed sleeve": [
+        {
+          "window": "GFC",
+          "from": "2007-10-09",
+          "to": "2009-03-09",
+          "sessions": 356,
+          "total_return": -0.156,
+          "max_drawdown": -0.2023,
+          "worst_day": -0.0323
+        },
+        {
+          "window": "momentum crash rebound",
+          "from": "2009-03-10",
+          "to": "2009-06-30",
+          "sessions": 79,
+          "total_return": -0.0553,
+          "max_drawdown": -0.0851,
+          "worst_day": -0.0116
+        },
+        {
+          "window": "Eurozone / US downgrade",
+          "from": "2011-05-02",
+          "to": "2011-10-03",
+          "sessions": 108,
+          "total_return": -0.0825,
+          "max_drawdown": -0.0989,
+          "worst_day": -0.0314
+        },
+        {
+          "window": "China / energy selloff",
+          "from": "2015-07-01",
+          "to": "2016-02-11",
+          "sessions": 156,
+          "total_return": -0.0115,
+          "max_drawdown": -0.0629,
+          "worst_day": -0.0191
+        },
+        {
+          "window": "2018 volatility and Q4",
+          "from": "2018-01-26",
+          "to": "2018-12-24",
+          "sessions": 230,
+          "total_return": -0.0796,
+          "max_drawdown": -0.1172,
+          "worst_day": -0.0272
+        },
+        {
+          "window": "COVID crash",
+          "from": "2020-02-19",
+          "to": "2020-03-23",
+          "sessions": 24,
+          "total_return": -0.165,
+          "max_drawdown": -0.167,
+          "worst_day": -0.0488
+        },
+        {
+          "window": "inflation bear",
+          "from": "2022-01-03",
+          "to": "2022-10-12",
+          "sessions": 196,
+          "total_return": -0.0747,
+          "max_drawdown": -0.0857,
+          "worst_day": -0.0183
+        }
+      ],
+      "15% sleeve vol target": [
+        {
+          "window": "GFC",
+          "from": "2007-10-09",
+          "to": "2009-03-09",
+          "sessions": 356,
+          "total_return": -0.1852,
+          "max_drawdown": -0.2143,
+          "worst_day": -0.0354
+        },
+        {
+          "window": "momentum crash rebound",
+          "from": "2009-03-10",
+          "to": "2009-06-30",
+          "sessions": 79,
+          "total_return": 0.0589,
+          "max_drawdown": -0.026,
+          "worst_day": -0.0136
+        },
+        {
+          "window": "Eurozone / US downgrade",
+          "from": "2011-05-02",
+          "to": "2011-10-03",
+          "sessions": 108,
+          "total_return": -0.0825,
+          "max_drawdown": -0.0989,
+          "worst_day": -0.0314
+        },
+        {
+          "window": "China / energy selloff",
+          "from": "2015-07-01",
+          "to": "2016-02-11",
+          "sessions": 156,
+          "total_return": -0.0158,
+          "max_drawdown": -0.0642,
+          "worst_day": -0.0191
+        },
+        {
+          "window": "2018 volatility and Q4",
+          "from": "2018-01-26",
+          "to": "2018-12-24",
+          "sessions": 230,
+          "total_return": -0.0796,
+          "max_drawdown": -0.1172,
+          "worst_day": -0.0272
+        },
+        {
+          "window": "COVID crash",
+          "from": "2020-02-19",
+          "to": "2020-03-23",
+          "sessions": 24,
+          "total_return": -0.165,
+          "max_drawdown": -0.167,
+          "worst_day": -0.0488
+        },
+        {
+          "window": "inflation bear",
+          "from": "2022-01-03",
+          "to": "2022-10-12",
+          "sessions": 196,
+          "total_return": -0.0798,
+          "max_drawdown": -0.0895,
+          "worst_day": -0.0183
+        }
+      ]
+    },
+    "2x": {
+      "fixed sleeve": [
+        {
+          "window": "GFC",
+          "from": "2007-10-09",
+          "to": "2009-03-09",
+          "sessions": 356,
+          "total_return": -0.3411,
+          "max_drawdown": -0.3941,
+          "worst_day": -0.064
+        },
+        {
+          "window": "momentum crash rebound",
+          "from": "2009-03-10",
+          "to": "2009-06-30",
+          "sessions": 79,
+          "total_return": -0.1446,
+          "max_drawdown": -0.1925,
+          "worst_day": -0.025
+        },
+        {
+          "window": "Eurozone / US downgrade",
+          "from": "2011-05-02",
+          "to": "2011-10-03",
+          "sessions": 108,
+          "total_return": -0.1822,
+          "max_drawdown": -0.1954,
+          "worst_day": -0.0634
+        },
+        {
+          "window": "China / energy selloff",
+          "from": "2015-07-01",
+          "to": "2016-02-11",
+          "sessions": 156,
+          "total_return": -0.0539,
+          "max_drawdown": -0.1452,
+          "worst_day": -0.0384
+        },
+        {
+          "window": "2018 volatility and Q4",
+          "from": "2018-01-26",
+          "to": "2018-12-24",
+          "sessions": 230,
+          "total_return": -0.1992,
+          "max_drawdown": -0.2336,
+          "worst_day": -0.055
+        },
+        {
+          "window": "COVID crash",
+          "from": "2020-02-19",
+          "to": "2020-03-23",
+          "sessions": 24,
+          "total_return": -0.3125,
+          "max_drawdown": -0.3156,
+          "worst_day": -0.0986
+        },
+        {
+          "window": "inflation bear",
+          "from": "2022-01-03",
+          "to": "2022-10-12",
+          "sessions": 196,
+          "total_return": -0.1801,
+          "max_drawdown": -0.1982,
+          "worst_day": -0.0384
+        }
+      ],
+      "15% sleeve vol target": [
+        {
+          "window": "GFC",
+          "from": "2007-10-09",
+          "to": "2009-03-09",
+          "sessions": 356,
+          "total_return": -0.3945,
+          "max_drawdown": -0.4246,
+          "worst_day": -0.0711
+        },
+        {
+          "window": "momentum crash rebound",
+          "from": "2009-03-10",
+          "to": "2009-06-30",
+          "sessions": 79,
+          "total_return": 0.1007,
+          "max_drawdown": -0.0544,
+          "worst_day": -0.0274
+        },
+        {
+          "window": "Eurozone / US downgrade",
+          "from": "2011-05-02",
+          "to": "2011-10-03",
+          "sessions": 108,
+          "total_return": -0.1822,
+          "max_drawdown": -0.1954,
+          "worst_day": -0.0634
+        },
+        {
+          "window": "China / energy selloff",
+          "from": "2015-07-01",
+          "to": "2016-02-11",
+          "sessions": 156,
+          "total_return": -0.0638,
+          "max_drawdown": -0.1517,
+          "worst_day": -0.0384
+        },
+        {
+          "window": "2018 volatility and Q4",
+          "from": "2018-01-26",
+          "to": "2018-12-24",
+          "sessions": 230,
+          "total_return": -0.1992,
+          "max_drawdown": -0.2336,
+          "worst_day": -0.055
+        },
+        {
+          "window": "COVID crash",
+          "from": "2020-02-19",
+          "to": "2020-03-23",
+          "sessions": 24,
+          "total_return": -0.3125,
+          "max_drawdown": -0.3156,
+          "worst_day": -0.0986
+        },
+        {
+          "window": "inflation bear",
+          "from": "2022-01-03",
+          "to": "2022-10-12",
+          "sessions": 196,
+          "total_return": -0.1921,
+          "max_drawdown": -0.207,
+          "worst_day": -0.0369
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "The pre-2020 stock momentum return remains an academic proxy.",
+    "Historical borrow availability and realized slippage are unknown.",
+    "Volatility scaling reacts after shocks and cannot prevent gaps.",
+    "A live sleeve-level scale is not implemented."
+  ]
+}
