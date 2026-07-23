@@ -407,6 +407,8 @@ def spread_pnl(
             record["rejected"] = "no valuation bars"
             logs.append(record)
             continue
+        if pd.isna(values.iloc[0]):
+            values.iloc[0] = entry_value
         if exit_date == pd.Timestamp(plan.expiration_date):
             spot = float(spy.reindex(dates).ffill().loc[exit_date])
             values.iloc[-1] = (
