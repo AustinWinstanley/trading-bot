@@ -156,6 +156,10 @@ def test_db_additively_migrates_legacy_journal(tmp_path, monkeypatch):
         "SELECT name FROM sqlite_master "
         "WHERE type='table' AND name='attribution_snapshots'"
     ).fetchone() is None
+    assert rolled_back.execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name='leverage_recommendations'"
+    ).fetchone() is None
     rolled_back.close()
 
     persisted = runner.db()
@@ -166,6 +170,10 @@ def test_db_additively_migrates_legacy_journal(tmp_path, monkeypatch):
         row[1] for row in reopened.execute("PRAGMA table_info(orders)")
     }
     assert "requested_notional" in reopened_columns
+    assert reopened.execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name='leverage_recommendations'"
+    ).fetchone() is not None
 
 
 def test_sync_uses_most_protective_broker_stop_and_prunes_phantoms():

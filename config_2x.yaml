@@ -121,3 +121,9 @@ paper_portfolio:
   rebalance_band: 0.2
   min_order_notional: 25.0
   gross_leverage: 2.0
+  volatility_overlay:
+    mode: "shadow"
+    target_vol: 0.12
+    lookback_days: 63
+    min_observations: 32
+    min_scale: 0.25

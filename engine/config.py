@@ -242,6 +242,39 @@ def load_config(path: Path | str | None = None) -> Config:
         total = sum(float(v) for v in alloc.values())
         if not alloc or total > 1.0 + 1e-9:
             raise ConfigError(f"paper_portfolio.sleeves must sum to <= 1.0, got {total:.4f}")
+        overlay = paper.get("volatility_overlay", {})
+        if overlay:
+            overlay_mode = overlay.get("mode", "off")
+            if overlay_mode not in {"off", "shadow"}:
+                raise ConfigError(
+                    "paper_portfolio.volatility_overlay.mode must be 'off' "
+                    "or 'shadow'; active leverage changes are not implemented"
+                )
+            _fraction(
+                _require(overlay, "target_vol", "paper_portfolio.volatility_overlay"),
+                "paper_portfolio.volatility_overlay.target_vol",
+            )
+            lookback = _positive_int(
+                _require(overlay, "lookback_days", "paper_portfolio.volatility_overlay"),
+                "paper_portfolio.volatility_overlay.lookback_days",
+            )
+            min_observations = _positive_int(
+                _require(
+                    overlay,
+                    "min_observations",
+                    "paper_portfolio.volatility_overlay",
+                ),
+                "paper_portfolio.volatility_overlay.min_observations",
+            )
+            if min_observations > lookback:
+                raise ConfigError(
+                    "paper_portfolio.volatility_overlay.min_observations "
+                    "must be <= lookback_days"
+                )
+            _fraction(
+                _require(overlay, "min_scale", "paper_portfolio.volatility_overlay"),
+                "paper_portfolio.volatility_overlay.min_scale",
+            )
 
     return Config(
         mode=mode,

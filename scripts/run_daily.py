@@ -33,6 +33,7 @@ from engine.attribution import build_exposure_attribution
 from engine.config import load_config
 from engine.data import REPO_ROOT, atr, load_env
 from engine.execute import Trader
+from engine.leverage_overlay import recommend_leverage
 from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
                          SymbolData, evaluate)
@@ -87,6 +88,10 @@ def db() -> sqlite3.Connection:
         actual_long REAL, actual_short REAL, actual_gross REAL,
         target_by_sleeve TEXT, actual_by_sleeve TEXT,
         targets TEXT, actual_weights TEXT, largest_symbol_gaps TEXT);
+    CREATE TABLE IF NOT EXISTS leverage_recommendations(
+        ts TEXT, profile TEXT, mode TEXT, observations INTEGER,
+        target_vol REAL, realized_vol REAL, recommended_scale REAL,
+        recommended_leverage REAL, ready INTEGER, reason TEXT);
     """)
     # Existing server journals predate attribution. Additive migrations retain
     # every row and allow a normal pull/upgrade without rebuilding state.
@@ -300,6 +305,29 @@ def main() -> None:
 
     st = load_risk_state(equity, today)
     conn = db()
+    ts = now_et.isoformat()
+    fixed_leverage = float(cfg.sleeves_paper.get("gross_leverage", 1.0))
+    overlay = recommend_leverage(
+        conn,
+        current_ts=ts,
+        current_equity=equity,
+        fixed_leverage=fixed_leverage,
+        settings=cfg.sleeves_paper.get(
+            "volatility_overlay", {"mode": "off"}
+        ),
+    )
+    if overlay["mode"] != "off":
+        vol_text = (
+            f"{overlay['realized_vol']:.1%}"
+            if overlay["realized_vol"] is not None else "pending"
+        )
+        print(
+            f"volatility overlay={overlay['mode']} "
+            f"observations={overlay['observations']}/"
+            f"{overlay['min_observations']} realized={vol_text} "
+            f"recommended={overlay['recommended_leverage']:.2f}x "
+            f"(trading remains {fixed_leverage:.2f}x)"
+        )
     reconciled = reconcile_journal_orders(conn, t)
     open_orders = t.open_orders()
     protective_symbols = sync_broker_stops(conn, positions, open_orders, today)
@@ -322,6 +350,7 @@ def main() -> None:
         }
     else:
         targets, diag = build_targets(cfg, t)
+    diag["volatility_overlay"] = overlay
     print(f"targets: {diag['sleeve_counts']}  total={diag['total_weight']}  cash={diag['cash_weight']}")
 
     # ---- proposals -------------------------------------------------------
@@ -445,7 +474,6 @@ def main() -> None:
                                               shorting_enabled=shorting_enabled),
                       risk_state, ctx, cfg)
 
-    ts = now_et.isoformat()
     for rej in result.rejected:
         raw = rej.raw if isinstance(rej.raw, dict) else {}
         conn.execute(
@@ -628,6 +656,21 @@ def main() -> None:
             json.dumps(attribution["largest_symbol_gaps"]),
         ),
     )
+    conn.execute(
+        "INSERT INTO leverage_recommendations VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            ts,
+            args.profile,
+            overlay["mode"],
+            overlay["observations"],
+            overlay["target_vol"],
+            overlay["realized_vol"],
+            overlay["recommended_scale"],
+            overlay["recommended_leverage"],
+            int(overlay["ready"]),
+            overlay["reason"],
+        ),
+    )
     conn.commit()
     save_risk_state(st)
 
@@ -643,6 +686,10 @@ def main() -> None:
         f"gross {target_exp['gross']:.1%}",
         f"- actual exposure long {actual_exp['long']:.1%} | short {actual_exp['short']:.1%} | "
         f"gross {actual_exp['gross']:.1%}",
+        f"- volatility overlay {overlay['mode']} | observations "
+        f"{overlay['observations']}/{overlay['min_observations']} | "
+        f"recommended {overlay['recommended_leverage']:.2f}× | "
+        f"traded {fixed_leverage:.2f}×",
     ]
     if result.halt_reason:
         lines.append(f"- **HALT: {result.halt_reason}**")

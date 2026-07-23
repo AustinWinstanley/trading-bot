@@ -235,6 +235,12 @@ borrow rejections, latest sleeve exposure, and sleeve-level unrealized P&L for
 both paper accounts. Dry runs wrap schema migrations in the same rolled-back
 transaction as journal changes.
 
+The 2× profile also records a shadow 12% volatility-target recommendation from
+its own daily paper-equity history. It requires 32 observations in a 63-session
+window and may recommend 0.5×–2× exposure, but `shadow` mode cannot alter target
+weights or orders. The base profile is explicitly `off`; config validation
+rejects any unimplemented active mode.
+
 ## Safety contract
 
 `engine/risk.py` may reject or shrink a proposal. It may never enlarge one or

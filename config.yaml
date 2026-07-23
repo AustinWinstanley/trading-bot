@@ -112,3 +112,9 @@ paper_portfolio:
   min_order_notional: 25.0
   # Gross exposure multiplier applied to all sleeve weights. 1.0 = unlevered.
   gross_leverage: 1.0
+  volatility_overlay:
+    mode: "off"
+    target_vol: 0.12
+    lookback_days: 63
+    min_observations: 32
+    min_scale: 0.25
