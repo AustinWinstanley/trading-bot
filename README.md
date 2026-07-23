@@ -4,8 +4,8 @@ Deterministic Alpaca paper-trading system with a pure-Python risk gate,
 broker-state reconciliation, and reproducible backtests. No LLM has broker
 credentials or participates in sizing or execution.
 
-**Status:** two active paper profiles are configured: an unlevered $4,600
-account and a parallel $10,000 2× experiment. Nothing in this repository
+**Status:** two active $10,000 paper profiles are configured: an unlevered
+account and a parallel 2× experiment. Nothing in this repository
 enables live trading.
 
 ## Money path
@@ -61,6 +61,11 @@ The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
 variant from 27.3% to 5.98% CAGR.
 
+A cost-aware overnight-equity study also rejected replacing the SPY core.
+Close-to-open SPY broke even at only 1.91 bp per execution in the post-2013
+sample. QQQ survived 2 bp standalone, but every tested SPY/QQQ overnight
+replacement reduced production-portfolio Sharpe in the held-out window.
+
 ## Setup
 
 ```bash
@@ -88,8 +93,8 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
 
-`--dry-run` performs broker reads and writes local journal/report state, but
-submits and cancels no orders.
+`--dry-run` performs broker reads but submits no orders and rolls back all
+local journal/report state.
 
 To rebuild the survivorship-biased cross-sectional research matrix:
 
