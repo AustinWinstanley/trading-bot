@@ -1,0 +1,896 @@
+{
+  "pre_registration": {
+    "candidate": "enter top/bottom 20; retain until outside top/bottom 40",
+    "promotion_rule": "For both account profiles and both early and held-out windows: higher net Sharpe, at least 30% lower sleeve turnover, at least 90% of control CAGR, and no more than 10% worse max drawdown.",
+    "non_promotable_sensitivity": "20/60 buffer"
+  },
+  "decision": "reject",
+  "gates": [
+    {
+      "profile": "base",
+      "passed": false,
+      "windows": {
+        "early_2020_2022": {
+          "sharpe_improves": false,
+          "turnover_reduction_at_least_30pct": true,
+          "cagr_retains_at_least_90pct": true,
+          "max_drawdown_not_over_10pct_worse": true
+        },
+        "heldout_2023_plus": {
+          "sharpe_improves": false,
+          "turnover_reduction_at_least_30pct": true,
+          "cagr_retains_at_least_90pct": true,
+          "max_drawdown_not_over_10pct_worse": true
+        }
+      }
+    },
+    {
+      "profile": "2x",
+      "passed": false,
+      "windows": {
+        "early_2020_2022": {
+          "sharpe_improves": false,
+          "turnover_reduction_at_least_30pct": true,
+          "cagr_retains_at_least_90pct": true,
+          "max_drawdown_not_over_10pct_worse": false
+        },
+        "heldout_2023_plus": {
+          "sharpe_improves": false,
+          "turnover_reduction_at_least_30pct": true,
+          "cagr_retains_at_least_90pct": true,
+          "max_drawdown_not_over_10pct_worse": true
+        }
+      }
+    }
+  ],
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 weekly rebuild 20",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.062,
+        "ann_return": 0.0775,
+        "vol": 0.126,
+        "sharpe": 0.615,
+        "sortino": 0.722,
+        "max_dd": -0.1148,
+        "x_money": 1.189
+      },
+      {
+        "portfolio": "base \u2014 preselected 20/40 buffer",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0599,
+        "ann_return": 0.0753,
+        "vol": 0.1264,
+        "sharpe": 0.596,
+        "sortino": 0.701,
+        "max_dd": -0.125,
+        "x_money": 1.182
+      },
+      {
+        "portfolio": "base \u2014 sensitivity 20/60 buffer",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.05,
+        "ann_return": 0.0645,
+        "vol": 0.1266,
+        "sharpe": 0.509,
+        "sortino": 0.593,
+        "max_dd": -0.1469,
+        "x_money": 1.151
+      },
+      {
+        "portfolio": "2x \u2014 weekly rebuild 20",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0923,
+        "ann_return": 0.1336,
+        "vol": 0.2493,
+        "sharpe": 0.536,
+        "sortino": 0.629,
+        "max_dd": -0.2084,
+        "x_money": 1.289
+      },
+      {
+        "portfolio": "2x \u2014 preselected 20/40 buffer",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0837,
+        "ann_return": 0.1245,
+        "vol": 0.2493,
+        "sharpe": 0.499,
+        "sortino": 0.586,
+        "max_dd": -0.2311,
+        "x_money": 1.26
+      },
+      {
+        "portfolio": "2x \u2014 sensitivity 20/60 buffer",
+        "from": "2020-02-13",
+        "to": "2022-12-30",
+        "years": 2.88,
+        "cagr": 0.0603,
+        "ann_return": 0.0993,
+        "vol": 0.2497,
+        "sharpe": 0.398,
+        "sortino": 0.465,
+        "max_dd": -0.2708,
+        "x_money": 1.183
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 weekly rebuild 20",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.176,
+        "ann_return": 0.1711,
+        "vol": 0.1281,
+        "sharpe": 1.336,
+        "sortino": 1.872,
+        "max_dd": -0.1399,
+        "x_money": 1.777
+      },
+      {
+        "portfolio": "base \u2014 preselected 20/40 buffer",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1684,
+        "ann_return": 0.1645,
+        "vol": 0.1274,
+        "sharpe": 1.292,
+        "sortino": 1.83,
+        "max_dd": -0.135,
+        "x_money": 1.737
+      },
+      {
+        "portfolio": "base \u2014 sensitivity 20/60 buffer",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1684,
+        "ann_return": 0.1647,
+        "vol": 0.1286,
+        "sharpe": 1.281,
+        "sortino": 1.817,
+        "max_dd": -0.136,
+        "x_money": 1.737
+      },
+      {
+        "portfolio": "2x \u2014 weekly rebuild 20",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2754,
+        "ann_return": 0.276,
+        "vol": 0.251,
+        "sharpe": 1.1,
+        "sortino": 1.539,
+        "max_dd": -0.2623,
+        "x_money": 2.371
+      },
+      {
+        "portfolio": "2x \u2014 preselected 20/40 buffer",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2625,
+        "ann_return": 0.2654,
+        "vol": 0.2495,
+        "sharpe": 1.064,
+        "sortino": 1.505,
+        "max_dd": -0.2494,
+        "x_money": 2.287
+      },
+      {
+        "portfolio": "2x \u2014 sensitivity 20/60 buffer",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2716,
+        "ann_return": 0.273,
+        "vol": 0.2512,
+        "sharpe": 1.087,
+        "sortino": 1.548,
+        "max_dd": -0.247,
+        "x_money": 2.346
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base \u2014 weekly rebuild 20",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1233,
+        "ann_return": 0.1324,
+        "vol": 0.1272,
+        "sharpe": 1.041,
+        "sortino": 1.348,
+        "max_dd": -0.1399,
+        "x_money": 2.113
+      },
+      {
+        "portfolio": "base \u2014 preselected 20/40 buffer",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1183,
+        "ann_return": 0.1277,
+        "vol": 0.127,
+        "sharpe": 1.006,
+        "sortino": 1.31,
+        "max_dd": -0.135,
+        "x_money": 2.054
+      },
+      {
+        "portfolio": "base \u2014 sensitivity 20/60 buffer",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1136,
+        "ann_return": 0.1233,
+        "vol": 0.1278,
+        "sharpe": 0.965,
+        "sortino": 1.254,
+        "max_dd": -0.1469,
+        "x_money": 1.999
+      },
+      {
+        "portfolio": "2x \u2014 weekly rebuild 20",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1895,
+        "ann_return": 0.2172,
+        "vol": 0.2502,
+        "sharpe": 0.868,
+        "sortino": 1.12,
+        "max_dd": -0.2623,
+        "x_money": 3.056
+      },
+      {
+        "portfolio": "2x \u2014 preselected 20/40 buffer",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1787,
+        "ann_return": 0.2071,
+        "vol": 0.2494,
+        "sharpe": 0.831,
+        "sortino": 1.08,
+        "max_dd": -0.2529,
+        "x_money": 2.881
+      },
+      {
+        "portfolio": "2x \u2014 sensitivity 20/60 buffer",
+        "from": "2020-02-13",
+        "to": "2026-07-22",
+        "years": 6.44,
+        "cagr": 0.1719,
+        "ann_return": 0.2012,
+        "vol": 0.2506,
+        "sharpe": 0.803,
+        "sortino": 1.045,
+        "max_dd": -0.2833,
+        "x_money": 2.776
+      }
+    ]
+  },
+  "sleeve_attribution": {
+    "early_2020_2022": [
+      {
+        "profile": "base",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.0079,
+          "ann_return": -0.0082,
+          "vol": 0.0449,
+          "sharpe": -0.182,
+          "sortino": -0.21,
+          "max_dd": -0.0734,
+          "x_money": 0.977
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.0223,
+          "ann_return": 0.027,
+          "vol": 0.0515,
+          "sharpe": 0.525,
+          "sortino": 0.496,
+          "max_dd": -0.052,
+          "x_money": 1.066
+        },
+        "long_turnover": 13.65,
+        "short_turnover": 9.36,
+        "average_short_gross": 0.0526
+      },
+      {
+        "profile": "base",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.0057,
+          "ann_return": -0.0057,
+          "vol": 0.044,
+          "sharpe": -0.13,
+          "sortino": -0.15,
+          "max_dd": -0.0683,
+          "x_money": 0.983
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.0183,
+          "ann_return": 0.0224,
+          "vol": 0.0506,
+          "sharpe": 0.442,
+          "sortino": 0.42,
+          "max_dd": -0.052,
+          "x_money": 1.054
+        },
+        "long_turnover": 6.3,
+        "short_turnover": 6.18,
+        "average_short_gross": 0.0508
+      },
+      {
+        "profile": "base",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.0133,
+          "ann_return": -0.0145,
+          "vol": 0.0445,
+          "sharpe": -0.327,
+          "sortino": -0.371,
+          "max_dd": -0.0844,
+          "x_money": 0.962
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.0165,
+          "ann_return": 0.0203,
+          "vol": 0.0499,
+          "sharpe": 0.406,
+          "sortino": 0.384,
+          "max_dd": -0.0525,
+          "x_money": 1.049
+        },
+        "long_turnover": 5.35,
+        "short_turnover": 5.91,
+        "average_short_gross": 0.0506
+      },
+      {
+        "profile": "2x",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.0174,
+          "ann_return": -0.0163,
+          "vol": 0.0898,
+          "sharpe": -0.182,
+          "sortino": -0.21,
+          "max_dd": -0.1441,
+          "x_money": 0.951
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.0675,
+          "ann_return": 0.0836,
+          "vol": 0.1238,
+          "sharpe": 0.675,
+          "sortino": 0.662,
+          "max_dd": -0.1154,
+          "x_money": 1.208
+        },
+        "long_turnover": 13.65,
+        "short_turnover": 11.08,
+        "average_short_gross": 0.1378
+      },
+      {
+        "profile": "2x",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.0131,
+          "ann_return": -0.0115,
+          "vol": 0.0881,
+          "sharpe": -0.13,
+          "sortino": -0.15,
+          "max_dd": -0.1345,
+          "x_money": 0.963
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.055,
+          "ann_return": 0.0695,
+          "vol": 0.1212,
+          "sharpe": 0.574,
+          "sortino": 0.561,
+          "max_dd": -0.1161,
+          "x_money": 1.168
+        },
+        "long_turnover": 6.3,
+        "short_turnover": 6.47,
+        "average_short_gross": 0.1364
+      },
+      {
+        "profile": "2x",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": -0.028,
+          "ann_return": -0.0291,
+          "vol": 0.089,
+          "sharpe": -0.327,
+          "sortino": -0.371,
+          "max_dd": -0.1642,
+          "x_money": 0.921
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2022-12-30",
+          "years": 2.9,
+          "cagr": 0.0483,
+          "ann_return": 0.062,
+          "vol": 0.1201,
+          "sharpe": 0.516,
+          "sortino": 0.502,
+          "max_dd": -0.1201,
+          "x_money": 1.146
+        },
+        "long_turnover": 5.35,
+        "short_turnover": 6.11,
+        "average_short_gross": 0.1361
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "profile": "base",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.0721,
+          "ann_return": 0.0723,
+          "vol": 0.0682,
+          "sharpe": 1.059,
+          "sortino": 1.455,
+          "max_dd": -0.0606,
+          "x_money": 1.28
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0247,
+          "ann_return": -0.0246,
+          "vol": 0.0323,
+          "sharpe": -0.761,
+          "sortino": -1.008,
+          "max_dd": -0.0989,
+          "x_money": 0.915
+        },
+        "long_turnover": 32.45,
+        "short_turnover": 27.32,
+        "average_short_gross": 0.0907
+      },
+      {
+        "profile": "base",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.0625,
+          "ann_return": 0.0631,
+          "vol": 0.0662,
+          "sharpe": 0.952,
+          "sortino": 1.321,
+          "max_dd": -0.0607,
+          "x_money": 1.24
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0221,
+          "ann_return": -0.022,
+          "vol": 0.0308,
+          "sharpe": -0.715,
+          "sortino": -0.951,
+          "max_dd": -0.0903,
+          "x_money": 0.924
+        },
+        "long_turnover": 13.95,
+        "short_turnover": 16.1,
+        "average_short_gross": 0.0878
+      },
+      {
+        "profile": "base",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.0665,
+          "ann_return": 0.067,
+          "vol": 0.0675,
+          "sharpe": 0.993,
+          "sortino": 1.389,
+          "max_dd": -0.0584,
+          "x_money": 1.257
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0258,
+          "ann_return": -0.0258,
+          "vol": 0.03,
+          "sharpe": -0.86,
+          "sortino": -1.14,
+          "max_dd": -0.1032,
+          "x_money": 0.911
+        },
+        "long_turnover": 11.4,
+        "short_turnover": 13.84,
+        "average_short_gross": 0.0873
+      },
+      {
+        "profile": "2x",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1441,
+          "ann_return": 0.1446,
+          "vol": 0.1365,
+          "sharpe": 1.059,
+          "sortino": 1.455,
+          "max_dd": -0.1195,
+          "x_money": 1.612
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0642,
+          "ann_return": -0.0633,
+          "vol": 0.082,
+          "sharpe": -0.771,
+          "sortino": -1.06,
+          "max_dd": -0.2541,
+          "x_money": 0.79
+        },
+        "long_turnover": 32.45,
+        "short_turnover": 35.47,
+        "average_short_gross": 0.2527
+      },
+      {
+        "profile": "2x",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1239,
+          "ann_return": 0.1261,
+          "vol": 0.1324,
+          "sharpe": 0.952,
+          "sortino": 1.321,
+          "max_dd": -0.1194,
+          "x_money": 1.514
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0568,
+          "ann_return": -0.0555,
+          "vol": 0.0802,
+          "sharpe": -0.692,
+          "sortino": -0.952,
+          "max_dd": -0.2331,
+          "x_money": 0.813
+        },
+        "long_turnover": 13.95,
+        "short_turnover": 20.22,
+        "average_short_gross": 0.2506
+      },
+      {
+        "profile": "2x",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1324,
+          "ann_return": 0.134,
+          "vol": 0.135,
+          "sharpe": 0.993,
+          "sortino": 1.389,
+          "max_dd": -0.1151,
+          "x_money": 1.554
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": -0.0569,
+          "ann_return": -0.0558,
+          "vol": 0.078,
+          "sharpe": -0.715,
+          "sortino": -0.985,
+          "max_dd": -0.2241,
+          "x_money": 0.812
+        },
+        "long_turnover": 11.4,
+        "short_turnover": 17.19,
+        "average_short_gross": 0.2486
+      }
+    ],
+    "full": [
+      {
+        "profile": "base",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.0353,
+          "ann_return": 0.039,
+          "vol": 0.0597,
+          "sharpe": 0.653,
+          "sortino": 0.836,
+          "max_dd": -0.0734,
+          "x_money": 1.251
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.0038,
+          "ann_return": -0.0032,
+          "vol": 0.0413,
+          "sharpe": -0.078,
+          "sortino": -0.088,
+          "max_dd": -0.1138,
+          "x_money": 0.976
+        },
+        "long_turnover": 46.1,
+        "short_turnover": 36.68,
+        "average_short_gross": 0.0749
+      },
+      {
+        "profile": "base",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.0312,
+          "ann_return": 0.0346,
+          "vol": 0.0581,
+          "sharpe": 0.596,
+          "sortino": 0.769,
+          "max_dd": -0.0683,
+          "x_money": 1.219
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.0042,
+          "ann_return": -0.0037,
+          "vol": 0.0402,
+          "sharpe": -0.091,
+          "sortino": -0.102,
+          "max_dd": -0.1045,
+          "x_money": 0.973
+        },
+        "long_turnover": 20.25,
+        "short_turnover": 22.27,
+        "average_short_gross": 0.0725
+      },
+      {
+        "profile": "base",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.0299,
+          "ann_return": 0.0333,
+          "vol": 0.0591,
+          "sharpe": 0.563,
+          "sortino": 0.73,
+          "max_dd": -0.0844,
+          "x_money": 1.209
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.007,
+          "ann_return": -0.0068,
+          "vol": 0.0395,
+          "sharpe": -0.171,
+          "sortino": -0.191,
+          "max_dd": -0.1152,
+          "x_money": 0.956
+        },
+        "long_turnover": 16.75,
+        "short_turnover": 19.75,
+        "average_short_gross": 0.0721
+      },
+      {
+        "profile": "2x",
+        "variant": "weekly rebuild 20",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.0684,
+          "ann_return": 0.078,
+          "vol": 0.1195,
+          "sharpe": 0.653,
+          "sortino": 0.836,
+          "max_dd": -0.1441,
+          "x_money": 1.532
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.0071,
+          "ann_return": -0.0025,
+          "vol": 0.1015,
+          "sharpe": -0.025,
+          "sortino": -0.029,
+          "max_dd": -0.28,
+          "x_money": 0.955
+        },
+        "long_turnover": 46.1,
+        "short_turnover": 46.55,
+        "average_short_gross": 0.2052
+      },
+      {
+        "profile": "2x",
+        "variant": "preselected 20/40 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.06,
+          "ann_return": 0.0692,
+          "vol": 0.1162,
+          "sharpe": 0.596,
+          "sortino": 0.769,
+          "max_dd": -0.1345,
+          "x_money": 1.457
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.0081,
+          "ann_return": -0.0038,
+          "vol": 0.0993,
+          "sharpe": -0.038,
+          "sortino": -0.044,
+          "max_dd": -0.262,
+          "x_money": 0.949
+        },
+        "long_turnover": 20.25,
+        "short_turnover": 26.69,
+        "average_short_gross": 0.2034
+      },
+      {
+        "profile": "2x",
+        "variant": "sensitivity 20/60 buffer",
+        "long": {
+          "portfolio": "long",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": 0.0571,
+          "ann_return": 0.0666,
+          "vol": 0.1182,
+          "sharpe": 0.563,
+          "sortino": 0.73,
+          "max_dd": -0.1642,
+          "x_money": 1.432
+        },
+        "short_before_borrow": {
+          "portfolio": "short",
+          "from": "2020-02-06",
+          "to": "2026-07-22",
+          "years": 6.46,
+          "cagr": -0.011,
+          "ann_return": -0.007,
+          "vol": 0.0977,
+          "sharpe": -0.072,
+          "sortino": -0.084,
+          "max_dd": -0.2517,
+          "x_money": 0.931
+        },
+        "long_turnover": 16.75,
+        "short_turnover": 23.3,
+        "average_short_gross": 0.202
+      }
+    ]
+  },
+  "limitations": [
+    "The operating-company universe contains current listings and is survivorship-biased.",
+    "Historical easy-to-borrow and locate availability is unavailable.",
+    "Costs use a fixed 15 bps per unit of one-way turnover plus the portfolio borrow assumption.",
+    "Whole-share short capacity is modeled from a dynamic $10,000 starting account."
+  ]
+}
