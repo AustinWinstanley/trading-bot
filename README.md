@@ -173,6 +173,15 @@ not qualify it for a paper shadow. Fixed gold looked attractive recently but
 worsened long-history held-out drawdown, so it remains an exploratory
 observation rather than a selected strategy.
 
+A sleeve-specific volatility overlay produced a mixed result. The pre-selected
+15% target scaled only MOM_LS, weekly, between 25% and 100% of its fixed
+allocation. It improved the base long-history proxy from 7.80% to 8.52% CAGR
+and reduced full-period drawdown from -26.24% to -21.43%, including turning the
+2009 momentum-crash rebound proxy from -5.5% to +5.9%. But it worsened the GFC
+return from -15.6% to -18.5%, did not improve 2017+ maximum drawdown, and
+reduced exact 2020–2022 Sharpe from 0.615 to 0.589. It therefore failed its
+pre-specified cross-window rule and is not promoted to paper shadow.
+
 ## Setup
 
 ```bash
@@ -198,6 +207,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.allocation_study
 .venv/bin/python -m backtest.capital_split_study
 .venv/bin/python -m backtest.defensive_rotation_study
+.venv/bin/python -m backtest.momentum_sleeve_overlay_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
