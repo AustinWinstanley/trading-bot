@@ -1,0 +1,46 @@
+{
+  "decision": "defer",
+  "strategy": "point-in-time quality filter on cross-sectional momentum",
+  "hypothesis": "Excluding low-quality long candidates and high-quality short candidates may reduce momentum crashes and distress exposure without replacing the momentum rank.",
+  "existing_evidence": {
+    "report": "reports/fund_signals.json",
+    "standalone_quality_sharpe": 0.06,
+    "first_half_gross_sharpe": 0.978,
+    "second_half_gross_sharpe": -0.401,
+    "sign_stable": false,
+    "correlation_to_momentum": -0.3417,
+    "interpretation": "Quality was diversifying but unstable and did not survive its prior standalone test."
+  },
+  "reproducibility_audit": {
+    "fundamental_result_file_present": true,
+    "source_fundamental_parquet_present": false,
+    "can_reproduce_existing_report_now": false,
+    "current_code_uses_filed_date": true,
+    "current_code_uses_current_cik_to_symbol_map": true,
+    "current_code_prefers_annual_flow_facts_instead_of_true_trailing_four_quarters": true,
+    "safe_to_backtest_filter_now": false
+  },
+  "reason": "The source filing cache is not present, and the prior quality signal changed sign sharply between halves. Reusing only its saved headline output cannot support a new conditional portfolio test.",
+  "minimum_data_contract": {
+    "facts": [
+      "gross profit",
+      "assets",
+      "operating cash flow",
+      "net income"
+    ],
+    "availability": "SEC accepted/filed timestamp plus one trading session",
+    "flows": "true trailing four reported quarters, with duplicate/restatement policy frozen",
+    "identifiers": "dated CIK-to-symbol mapping including delisted firms",
+    "staleness": "maximum 400 calendar days",
+    "coverage_requirement": "at least 80% of otherwise eligible momentum candidates in each evaluation window"
+  },
+  "pre_registered_test_when_data_exists": {
+    "control": "global top/bottom 20 by 12-1 momentum",
+    "candidate": "remove the bottom quality quintile from long candidates and top quality quintile from short candidates, then continue down the unchanged momentum rank to fill 20 names per leg",
+    "quality_score": "equal-weight cross-sectional rank of gross-profit-to-assets and operating-cash-flow-to-assets",
+    "rebalance": "weekly momentum rebalance using the latest available filing",
+    "costs": "15 bps one-way turnover, 3% annual short borrow, whole-share short capacity at $10,000",
+    "promotion_rule": "Higher net Sharpe and no lower CAGR in both profiles and both early/held-out windows; max drawdown may not worsen; coverage must remain at least 80%."
+  },
+  "next_action": "Rebuild and version the SEC point-in-time cache before testing or implementing this filter."
+}
