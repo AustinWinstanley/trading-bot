@@ -77,3 +77,21 @@ execution:
   market_open: "09:30"
   market_close: "16:00"
   timezone: America/New_York
+
+# --------------------------------------------------------------------------
+# Paper portfolio (Alpaca) — the evidence-backed stack, long-only v1.
+# Deferred to iterations: options overlays, MOM_LS (needs shorts), LLM veto.
+paper_portfolio:
+  sleeves:
+    clone: 0.45         # 13F top-3 per fund ("conviction"), equal weight
+    tsmom: 0.30         # asset-class trend, long/flat, inverse-vol weights
+    trend: 0.25         # SPY above 200DMA, else cash
+  clone_top_n: 3
+  tsmom_universe: [GLD, SLV, DBC, USO, UNG, DBA, TLT, IEF, LQD, HYG, EMB, VNQ, UUP, FXE, FXY]
+  trend_symbol: SPY
+  trend_ma_days: 200
+  tsmom_lookback_days: 252
+  # Trade only when a position drifts >20% from target, or >= $25 absolute —
+  # tiny rebalances would be pure cost.
+  rebalance_band: 0.20
+  min_order_notional: 25.0
