@@ -40,6 +40,15 @@ from engine.tiingo import load_parquet
 FRENCH_ZIP = Path("state/french/F-F_Momentum_Factor_daily_CSV.zip")
 ASSET_HISTORY = Path("state/history_assets")
 DEEP_HISTORY = Path("state/history_deep")
+STRESS_WINDOWS = {
+    "GFC": ("2007-10-09", "2009-03-09"),
+    "momentum crash rebound": ("2009-03-10", "2009-06-30"),
+    "Eurozone / US downgrade": ("2011-05-02", "2011-10-03"),
+    "China / energy selloff": ("2015-07-01", "2016-02-11"),
+    "2018 volatility and Q4": ("2018-01-26", "2018-12-24"),
+    "COVID crash": ("2020-02-19", "2020-03-23"),
+    "inflation bear": ("2022-01-03", "2022-10-12"),
+}
 
 
 def parse_french_momentum(text: str) -> pd.Series:
@@ -140,7 +149,12 @@ def stress_window(r: pd.Series, start: str, end: str, label: str) -> dict:
     }
 
 
-def main() -> None:
+def build_long_history_profiles() -> tuple[
+    dict[str, pd.Series],
+    dict[str, dict],
+    pd.DataFrame,
+]:
+    """Build base/2x proxy returns plus calibration diagnostics."""
     french = load_french_momentum()
     history = long_history_common()
 
@@ -164,7 +178,6 @@ def main() -> None:
 
     calibration = {}
     variants = {}
-    actual_profiles = {}
     capacity_report = json.loads(
         Path("reports/short_capacity_study.json").read_text()
     )
@@ -198,7 +211,6 @@ def main() -> None:
         ).dropna()
         financing = MARGIN_RATE / TD if profile == "2x" else 0.0
         variants[profile] = aligned.sum(axis=1) - financing
-        actual_profiles[profile] = actual_profile
         overlap = pd.concat(
             {"actual": actual_momentum, "proxy": french * scale},
             axis=1,
@@ -217,21 +229,17 @@ def main() -> None:
             ),
             "average_short_gross": short_gross,
         }
+    return variants, calibration, history
 
-    windows = {
-        "GFC": ("2007-10-09", "2009-03-09"),
-        "momentum crash rebound": ("2009-03-10", "2009-06-30"),
-        "Eurozone / US downgrade": ("2011-05-02", "2011-10-03"),
-        "China / energy selloff": ("2015-07-01", "2016-02-11"),
-        "2018 volatility and Q4": ("2018-01-26", "2018-12-24"),
-        "COVID crash": ("2020-02-19", "2020-03-23"),
-        "inflation bear": ("2022-01-03", "2022-10-12"),
-    }
+
+def main() -> None:
+    variants, calibration, history = build_long_history_profiles()
+
     stress = {}
     for profile, returns in variants.items():
         stress[profile] = [
             stress_window(returns, start, end, label)
-            for label, (start, end) in windows.items()
+            for label, (start, end) in STRESS_WINDOWS.items()
         ]
 
     payload = {
