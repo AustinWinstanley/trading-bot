@@ -163,6 +163,16 @@ Close-to-open SPY broke even at only 1.91 bp per execution in the post-2013
 sample. QQQ survived 2 bp standalone, but every tested SPY/QQQ overnight
 replacement reduced production-portfolio Sharpe in the held-out window.
 
+A defensive-rotation study also rejected investing the 20% trend sleeve while
+its SPY signal is off. The pre-selected 12-month relative-momentum rule rotated
+among GLD, TLT, IEF, and cash using prior-day data and paid 8 bp per unit of
+turnover. In the 2007–2016 design window it reduced proxy CAGR from 4.76% to
+4.12%, Sharpe from 0.527 to 0.453, and worsened drawdown from -26.25% to
+-31.66%. Its apparent improvement in the recent held-out window therefore did
+not qualify it for a paper shadow. Fixed gold looked attractive recently but
+worsened long-history held-out drawdown, so it remains an exploratory
+observation rather than a selected strategy.
+
 ## Setup
 
 ```bash
@@ -187,6 +197,7 @@ All configured Alpaca credentials must point to paper accounts.
 .venv/bin/python -m backtest.production_portfolio
 .venv/bin/python -m backtest.allocation_study
 .venv/bin/python -m backtest.capital_split_study
+.venv/bin/python -m backtest.defensive_rotation_study
 .venv/bin/python -m scripts.run_daily --dry-run --force
 .venv/bin/python -m scripts.run_daily --dry-run --force --profile 2x
 ```
