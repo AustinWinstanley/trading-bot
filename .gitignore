@@ -18,3 +18,4 @@ state/history_deep/
 state/xsec/
 state/universe_*.json
 state/cboe/
+state/fundamentals/
