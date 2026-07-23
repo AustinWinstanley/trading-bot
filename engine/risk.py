@@ -57,6 +57,10 @@ class AccountState:
     equity: float
     cash: float
     positions: dict[str, Position] = field(default_factory=dict)
+    # Margin headroom for buys. None = cash account semantics (cap at cash).
+    # The daily runner computes this as (gross_leverage * equity - long
+    # exposure), NOT the broker's 4x buying power — the config is the cap.
+    buying_power: float | None = None
 
     def short_exposure(self) -> float:
         return sum(abs(p.market_value) for p in self.positions.values() if p.is_short)
@@ -310,7 +314,7 @@ def evaluate(
     open_position_count = len(account.positions)
     committed_notional: dict[str, float] = {}
     leveraged_exposure = account.leveraged_exposure(cfg.leveraged_symbols)
-    cash_remaining = account.cash
+    cash_remaining = account.cash if account.buying_power is None else account.buying_power
 
     for raw in proposals:
         clean, err = _parse_proposal(raw)
@@ -567,10 +571,10 @@ def evaluate(
                 )
                 approved_notional = lev_room
 
-        # Cash.
+        # Cash / margin headroom.
         if approved_notional > cash_remaining:
             if cash_remaining <= 0:
-                result.rejected.append(RejectedProposal(symbol, "no cash remaining", raw))
+                result.rejected.append(RejectedProposal(symbol, "no buying headroom remaining", raw))
                 continue
             adjustments.append(f"shrunk to available cash ({approved_notional:,.2f} -> {cash_remaining:,.2f})")
             approved_notional = cash_remaining

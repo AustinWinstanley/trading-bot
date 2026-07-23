@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import sqlite3
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -34,10 +35,27 @@ from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
                          SymbolData, evaluate)
 
+ET = ZoneInfo("America/New_York")
+
+PROFILES = {
+    # name: (config file, env suffix, state suffix)
+    "base": ("config.yaml", "", ""),
+    "2x":   ("config_2x.yaml", "_2X", "_2x"),
+}
+# Set per-run in main() from --profile; module-level so db()/state fns see them.
 DB = REPO_ROOT / "state" / "paper.db"
 RISK_STATE = REPO_ROOT / "state" / "risk_state.json"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
-ET = ZoneInfo("America/New_York")
+
+
+def set_profile(name: str) -> tuple[str, str]:
+    """Point DB/state/report paths at the profile and return (config, env suffix)."""
+    global DB, RISK_STATE, REPORT_DIR
+    cfg_file, env_sfx, state_sfx = PROFILES[name]
+    DB = REPO_ROOT / "state" / f"paper{state_sfx}.db"
+    RISK_STATE = REPO_ROOT / "state" / f"risk_state{state_sfx}.json"
+    REPORT_DIR = REPO_ROOT / "reports" / f"paper{state_sfx}"
+    return cfg_file, env_sfx
 
 
 def db() -> sqlite3.Connection:
@@ -85,14 +103,23 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--force", action="store_true", help="run even when market is closed (for testing)")
+    ap.add_argument("--profile", choices=list(PROFILES), default="base")
     args = ap.parse_args()
 
-    cfg = load_config()
+    cfg_file, env_sfx = set_profile(args.profile)
+    cfg = load_config(REPO_ROOT / cfg_file)
     if cfg.mode == "halt":
         print("mode=halt — refusing to run")
         return
 
-    t = Trader()
+    key = os.environ.get(f"ALPACA_API_KEY{env_sfx}")
+    secret = os.environ.get(f"ALPACA_API_SECRET{env_sfx}")
+    if env_sfx and not (key and secret):
+        print(f"CRITICAL: profile {args.profile} needs ALPACA_API_KEY{env_sfx} / "
+              f"ALPACA_API_SECRET{env_sfx} in .env — standing down")
+        return
+    t = Trader(key=key, secret=secret) if env_sfx else Trader()
+    print(f"profile={args.profile} config={cfg_file} lev={cfg.sleeves_paper.get('gross_leverage', 1.0)}")
     clock = t.clock()
     now_et = dt.datetime.now(ET)
     today = now_et.date()
@@ -209,7 +236,13 @@ def main() -> None:
     )
     ctx = MarketContext(now=now_et, is_trading_day=bool(clock.get("is_open")) or args.force,
                         symbols=symbol_data)
-    result = evaluate(proposals, AccountState(equity=equity, cash=cash, positions=positions),
+    lev = float(cfg.sleeves_paper.get("gross_leverage", 1.0))
+    buying_power = None
+    if lev > 1.0:
+        long_exposure = sum(p2.market_value for p2 in positions.values() if not p2.is_short)
+        buying_power = max(lev * equity - long_exposure, 0.0)
+    result = evaluate(proposals, AccountState(equity=equity, cash=cash, positions=positions,
+                                              buying_power=buying_power),
                       risk_state, ctx, cfg)
 
     ts = now_et.isoformat()

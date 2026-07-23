@@ -145,16 +145,17 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
         "mom_ls": mom_ls_targets(cfg),
     }
 
+    lev = float(p.get("gross_leverage", 1.0))
     combined: dict[str, float] = {}
     origin: dict[str, str] = {}
     for name, tw in sleeves.items():
         for sym, w in tw.items():
-            combined[sym] = combined.get(sym, 0.0) + w
+            combined[sym] = combined.get(sym, 0.0) + w * lev
             origin[sym] = f"{origin.get(sym, '')}+{name}".strip("+")
 
     long_total = sum(w for w in combined.values() if w > 0)
     short_total = sum(-w for w in combined.values() if w < 0)
-    assert long_total <= 1.0 + 1e-9, f"long targets sum to {long_total:.4f} > 1"
+    assert long_total <= lev + 1e-9, f"long targets sum to {long_total:.4f} > leverage {lev}"
     assert short_total <= cfg.risk.max_short_exposure_pct + 1e-9, \
         f"short targets {short_total:.4f} exceed cap {cfg.risk.max_short_exposure_pct}"
     diag = {
@@ -164,6 +165,7 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
         "long_weight": round(long_total, 4),
         "short_weight": round(short_total, 4),
         "total_weight": round(long_total, 4),
+        "gross_leverage": lev,
         "cash_weight": round(1 - long_total, 4),
         "origin": origin,
     }
