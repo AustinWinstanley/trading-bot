@@ -65,6 +65,7 @@ class Config:
     execution: ExecutionLimits
     universe: UniverseFilters
     sleeves: dict
+    sleeves_paper: dict
     leveraged_symbols: frozenset[str]
 
 
@@ -203,6 +204,13 @@ def load_config(path: Path | str | None = None) -> Config:
 
     leveraged_symbols = frozenset(sleeves.get("leveraged", {}).get("symbols", []))
 
+    paper = raw.get("paper_portfolio", {})
+    if paper:
+        alloc = paper.get("sleeves", {})
+        total = sum(float(v) for v in alloc.values())
+        if not alloc or total > 1.0 + 1e-9:
+            raise ConfigError(f"paper_portfolio.sleeves must sum to <= 1.0, got {total:.4f}")
+
     return Config(
         mode=mode,
         starting_equity=float(starting_equity),
@@ -210,5 +218,6 @@ def load_config(path: Path | str | None = None) -> Config:
         execution=execution,
         universe=universe,
         sleeves=sleeves,
+        sleeves_paper=paper,
         leveraged_symbols=leveraged_symbols,
     )
