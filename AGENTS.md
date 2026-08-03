@@ -57,7 +57,32 @@ Studies live in `backtest/`, write one JSON to `reports/`, and carry a
 
 Costs are 15 bps per unit of one-way turnover, 3% annual short borrow, and
 margin financing on 2x. Reuse `profile_returns` and `returns_summary` rather
-than recomputing.
+than recomputing. Evaluate the promotion rule itself with
+`backtest.promotion.passes_gate` / `passes_gate_all_cells` rather than
+hand-rolling the comparison — seven studies each did that differently before
+this module existed, so "passed the gate" didn't mean the same thing across
+`reports/`. Not every candidate is a straightforward return enhancer; pick
+the closest `objective_class` (`return_enhancer`, `risk_reducer`,
+`cost_reducer`) and pre-declare its bounds before looking at results — see
+the module docstring.
+
+### `heldout_2023_plus` is no longer a clean hold-out
+
+By the 2026-08-03 campaign, roughly fifteen studies had already used
+`heldout_2023_plus` as part of a promotion decision. A window that has
+arbitrated that many candidates is no longer meaningfully out-of-sample —
+marginal accept/reject calls (hundredths of Sharpe) are close to
+indistinguishable from selecting on noise, and nothing in the record
+corrects for that multiplicity.
+
+**2026-08-04 onward is reserved as a frozen final-validation window** — new
+market data as it accrues, plus the live paper journal's actual results. No
+study may tune its methodology, thresholds, or candidate variant on data
+from that window. Treat `early_2020_2022` + `heldout_2023_plus` as a screen a
+candidate must clear before anything else, not as sufficient evidence on its
+own for promotion to `active`. A candidate that clears the screen moves to
+shadow/paper observation and is judged against the frozen window before any
+config change makes it live.
 
 Existing decisions are binding. Several plausible ideas — rank buffers,
 sector-neutral momentum, price-aware short selection, correlation caps,
