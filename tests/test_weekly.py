@@ -63,3 +63,55 @@ def test_slot_guard_runs_when_et_matches(tmp_path):
 
     now_et = dt.datetime.now(ZoneInfo("America/New_York")).strftime("%H:%M")
     assert _run_slot(now_et, tmp_path) == 2
+
+
+def _fake_thirteenf(called):
+    """Stand-in for engine.thirteenf that records calls instead of hitting SEC."""
+    import types
+
+    mod = types.ModuleType("engine.thirteenf")
+
+    def build_holdings(refresh=False):
+        called.append(("holdings", refresh))
+        raise RuntimeError("network disabled in tests")
+
+    def cusip_ticker_map(refresh=False):
+        called.append(("cusip", refresh))
+        raise RuntimeError("network disabled in tests")
+
+    mod.build_holdings = build_holdings
+    mod.cusip_ticker_map = cusip_ticker_map
+    return mod
+
+
+def test_refresh_skipped_when_clone_sleeve_is_unallocated(monkeypatch):
+    """The live config retires the clone sleeve, so nothing should hit SEC."""
+    import sys
+
+    called = []
+    monkeypatch.setattr(weekly, "clone_allocation", lambda: 0.0)
+    monkeypatch.setitem(sys.modules, "engine.thirteenf", _fake_thirteenf(called))
+
+    notes = weekly.refresh_data()
+
+    assert called == []                            # nothing downloaded
+    assert notes == ["13F/CUSIP refresh skipped: clone sleeve unallocated "
+                     "(backtests refresh on demand)"]
+
+
+def test_refresh_runs_when_clone_sleeve_is_allocated(monkeypatch):
+    import sys
+
+    called = []
+    monkeypatch.setattr(weekly, "clone_allocation", lambda: 0.15)
+    monkeypatch.setitem(sys.modules, "engine.thirteenf", _fake_thirteenf(called))
+
+    notes = weekly.refresh_data()
+
+    assert called == [("holdings", True)]          # it did try, and refreshed
+    assert notes[0].startswith("CRITICAL: 13F refresh failed")
+
+
+def test_live_config_has_no_clone_allocation():
+    """Guards the assumption the skip depends on."""
+    assert weekly.clone_allocation() == 0.0

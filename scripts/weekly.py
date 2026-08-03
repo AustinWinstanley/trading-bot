@@ -23,8 +23,26 @@ DB_2X = REPO_ROOT / "state" / "paper_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
+def clone_allocation() -> float:
+    """Sleeve weight for the 13F clone strategy; 0 when it is not trading."""
+    from engine.config import load_config
+    return float(load_config().sleeves_paper["sleeves"].get("clone", 0.0))
+
+
 def refresh_data() -> list[str]:
+    """Refresh the 13F holdings and CUSIP map, if anything still trades on them.
+
+    Only the clone sleeve reads these, and it was retired in favour of
+    equity_core. Refreshing anyway rebuilt the CUSIP map from ~36 SEC
+    fail-to-deliver downloads every Sunday, left the parquet permanently
+    dirty in the working tree, and could raise a CRITICAL in the weekly
+    report about a sleeve that is not trading. The committed snapshot stays
+    put for the backtests that use it; they can refresh explicitly.
+    """
     notes = []
+    if clone_allocation() <= 0:
+        return ["13F/CUSIP refresh skipped: clone sleeve unallocated "
+                "(backtests refresh on demand)"]
     try:
         from engine.thirteenf import build_holdings, cusip_ticker_map
         h = build_holdings(refresh=True)
