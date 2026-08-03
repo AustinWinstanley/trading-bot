@@ -1,0 +1,671 @@
+{
+  "pre_registration": {
+    "candidates": {
+      "quality": "equal-weight cross-sectional rank of gross-profit/assets and OCF/assets",
+      "accruals": "-(NetIncomeLoss - OperatingCashFlow) / Assets (Sloan 1996)"
+    },
+    "filter": "Remove bottom-quintile-score names from long candidates and top-quintile-score names from short candidates, then continue down the unchanged momentum rank to fill 20 names per leg.",
+    "promotion_rule": "return_enhancer (backtest.promotion): higher Sharpe, CAGR not lower, max drawdown not worse, in both profiles and both windows. Per reports/quality_momentum_filter_feasibility.json, coverage must also remain >=80% of otherwise-eligible momentum candidates.",
+    "coverage_requirement_pct": 80.0
+  },
+  "reproduction_check": {
+    "max_abs_equity_diff_vs_build_portfolio": 0.0,
+    "passes_agents_md_discipline": true
+  },
+  "cik_map_coverage": {
+    "total_ciks_with_facts": 9459,
+    "ciks_matched_to_a_current_ticker": 5151,
+    "coverage_pct": 54.5,
+    "note": "cik_map() is current-listing only; delisted/deregistered CIKs are dropped, not mismapped. Every signal here inherits this survivorship bias in addition to the price panel's own."
+  },
+  "coverage_by_variant": {
+    "quality": {
+      "base": 0.352,
+      "2x": 0.352
+    },
+    "accruals": {
+      "base": 0.8062,
+      "2x": 0.8062
+    }
+  },
+  "decision": {
+    "quality": "defer_insufficient_coverage",
+    "accruals": "reject"
+  },
+  "gates": {
+    "quality": {
+      "objective_class": "return_enhancer",
+      "passed": false,
+      "cells": [
+        {
+          "window": "early_2020_2022",
+          "profile": "base",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": true,
+            "cagr_not_lower": true,
+            "max_dd_not_worse": false
+          },
+          "inputs": {
+            "control_sharpe": 0.968,
+            "candidate_sharpe": 0.977,
+            "control_cagr": 0.1056,
+            "candidate_cagr": 0.1066,
+            "control_max_dd": -0.0986,
+            "candidate_max_dd": -0.1011,
+            "d_sharpe": 0.009,
+            "d_cagr": 0.001,
+            "d_max_dd": -0.0025
+          }
+        },
+        {
+          "window": "early_2020_2022",
+          "profile": "2x",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": true,
+            "cagr_not_lower": true,
+            "max_dd_not_worse": false
+          },
+          "inputs": {
+            "control_sharpe": 0.986,
+            "candidate_sharpe": 1.002,
+            "control_cagr": 0.1452,
+            "candidate_cagr": 0.1473,
+            "control_max_dd": -0.1421,
+            "candidate_max_dd": -0.1428,
+            "d_sharpe": 0.016,
+            "d_cagr": 0.0021,
+            "d_max_dd": -0.0007
+          }
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "base",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": false
+          },
+          "inputs": {
+            "control_sharpe": 1.291,
+            "candidate_sharpe": 1.266,
+            "control_cagr": 0.1641,
+            "candidate_cagr": 0.1531,
+            "control_max_dd": -0.1377,
+            "candidate_max_dd": -0.1399,
+            "d_sharpe": -0.025,
+            "d_cagr": -0.011,
+            "d_max_dd": -0.0022
+          }
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "2x",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": true
+          },
+          "inputs": {
+            "control_sharpe": 1.069,
+            "candidate_sharpe": 1.029,
+            "control_cagr": 0.1939,
+            "candidate_cagr": 0.1725,
+            "control_max_dd": -0.1809,
+            "candidate_max_dd": -0.1781,
+            "d_sharpe": -0.04,
+            "d_cagr": -0.0214,
+            "d_max_dd": 0.0028
+          }
+        }
+      ]
+    },
+    "accruals": {
+      "objective_class": "return_enhancer",
+      "passed": false,
+      "cells": [
+        {
+          "window": "early_2020_2022",
+          "profile": "base",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": false
+          },
+          "inputs": {
+            "control_sharpe": 0.968,
+            "candidate_sharpe": 0.879,
+            "control_cagr": 0.1056,
+            "candidate_cagr": 0.0944,
+            "control_max_dd": -0.0986,
+            "candidate_max_dd": -0.1003,
+            "d_sharpe": -0.089,
+            "d_cagr": -0.0112,
+            "d_max_dd": -0.0017
+          }
+        },
+        {
+          "window": "early_2020_2022",
+          "profile": "2x",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": true
+          },
+          "inputs": {
+            "control_sharpe": 0.986,
+            "candidate_sharpe": 0.867,
+            "control_cagr": 0.1452,
+            "candidate_cagr": 0.1226,
+            "control_max_dd": -0.1421,
+            "candidate_max_dd": -0.1354,
+            "d_sharpe": -0.119,
+            "d_cagr": -0.0226,
+            "d_max_dd": 0.0067
+          }
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "base",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": true
+          },
+          "inputs": {
+            "control_sharpe": 1.291,
+            "candidate_sharpe": 1.273,
+            "control_cagr": 0.1641,
+            "candidate_cagr": 0.1594,
+            "control_max_dd": -0.1377,
+            "candidate_max_dd": -0.1261,
+            "d_sharpe": -0.018,
+            "d_cagr": -0.0047,
+            "d_max_dd": 0.0116
+          }
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "2x",
+          "objective_class": "return_enhancer",
+          "passed": false,
+          "checks": {
+            "sharpe_higher": false,
+            "cagr_not_lower": false,
+            "max_dd_not_worse": true
+          },
+          "inputs": {
+            "control_sharpe": 1.069,
+            "candidate_sharpe": 1.048,
+            "control_cagr": 0.1939,
+            "candidate_cagr": 0.1847,
+            "control_max_dd": -0.1809,
+            "candidate_max_dd": -0.1596,
+            "d_sharpe": -0.021,
+            "d_cagr": -0.0092,
+            "d_max_dd": 0.0213
+          }
+        }
+      ]
+    }
+  },
+  "risk_reducer_gates": {
+    "quality": {
+      "early_2020_2022/base": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 0.968,
+          "candidate_sharpe": 0.977,
+          "control_cagr": 0.1056,
+          "candidate_cagr": 0.1066,
+          "control_max_dd": -0.0986,
+          "candidate_max_dd": -0.1011,
+          "d_sharpe": 0.009,
+          "d_cagr": 0.001,
+          "d_max_dd": -0.0025,
+          "cagr_cost_pp": -0.1,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": -0.0254,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "early_2020_2022/2x": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 0.986,
+          "candidate_sharpe": 1.002,
+          "control_cagr": 0.1452,
+          "candidate_cagr": 0.1473,
+          "control_max_dd": -0.1421,
+          "candidate_max_dd": -0.1428,
+          "d_sharpe": 0.016,
+          "d_cagr": 0.0021,
+          "d_max_dd": -0.0007,
+          "cagr_cost_pp": -0.21,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": -0.0049,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "heldout_2023_plus/base": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": false
+        },
+        "inputs": {
+          "control_sharpe": 1.291,
+          "candidate_sharpe": 1.266,
+          "control_cagr": 0.1641,
+          "candidate_cagr": 0.1531,
+          "control_max_dd": -0.1377,
+          "candidate_max_dd": -0.1399,
+          "d_sharpe": -0.025,
+          "d_cagr": -0.011,
+          "d_max_dd": -0.0022,
+          "cagr_cost_pp": 1.1,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": -0.016,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "heldout_2023_plus/2x": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": false,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 1.069,
+          "candidate_sharpe": 1.029,
+          "control_cagr": 0.1939,
+          "candidate_cagr": 0.1725,
+          "control_max_dd": -0.1809,
+          "candidate_max_dd": -0.1781,
+          "d_sharpe": -0.04,
+          "d_cagr": -0.0214,
+          "d_max_dd": 0.0028,
+          "cagr_cost_pp": 2.14,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": 0.0155,
+          "min_dd_improvement_pct": 0.05
+        }
+      }
+    },
+    "accruals": {
+      "early_2020_2022/base": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": false
+        },
+        "inputs": {
+          "control_sharpe": 0.968,
+          "candidate_sharpe": 0.879,
+          "control_cagr": 0.1056,
+          "candidate_cagr": 0.0944,
+          "control_max_dd": -0.0986,
+          "candidate_max_dd": -0.1003,
+          "d_sharpe": -0.089,
+          "d_cagr": -0.0112,
+          "d_max_dd": -0.0017,
+          "cagr_cost_pp": 1.12,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": -0.0172,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "early_2020_2022/2x": {
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": false,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 0.986,
+          "candidate_sharpe": 0.867,
+          "control_cagr": 0.1452,
+          "candidate_cagr": 0.1226,
+          "control_max_dd": -0.1421,
+          "candidate_max_dd": -0.1354,
+          "d_sharpe": -0.119,
+          "d_cagr": -0.0226,
+          "d_max_dd": 0.0067,
+          "cagr_cost_pp": 2.26,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": 0.0471,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "heldout_2023_plus/base": {
+        "objective_class": "risk_reducer",
+        "passed": true,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": true,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 1.291,
+          "candidate_sharpe": 1.273,
+          "control_cagr": 0.1641,
+          "candidate_cagr": 0.1594,
+          "control_max_dd": -0.1377,
+          "candidate_max_dd": -0.1261,
+          "d_sharpe": -0.018,
+          "d_cagr": -0.0047,
+          "d_max_dd": 0.0116,
+          "cagr_cost_pp": 0.47,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": 0.0842,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      "heldout_2023_plus/2x": {
+        "objective_class": "risk_reducer",
+        "passed": true,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": true,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 1.069,
+          "candidate_sharpe": 1.048,
+          "control_cagr": 0.1939,
+          "candidate_cagr": 0.1847,
+          "control_max_dd": -0.1809,
+          "candidate_max_dd": -0.1596,
+          "d_sharpe": -0.021,
+          "d_cagr": -0.0092,
+          "d_max_dd": 0.0213,
+          "cagr_cost_pp": 0.92,
+          "max_cagr_cost_pp": 1.5,
+          "dd_improvement_pct": 0.1177,
+          "min_dd_improvement_pct": 0.05
+        }
+      }
+    }
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1056,
+        "ann_return": 0.106,
+        "vol": 0.1095,
+        "sharpe": 0.968,
+        "sortino": 1.36,
+        "max_dd": -0.0986,
+        "x_money": 1.275
+      },
+      {
+        "portfolio": "base \u2014 quality",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1066,
+        "ann_return": 0.1069,
+        "vol": 0.1094,
+        "sharpe": 0.977,
+        "sortino": 1.381,
+        "max_dd": -0.1011,
+        "x_money": 1.278
+      },
+      {
+        "portfolio": "base \u2014 accruals",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0944,
+        "ann_return": 0.0958,
+        "vol": 0.109,
+        "sharpe": 0.879,
+        "sortino": 1.217,
+        "max_dd": -0.1003,
+        "x_money": 1.244
+      },
+      {
+        "portfolio": "2x \u2014 control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1452,
+        "ann_return": 0.1461,
+        "vol": 0.1482,
+        "sharpe": 0.986,
+        "sortino": 1.344,
+        "max_dd": -0.1421,
+        "x_money": 1.389
+      },
+      {
+        "portfolio": "2x \u2014 quality",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1473,
+        "ann_return": 0.1478,
+        "vol": 0.1475,
+        "sharpe": 1.002,
+        "sortino": 1.387,
+        "max_dd": -0.1428,
+        "x_money": 1.395
+      },
+      {
+        "portfolio": "2x \u2014 accruals",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1226,
+        "ann_return": 0.1257,
+        "vol": 0.145,
+        "sharpe": 0.867,
+        "sortino": 1.177,
+        "max_dd": -0.1354,
+        "x_money": 1.323
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1641,
+        "ann_return": 0.1604,
+        "vol": 0.1242,
+        "sharpe": 1.291,
+        "sortino": 1.794,
+        "max_dd": -0.1377,
+        "x_money": 1.715
+      },
+      {
+        "portfolio": "base \u2014 quality",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1531,
+        "ann_return": 0.1502,
+        "vol": 0.1187,
+        "sharpe": 1.266,
+        "sortino": 1.758,
+        "max_dd": -0.1399,
+        "x_money": 1.658
+      },
+      {
+        "portfolio": "base \u2014 accruals",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1594,
+        "ann_return": 0.1561,
+        "vol": 0.1226,
+        "sharpe": 1.273,
+        "sortino": 1.759,
+        "max_dd": -0.1261,
+        "x_money": 1.69
+      },
+      {
+        "portfolio": "2x \u2014 control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1939,
+        "ann_return": 0.1947,
+        "vol": 0.1821,
+        "sharpe": 1.069,
+        "sortino": 1.458,
+        "max_dd": -0.1809,
+        "x_money": 1.875
+      },
+      {
+        "portfolio": "2x \u2014 quality",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1725,
+        "ann_return": 0.1743,
+        "vol": 0.1694,
+        "sharpe": 1.029,
+        "sortino": 1.407,
+        "max_dd": -0.1781,
+        "x_money": 1.759
+      },
+      {
+        "portfolio": "2x \u2014 accruals",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1847,
+        "ann_return": 0.1862,
+        "vol": 0.1776,
+        "sharpe": 1.048,
+        "sortino": 1.409,
+        "max_dd": -0.1596,
+        "x_money": 1.825
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base \u2014 control",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1397,
+        "ann_return": 0.1382,
+        "vol": 0.1184,
+        "sharpe": 1.167,
+        "sortino": 1.628,
+        "max_dd": -0.1377,
+        "x_money": 2.187
+      },
+      {
+        "portfolio": "base \u2014 quality",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1338,
+        "ann_return": 0.1325,
+        "vol": 0.1149,
+        "sharpe": 1.153,
+        "sortino": 1.613,
+        "max_dd": -0.1399,
+        "x_money": 2.119
+      },
+      {
+        "portfolio": "base \u2014 accruals",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1323,
+        "ann_return": 0.1316,
+        "vol": 0.1173,
+        "sharpe": 1.122,
+        "sortino": 1.552,
+        "max_dd": -0.1261,
+        "x_money": 2.103
+      },
+      {
+        "portfolio": "2x \u2014 control",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1736,
+        "ann_return": 0.1749,
+        "vol": 0.169,
+        "sharpe": 1.034,
+        "sortino": 1.405,
+        "max_dd": -0.1809,
+        "x_money": 2.605
+      },
+      {
+        "portfolio": "2x \u2014 quality",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1619,
+        "ann_return": 0.1635,
+        "vol": 0.1608,
+        "sharpe": 1.017,
+        "sortino": 1.394,
+        "max_dd": -0.1781,
+        "x_money": 2.454
+      },
+      {
+        "portfolio": "2x \u2014 accruals",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1588,
+        "ann_return": 0.1615,
+        "vol": 0.165,
+        "sharpe": 0.979,
+        "sortino": 1.316,
+        "max_dd": -0.1596,
+        "x_money": 2.415
+      }
+    ]
+  },
+  "limitations": [
+    "Inherits engine.fundamentals.cik_map()'s current-listing-only survivorship bias (see cik_map_coverage above) on top of the price panel's own current-listing bias.",
+    "The cross-sectional panel has no data before 2020-07-27 (see AGENTS.md); combined with fundamentals starting 2019, coverage in the earliest rebalances may be thinner than the full-sample average reported in coverage_by_variant.",
+    "Whole-share short capacity is not modeled here (idealized fractional shorts, matching production_portfolio.py's convention) \u2014 see AGENTS.md's short-borrow-convention note.",
+    "Historical easy-to-borrow availability is unavailable."
+  ]
+}
