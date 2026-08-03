@@ -68,7 +68,11 @@ sleeves:
 
 universe:
   min_price: 5.00
-  min_avg_dollar_volume: 20000000   # 20-day average dollar volume
+  # 20-day average dollar volume. 20M was sized for institutional capital and
+  # rejected ~20 names a day at a ~$75 slot size — 0.004% of a 2M-ADV name's
+  # daily volume. Lowered 2026-08-03; revisit if account equity grows an order
+  # of magnitude.
+  min_avg_dollar_volume: 3000000
   exclude_ipo_days: 180
   # Shorting enabled 2026-07-23 with user authorization, for the Alpaca
   # paper/live path (verified shortable account). The old Robinhood-parity

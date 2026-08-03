@@ -35,6 +35,30 @@ def refresh_data() -> list[str]:
     return notes
 
 
+def short_slot_notional(top_n: int) -> float | None:
+    """Dollars the mom_ls sleeve will allocate to one short, or None if unknown.
+
+    Sized off the base profile's latest equity snapshot. The targets file is
+    shared with the leveraged profiles, whose slots are strictly larger, so
+    the base slot is the binding constraint — anything affordable here is
+    affordable there.
+    """
+    if not DB.exists() or top_n <= 0:
+        return None
+    conn = sqlite3.connect(DB)
+    try:
+        row = conn.execute("SELECT equity FROM snapshots ORDER BY ts DESC LIMIT 1").fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        conn.close()
+    if not row or not row[0]:
+        return None
+    from engine.config import load_config
+    weight = float(load_config().sleeves_paper["sleeves"]["mom_ls"])
+    return float(row[0]) * weight / top_n
+
+
 def build_mom_ls_targets() -> list[str]:
     """Weekly momentum ranks for the market-neutral sleeve.
 
@@ -73,8 +97,28 @@ def build_mom_ls_targets() -> list[str]:
     notes.append(f"eligible after filters: {len(ranked):,}")
 
     longs = list(ranked.head(top_n).index)
+
+    # Alpaca will not short fractionally, so a slot can only fill if one whole
+    # share fits inside it. Ranking without this filter picked names priced
+    # above the slot, the risk gate rejected every one of them at submission,
+    # and the "market-neutral" sleeve ran structurally net long. Filter here,
+    # where we can still walk further down the momentum ranks for a
+    # replacement, instead of discovering it at the gate.
+    max_short_px = short_slot_notional(top_n)
+    if max_short_px:
+        affordable = px[px <= max_short_px]
+        skipped = [s for s in ranked.index[::-1][:top_n] if s not in affordable.index]
+        ranked_short = ranked[ranked.index.isin(affordable.index)]
+        notes.append(f"short slot ${max_short_px:,.2f}; {len(ranked) - len(ranked_short):,} "
+                     f"of {len(ranked):,} ranked names too expensive to short whole-share")
+        if skipped:
+            notes.append(f"skipped by price at the short end: {', '.join(skipped[:10])}")
+    else:
+        ranked_short = ranked
+        notes.append("CRITICAL: no equity snapshot; short slot size unknown, price filter skipped")
+
     shorts = []
-    for sym in ranked.index[::-1]:                 # worst momentum first
+    for sym in ranked_short.index[::-1]:            # worst momentum first
         if len(shorts) >= top_n:
             break
         try:
@@ -83,9 +127,13 @@ def build_mom_ls_targets() -> list[str]:
                 shorts.append(sym)
         except Exception:
             continue
+    if len(shorts) < top_n:
+        notes.append(f"CRITICAL: only {len(shorts)} of {top_n} short slots filled — "
+                     f"sleeve will run net long")
 
     out = {"as_of": end.isoformat(), "long": longs, "short": shorts,
-           "params": {"top_n": top_n, "min_price": min_px, "min_dollar_volume": min_dv}}
+           "params": {"top_n": top_n, "min_price": min_px, "min_dollar_volume": min_dv,
+                      "max_short_price": max_short_px}}
     path = REPO_ROOT / p["mom_ls_targets_file"]
     path.write_text(_json.dumps(out, indent=2))
     notes.append(f"mom_ls targets written: {len(longs)} long / {len(shorts)} short (easy-to-borrow)")
@@ -121,10 +169,16 @@ def summarize_week() -> list[str]:
         lines.append("top gate rejections:")
         lines += [f"  {n:>4}x {reason[:100]}" for reason, n in rejs]
 
-    # CRITICAL lines from this week's logs
+    # CRITICAL lines from this week's logs. Windowed by date, not by file
+    # count — logs only exist for days the bot ran, so "last 8 files" silently
+    # reached back further every time a run was skipped and kept resurfacing
+    # long-fixed incidents as if they were current.
     log_dir = REPO_ROOT / "logs"
+    cutoff = (dt.date.today() - dt.timedelta(days=7)).strftime("%Y%m%d")
     crits = []
-    for f in sorted(log_dir.glob("paper-*.log"))[-8:]:
+    for f in sorted(log_dir.glob("paper-*.log")):
+        if f.stem.removeprefix("paper-") < cutoff:
+            continue
         crits += [f"  {f.name}: {l.strip()}" for l in f.read_text().splitlines() if "CRITICAL" in l]
     if crits:
         lines.append("CRITICAL log lines:")
