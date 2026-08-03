@@ -1,5 +1,7 @@
 {
   "note": "training-data contamination possible; rubric is extractive to limit it",
   "results": [],
-  "n_events": 66
+  "n_events": 66,
+  "unreliable": true,
+  "unreliable_reason": "Empty result set (results: [], n_events: 66) with no reproducible source events or verdicts. reports/pead_data_audit.json correctly treats this as inconclusive rather than evidence; do not cite it as either a positive or negative finding."
 }

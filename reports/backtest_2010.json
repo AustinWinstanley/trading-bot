@@ -272,5 +272,7 @@
     "2020-03-30: HALT \u2014 peak drawdown 19.45% >= limit 18.00% \u2014 halted, manual restart required",
     "2020-03-31: HALT \u2014 peak drawdown 19.45% >= limit 18.00% \u2014 halted, manual restart required",
     "2020-04-01: restart after halt; peak rebased to 4,614.17"
-  ]
+  ],
+  "unreliable": true,
+  "unreliable_reason": "Produced by a superseded, pre-2026-08-03 backtest engine (event-driven per-trade fills against momentum/mean_reversion/leveraged/pead sleeves) that is architecturally unrelated to the deployed four-sleeve portfolio this repo now evaluates via backtest.production_portfolio. Its 18% drawdown-halt mechanic rebased the equity peak on restart and fired 19 consecutive sessions in March 2020, making its drawdown figure path-dependent and not comparable to any other report in this repo. Retained for history only; do not cite its CAGR/Sharpe/drawdown as current evidence."
 }
