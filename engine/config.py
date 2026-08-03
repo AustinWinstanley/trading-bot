@@ -38,6 +38,18 @@ class RiskLimits:
     allow_averaging_down: bool
     loss_reentry_block_days: int
     max_short_exposure_pct: float
+    # Sleeves that manage risk by rebalancing rather than per-position exits.
+    # See reports/risk_overlay_study.json — on MOM_LS the stop cost CAGR and
+    # Sharpe in both windows and both profiles, and the re-entry block is
+    # inert without it. Empty means every sleeve is stopped, as before.
+    stop_exempt_sleeves: frozenset[str] = frozenset()
+    reentry_block_exempt_sleeves: frozenset[str] = frozenset()
+
+    def stops_apply_to(self, sleeve: str) -> bool:
+        return sleeve not in self.stop_exempt_sleeves
+
+    def reentry_block_applies_to(self, sleeve: str) -> bool:
+        return sleeve not in self.reentry_block_exempt_sleeves
 
 
 @dataclass(frozen=True)
@@ -91,6 +103,25 @@ def _positive_int(value, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ConfigError(f"{name} must be a positive integer, got {value!r}")
     return value
+
+
+def _sleeve_set(value, name: str) -> frozenset[str]:
+    """Parse an optional list of sleeve names into a frozenset.
+
+    Absent means empty, i.e. the control applies everywhere — the pre-existing
+    behaviour. A typo must not silently disable a risk control, so anything
+    that is not a list of non-empty strings is a hard config error.
+    """
+    if value is None:
+        return frozenset()
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise ConfigError(f"{name} must be a list of sleeve names, got {value!r}")
+    names = []
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ConfigError(f"{name} entries must be non-empty strings, got {item!r}")
+        names.append(item.strip())
+    return frozenset(names)
 
 
 def _positive_number(value, name: str, *, high: float) -> float:
@@ -162,6 +193,10 @@ def load_config(path: Path | str | None = None) -> Config:
         allow_averaging_down=bool(_require(r, "allow_averaging_down", "risk")),
         loss_reentry_block_days=int(_require(r, "loss_reentry_block_days", "risk")),
         max_short_exposure_pct=float(r.get("max_short_exposure_pct", 0.0)),
+        stop_exempt_sleeves=_sleeve_set(r.get("stop_exempt_sleeves"), "risk.stop_exempt_sleeves"),
+        reentry_block_exempt_sleeves=_sleeve_set(
+            r.get("reentry_block_exempt_sleeves"), "risk.reentry_block_exempt_sleeves"
+        ),
     )
 
     # Averaging down is never permitted. Refuse to start rather than honour it.

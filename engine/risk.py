@@ -444,7 +444,7 @@ def evaluate(
                     RejectedProposal(symbol, f"averaging down is never permitted (short is {held.unrealized_pct:.2%})", raw))
                 continue
             loss_date = risk_state.recent_losses.get(symbol)
-            if loss_date is not None:
+            if loss_date is not None and cfg.risk.reentry_block_applies_to(clean["sleeve"]):
                 age = (ctx.now.date() - loss_date).days
                 if age < cfg.risk.loss_reentry_block_days:
                     result.rejected.append(
@@ -491,8 +491,11 @@ def evaluate(
                     RejectedProposal(symbol, f"short notional {approved_notional:,.2f} rounds below 1 whole share", raw))
                 continue
             approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
-            stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
-            stop_price = round(clean["limit_price"] * (1 + stop_pct), 4)   # stop ABOVE entry
+            if cfg.risk.stops_apply_to(clean["sleeve"]):
+                stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
+                stop_price = round(clean["limit_price"] * (1 + stop_pct), 4)   # stop ABOVE entry
+            else:
+                stop_price = 0.0   # sentinel: no stop, same as a cover
 
             result.approved.append(
                 ApprovedOrder(symbol=symbol, side="short", sleeve=clean["sleeve"],
@@ -560,9 +563,10 @@ def evaluate(
             )
             continue
 
-        # Revenge-trade block
+        # Revenge-trade block. Exempt sleeves rebalance systematically, so a
+        # bar on re-entry just forces them out of their own signal for a week.
         loss_date = risk_state.recent_losses.get(symbol)
-        if loss_date is not None:
+        if loss_date is not None and cfg.risk.reentry_block_applies_to(clean["sleeve"]):
             age = (ctx.now.date() - loss_date).days
             if age < cfg.risk.loss_reentry_block_days:
                 result.rejected.append(
@@ -684,11 +688,14 @@ def evaluate(
         # contract by a fraction of a cent.
         approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
 
-        stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
-        stop_price = round(clean["limit_price"] * (1 - stop_pct), 4)
-        if stop_price <= 0:
-            result.rejected.append(RejectedProposal(symbol, "computed stop price is non-positive", raw))
-            continue
+        if cfg.risk.stops_apply_to(clean["sleeve"]):
+            stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
+            stop_price = round(clean["limit_price"] * (1 - stop_pct), 4)
+            if stop_price <= 0:
+                result.rejected.append(RejectedProposal(symbol, "computed stop price is non-positive", raw))
+                continue
+        else:
+            stop_price = 0.0   # sentinel: no stop, same as a cover
 
         result.approved.append(
             ApprovedOrder(
@@ -730,7 +737,17 @@ def _assert_gate_invariants(result: GateResult, cfg: Config) -> None:
                 f"GATE INVARIANT VIOLATED: {order.symbol} approved {order.notional} > "
                 f"requested {order.requested_notional}"
             )
-        if order.side == "buy":
+        # A stop-exempt sleeve must carry exactly no stop. Anything else means
+        # the exemption and the stop calculation disagree, which would send a
+        # malformed stop to the broker — so it is still an invariant, just a
+        # different one.
+        exempt = order.side in ("buy", "short") and not cfg.risk.stops_apply_to(order.sleeve)
+        if exempt and order.stop_price != 0.0:
+            raise AssertionError(
+                f"GATE INVARIANT VIOLATED: {order.symbol} is in stop-exempt sleeve "
+                f"{order.sleeve!r} but carries stop {order.stop_price}"
+            )
+        if order.side == "buy" and not exempt:
             if order.stop_price <= 0:
                 raise AssertionError(f"GATE INVARIANT VIOLATED: {order.symbol} buy has no stop")
             if order.stop_price >= order.limit_price:
@@ -739,7 +756,7 @@ def _assert_gate_invariants(result: GateResult, cfg: Config) -> None:
                     f">= entry {order.limit_price}"
                 )
         if order.side == "short":
-            if order.stop_price <= order.limit_price:
+            if not exempt and order.stop_price <= order.limit_price:
                 raise AssertionError(
                     f"GATE INVARIANT VIOLATED: {order.symbol} short stop {order.stop_price} "
                     f"must be ABOVE entry {order.limit_price}"

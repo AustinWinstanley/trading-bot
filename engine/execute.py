@@ -133,7 +133,19 @@ class Trader(AlpacaClient):
         Alpaca rejects fractional advanced orders. Whole-share entries use OTO;
         fractional entries use a simple DAY limit and must receive a software
         fallback stop from the runner.
+
+        A falsy ``stop_price`` means the sleeve is deliberately unstopped
+        (``risk.stop_exempt_sleeves``). Sending it as an OTO would attach a
+        stop at zero — never triggering for a long, and triggering instantly
+        for a short — so it goes out as a plain limit with no stop to mirror.
         """
+        if not stop_price:
+            return (
+                self.submit_limit(
+                    symbol, side, qty, limit_price, client_order_id=client_order_id
+                ),
+                False,
+            )
         whole_qty = round(qty)
         if math.isclose(qty, whole_qty, abs_tol=1e-6):
             return (

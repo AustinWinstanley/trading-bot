@@ -517,9 +517,14 @@ def test_shipped_config_loads_and_is_sane():
 # --------------------------------------------------------------------------
 
 
-def short_prop(symbol="XLK", notional=500.0, limit=100.0):
-    return {"symbol": symbol, "side": "short", "sleeve": "mom_ls",
+def short_prop(symbol="XLK", notional=500.0, limit=100.0, sleeve="mom_ls"):
+    return {"symbol": symbol, "side": "short", "sleeve": sleeve,
             "notional": notional, "limit_price": limit, "rationale": "test"}
+
+
+# mom_ls is stop- and block-exempt in the shipped config, so tests that assert
+# stop/block behaviour must name a sleeve that is still subject to them.
+STOPPED_SLEEVE = "xsec_short"
 
 
 @pytest.fixture
@@ -535,12 +540,36 @@ def ctx_shortable(ctx):
 
 
 def test_short_carries_stop_above_entry(cfg, account, clean_risk, ctx_shortable):
-    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    result = evaluate(
+        [short_prop(sleeve=STOPPED_SLEEVE)], account, clean_risk, ctx_shortable, cfg
+    )
     assert len(result.approved) == 1
     o = result.approved[0]
     assert o.side == "short"
     assert o.stop_price > o.limit_price          # stop ABOVE entry for shorts
     assert o.qty == int(o.qty)                   # whole shares only
+
+
+def test_stop_exempt_sleeve_gets_no_stop(cfg, account, clean_risk, ctx_shortable):
+    """mom_ls rebalances weekly; reports/risk_overlay_study.json says stopping
+    it costs CAGR and Sharpe in both windows and both profiles."""
+    assert "mom_ls" in cfg.risk.stop_exempt_sleeves
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
+    assert len(result.approved) == 1
+    assert result.approved[0].stop_price == 0.0
+
+
+def test_stop_exempt_buy_gets_no_stop(cfg, account, clean_risk, ctx):
+    result = evaluate([buy(sleeve="mom_ls")], account, clean_risk, ctx, cfg)
+    assert len(result.approved) == 1
+    assert result.approved[0].stop_price == 0.0
+
+
+def test_non_exempt_buy_still_carries_a_stop(cfg, account, clean_risk, ctx):
+    result = evaluate([buy(sleeve="momentum")], account, clean_risk, ctx, cfg)
+    assert len(result.approved) == 1
+    o = result.approved[0]
+    assert 0 < o.stop_price < o.limit_price
 
 
 def test_short_rejected_when_not_shortable(cfg, account, clean_risk, ctx_shortable):
@@ -585,8 +614,23 @@ def test_short_revenge_trade_is_blocked(cfg, account, ctx_shortable):
         month_start_equity=EQUITY,
         recent_losses={"XLK": dt.date(2026, 7, 20)},
     )
-    result = evaluate([short_prop()], account, risk, ctx_shortable, cfg)
+    result = evaluate(
+        [short_prop(sleeve=STOPPED_SLEEVE)], account, risk, ctx_shortable, cfg
+    )
     assert "re-entry blocked" in only_rejection(result)
+
+
+def test_reentry_block_exempt_sleeve_may_re_enter(cfg, account, ctx_shortable):
+    """A systematic sleeve must not be barred from acting on its own signal."""
+    assert "mom_ls" in cfg.risk.reentry_block_exempt_sleeves
+    risk = RiskState(
+        peak_equity=EQUITY,
+        day_start_equity=EQUITY,
+        month_start_equity=EQUITY,
+        recent_losses={"XLK": dt.date(2026, 7, 20)},
+    )
+    result = evaluate([short_prop()], account, risk, ctx_shortable, cfg)
+    assert len(result.approved) == 1
 
 
 def test_short_gross_exposure_is_capped(cfg, account, clean_risk, ctx_shortable):
@@ -682,3 +726,14 @@ def test_portfolio_long_exposure_cap_applies_even_with_buying_power(
     result = evaluate([buy("XLK", notional=500.0)], account, clean_risk, ctx, cfg)
     assert len(result.approved) == 1
     assert result.approved[0].notional <= 50.0
+
+
+def test_sleeve_exemption_lists_must_be_lists_of_names():
+    from engine.config import ConfigError, _sleeve_set
+
+    assert _sleeve_set(None, "x") == frozenset()
+    assert _sleeve_set(["mom_ls", " trend "], "x") == frozenset({"mom_ls", "trend"})
+    # A typo must not silently disable a risk control.
+    for bad in ("mom_ls", 5, ["mom_ls", ""], [None]):
+        with pytest.raises(ConfigError):
+            _sleeve_set(bad, "x")

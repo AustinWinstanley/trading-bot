@@ -1,0 +1,443 @@
+{
+  "decision": "defer",
+  "question": "Does capping trailing correlation inside the MOM_LS book improve risk-adjusted return, and how concentrated is the book by default?",
+  "promotion_rule": "Higher Sharpe, no lower CAGR and no worse max drawdown, in both account profiles and both the early and held-out windows.",
+  "realized_concentration": {
+    "control (production ranks)": {
+      "samples": 60,
+      "mean_pairwise_correlation": 0.313332656422814,
+      "median": 0.2957829987461211,
+      "p90": 0.465814603546185,
+      "max": 0.6459319058479978,
+      "pct_of_samples_above_0_5": 0.1,
+      "mean_basket_vol_annualised": 0.4306815311575545
+    },
+    "corr cap 0.70": {
+      "samples": 60,
+      "mean_pairwise_correlation": 0.2693965132737825,
+      "median": 0.27742761748740347,
+      "p90": 0.35328333069516377,
+      "max": 0.4420237647519928,
+      "pct_of_samples_above_0_5": 0.0,
+      "mean_basket_vol_annualised": 0.3812448926751035
+    },
+    "corr cap 0.60": {
+      "samples": 60,
+      "mean_pairwise_correlation": 0.2396832206047647,
+      "median": 0.24194503821396734,
+      "p90": 0.292398494123333,
+      "max": 0.40816509389422045,
+      "pct_of_samples_above_0_5": 0.0,
+      "mean_basket_vol_annualised": 0.3544512128081724
+    },
+    "corr cap 0.50": {
+      "samples": 60,
+      "mean_pairwise_correlation": 0.2021894396578536,
+      "median": 0.20199254779832954,
+      "p90": 0.24805842544466483,
+      "max": 0.2935267143043514,
+      "pct_of_samples_above_0_5": 0.0,
+      "mean_basket_vol_annualised": 0.32098805253974877
+    }
+  },
+  "gates": [
+    {
+      "variant": "corr cap 0.70",
+      "passed": false,
+      "checks": [
+        {
+          "window": "early_2020_2022",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.18599999999999994,
+          "d_cagr": -0.02439999999999999,
+          "d_max_dd": 0.00010000000000000286
+        },
+        {
+          "window": "early_2020_2022",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.19599999999999995,
+          "d_cagr": -0.04930000000000001,
+          "d_max_dd": -0.021199999999999997
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.05800000000000005,
+          "d_cagr": -0.0121,
+          "d_max_dd": -0.0025000000000000022
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.06299999999999994,
+          "d_cagr": -0.02529999999999999,
+          "d_max_dd": -0.0032999999999999696
+        }
+      ]
+    },
+    {
+      "variant": "corr cap 0.60",
+      "passed": false,
+      "checks": [
+        {
+          "window": "early_2020_2022",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.1299999999999999,
+          "d_cagr": -0.0189,
+          "d_max_dd": 0.008800000000000002
+        },
+        {
+          "window": "early_2020_2022",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.1409999999999999,
+          "d_cagr": -0.0379,
+          "d_max_dd": 0.001899999999999985
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.05800000000000005,
+          "d_cagr": -0.016999999999999987,
+          "d_max_dd": 0.0012999999999999956
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.07000000000000006,
+          "d_cagr": -0.03469999999999998,
+          "d_max_dd": 0.003500000000000003
+        }
+      ]
+    },
+    {
+      "variant": "corr cap 0.50",
+      "passed": false,
+      "checks": [
+        {
+          "window": "early_2020_2022",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.09099999999999997,
+          "d_cagr": -0.014899999999999997,
+          "d_max_dd": 0.008800000000000002
+        },
+        {
+          "window": "early_2020_2022",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.10199999999999998,
+          "d_cagr": -0.029600000000000015,
+          "d_max_dd": 0.006399999999999989
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "base",
+          "passed": false,
+          "d_sharpe": -0.09800000000000009,
+          "d_cagr": -0.02940000000000001,
+          "d_max_dd": 0.006200000000000011
+        },
+        {
+          "window": "heldout_2023_plus",
+          "profile": "2x",
+          "passed": false,
+          "d_sharpe": -0.121,
+          "d_cagr": -0.059599999999999986,
+          "d_max_dd": 0.01100000000000001
+        }
+      ]
+    }
+  ],
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 control (production ranks)",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.105,
+        "ann_return": 0.1232,
+        "vol": 0.119,
+        "sharpe": 1.035,
+        "sortino": 1.287,
+        "max_dd": -0.0947,
+        "x_money": 1.335,
+        "profile": "base",
+        "variant": "control (production ranks)",
+        "mean_names_held": 40.0,
+        "annual_turnover": 15.90967741935484
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.70",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0806,
+        "ann_return": 0.0966,
+        "vol": 0.1137,
+        "sharpe": 0.849,
+        "sortino": 1.047,
+        "max_dd": -0.0946,
+        "x_money": 1.252,
+        "profile": "base",
+        "variant": "corr cap 0.70",
+        "mean_names_held": 40.0,
+        "annual_turnover": 19.468202764976958
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.60",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0861,
+        "ann_return": 0.1024,
+        "vol": 0.1132,
+        "sharpe": 0.905,
+        "sortino": 1.109,
+        "max_dd": -0.0859,
+        "x_money": 1.27,
+        "profile": "base",
+        "variant": "corr cap 0.60",
+        "mean_names_held": 40.0,
+        "annual_turnover": 22.52073732718894
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.50",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.0901,
+        "ann_return": 0.1067,
+        "vol": 0.113,
+        "sharpe": 0.944,
+        "sortino": 1.158,
+        "max_dd": -0.0859,
+        "x_money": 1.284,
+        "profile": "base",
+        "variant": "corr cap 0.50",
+        "mean_names_held": 40.0,
+        "annual_turnover": 25.473732718894013
+      },
+      {
+        "portfolio": "2x \u2014 control (production ranks)",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.1552,
+        "ann_return": 0.1963,
+        "vol": 0.238,
+        "sharpe": 0.825,
+        "sortino": 1.027,
+        "max_dd": -0.1873,
+        "x_money": 1.519,
+        "profile": "2x",
+        "variant": "control (production ranks)",
+        "mean_names_held": 40.0,
+        "annual_turnover": 15.90967741935484
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.70",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.1059,
+        "ann_return": 0.1431,
+        "vol": 0.2275,
+        "sharpe": 0.629,
+        "sortino": 0.777,
+        "max_dd": -0.2085,
+        "x_money": 1.338,
+        "profile": "2x",
+        "variant": "corr cap 0.70",
+        "mean_names_held": 40.0,
+        "annual_turnover": 19.468202764976958
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.60",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.1173,
+        "ann_return": 0.1548,
+        "vol": 0.2263,
+        "sharpe": 0.684,
+        "sortino": 0.839,
+        "max_dd": -0.1854,
+        "x_money": 1.379,
+        "profile": "2x",
+        "variant": "corr cap 0.60",
+        "mean_names_held": 40.0,
+        "annual_turnover": 22.52073732718894
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.50",
+        "from": "2020-02-06",
+        "to": "2022-12-30",
+        "years": 2.9,
+        "cagr": 0.1256,
+        "ann_return": 0.1633,
+        "vol": 0.226,
+        "sharpe": 0.723,
+        "sortino": 0.888,
+        "max_dd": -0.1809,
+        "x_money": 1.409,
+        "profile": "2x",
+        "variant": "corr cap 0.50",
+        "mean_names_held": 40.0,
+        "annual_turnover": 25.473732718894013
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 control (production ranks)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1623,
+        "ann_return": 0.1588,
+        "vol": 0.1243,
+        "sharpe": 1.278,
+        "sortino": 1.786,
+        "max_dd": -0.1355,
+        "x_money": 1.705,
+        "profile": "base",
+        "variant": "control (production ranks)",
+        "mean_names_held": 40.0,
+        "annual_turnover": 15.90967741935484
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.70",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1502,
+        "ann_return": 0.148,
+        "vol": 0.1213,
+        "sharpe": 1.22,
+        "sortino": 1.68,
+        "max_dd": -0.138,
+        "x_money": 1.643,
+        "profile": "base",
+        "variant": "corr cap 0.70",
+        "mean_names_held": 40.0,
+        "annual_turnover": 19.468202764976958
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.60",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1453,
+        "ann_return": 0.1432,
+        "vol": 0.1174,
+        "sharpe": 1.22,
+        "sortino": 1.695,
+        "max_dd": -0.1342,
+        "x_money": 1.618,
+        "profile": "base",
+        "variant": "corr cap 0.60",
+        "mean_names_held": 40.0,
+        "annual_turnover": 22.52073732718894
+      },
+      {
+        "portfolio": "base \u2014 corr cap 0.50",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1329,
+        "ann_return": 0.1316,
+        "vol": 0.1115,
+        "sharpe": 1.18,
+        "sortino": 1.64,
+        "max_dd": -0.1293,
+        "x_money": 1.557,
+        "profile": "base",
+        "variant": "corr cap 0.50",
+        "mean_names_held": 40.0,
+        "annual_turnover": 25.473732718894013
+      },
+      {
+        "portfolio": "2x \u2014 control (production ranks)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2657,
+        "ann_return": 0.2677,
+        "vol": 0.2486,
+        "sharpe": 1.077,
+        "sortino": 1.504,
+        "max_dd": -0.264,
+        "x_money": 2.307,
+        "profile": "2x",
+        "variant": "control (production ranks)",
+        "mean_names_held": 40.0,
+        "annual_turnover": 15.90967741935484
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.70",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2404,
+        "ann_return": 0.246,
+        "vol": 0.2426,
+        "sharpe": 1.014,
+        "sortino": 1.395,
+        "max_dd": -0.2673,
+        "x_money": 2.148,
+        "profile": "2x",
+        "variant": "corr cap 0.70",
+        "mean_names_held": 40.0,
+        "annual_turnover": 19.468202764976958
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.60",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.231,
+        "ann_return": 0.2365,
+        "vol": 0.2348,
+        "sharpe": 1.007,
+        "sortino": 1.399,
+        "max_dd": -0.2605,
+        "x_money": 2.091,
+        "profile": "2x",
+        "variant": "corr cap 0.60",
+        "mean_names_held": 40.0,
+        "annual_turnover": 22.52073732718894
+      },
+      {
+        "portfolio": "2x \u2014 corr cap 0.50",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2061,
+        "ann_return": 0.2132,
+        "vol": 0.2231,
+        "sharpe": 0.956,
+        "sortino": 1.328,
+        "max_dd": -0.253,
+        "x_money": 1.944,
+        "profile": "2x",
+        "variant": "corr cap 0.50",
+        "mean_names_held": 40.0,
+        "annual_turnover": 25.473732718894013
+      }
+    ]
+  },
+  "limitations": [
+    "Trailing correlation is noisy; a low cap degrades the momentum signal.",
+    "Skipping correlated names changes the signal, not just its risk.",
+    "Historical easy-to-borrow and locate availability is unavailable.",
+    "The universe of currently listed companies is survivorship-biased."
+  ]
+}
