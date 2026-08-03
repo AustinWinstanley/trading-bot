@@ -209,6 +209,52 @@ switching a control off globally: `risk.stop_exempt_sleeves` and
 Evidence usually covers one sleeve. Applying its conclusion everywhere invents
 support the study does not provide.
 
+### `equity_core` + `trend` silently capped at a quarter of their target
+
+Found in a 2026-08-03 review of the server journal: `max_position_pct` (15%
+base / 30% 2x) is a single-name concentration control, but `equity_core`
+(0.40) and `trend` (0.20) both hold SPY, so their combined target — 60% base,
+120% 2x — sat well above it. The gate did exactly what it's supposed to:
+shrunk every SPY buy back down to the cap. Live effect, confirmed from
+`state/paper.db`/`state/paper_2x.db`: SPY was rejected at the position cap on
+19 of the last ~19 base-profile opportunities and 14 of ~14 on 2x
+(2026-07-24 through 2026-08-03), realizing ~15%/~31% instead of the 60%/120%
+target — every un-invested difference sat in cash instead.
+
+Fixed with `risk.elevated_position_pct` / `risk.elevated_position_sleeves`
+(same shape as the stop/re-entry exemptions above): a symbol whose sleeve
+attribution is *entirely* within the listed sleeves gets the wider cap —
+`RiskLimits.position_cap_pct` requires every `+`-joined origin to qualify, so
+a name that's part index-core and part something else does not inherit it.
+Config validation refuses one of the pair without the other, and refuses an
+"elevated" value below the base cap — see `engine/config.py`.
+
+This was a config/backtest divergence of the same shape as the MOM_LS
+stop-loss finding: `backtest/production_portfolio.py` has never modeled a
+position cap at all, so every headline number already assumed SPY reached
+its full target. The gate, not the backtest, was silently describing a
+different portfolio. Re-run `scripts.run_daily --dry-run` after touching
+either `elevated_position_pct` value and check the SPY proposal is no longer
+shrunk for a cap reason before trusting a change here.
+
+### The IPO-age gate now uses a real, if approximate, listing date
+
+`scripts/run_daily.py` used to hardcode every symbol's `listed_days` to
+10,000, so `universe.exclude_ipo_days` (180) could never fire in production
+even though `tests/test_risk_gate.py` exercises it directly. Alpaca's asset
+endpoint carries no listing date at all, so there's no single free field to
+read. The fix fetches bars over a window comfortably longer than
+`exclude_ipo_days` (currently `max(400, exclude_ipo_days * 2 + 40)` calendar
+days) and uses the first bar's date as `listed_days` — the same proxy
+`scripts/weekly.py` already relies on for universe history length. Verified
+against a real recent listing: CRCL's first bar in that window lands on its
+actual 2025-06-05 IPO date. A symbol with no bars at all is treated as 0
+days (fails the gate) rather than as old — the liquidity gate would reject
+it anyway, and assuming "old" on missing data is the wrong direction to fail
+in. Note the proxy only resolves the threshold, not a precise listing date:
+a genuinely old symbol's `listed_days` is a lower bound (however far back
+the window reaches), which is fine since it still clears 180 either way.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized

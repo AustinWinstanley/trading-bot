@@ -138,6 +138,42 @@ def test_oversized_position_is_shrunk_not_rejected(cfg, account, clean_risk, ctx
     assert "max_position_pct" in " ".join(order.adjustments)
 
 
+def test_elevated_cap_sleeve_reaches_its_wider_target(cfg, account, clean_risk, ctx):
+    """SPY (equity_core+trend) can exceed the base 15% cap up to the elevated one."""
+    result = evaluate(
+        [buy("XLK", notional=4000.0, sleeve="equity_core+trend")], account, clean_risk, ctx, cfg
+    )
+    assert len(result.approved) == 1
+    order = result.approved[0]
+    assert cfg.risk.max_position_pct * EQUITY < order.notional
+    assert order.notional <= cfg.risk.elevated_position_pct * EQUITY + 0.01
+
+
+def test_non_elevated_sleeve_still_capped_at_the_base_limit(cfg, account, clean_risk, ctx):
+    """MOM_LS keeps the narrow cap — the wider one doesn't leak to other sleeves."""
+    result = evaluate([buy("XLK", notional=4000.0, sleeve="mom_ls")], account, clean_risk, ctx, cfg)
+    assert len(result.approved) == 1
+    order = result.approved[0]
+    cap = cfg.risk.max_position_pct * EQUITY
+    assert order.notional <= cap + 0.01
+    assert order.was_shrunk
+
+
+def test_partial_overlap_with_an_elevated_sleeve_does_not_widen_the_cap(cfg, account, clean_risk, ctx):
+    """A symbol only partly attributed to an elevated sleeve keeps the base cap.
+
+    Sleeve strings can be `+`-joined combinations of origins; the elevated
+    cap must require every contributing sleeve to qualify, not just one.
+    """
+    result = evaluate(
+        [buy("XLK", notional=4000.0, sleeve="equity_core+mom_ls")], account, clean_risk, ctx, cfg
+    )
+    assert len(result.approved) == 1
+    order = result.approved[0]
+    cap = cfg.risk.max_position_pct * EQUITY
+    assert order.notional <= cap + 0.01
+
+
 def test_repeated_proposals_for_same_symbol_cannot_stack_past_the_cap(cfg, account, clean_risk, ctx):
     """Five separate 15% requests must not add up to 75% of the account."""
     result = evaluate([buy("XLK", notional=690.0) for _ in range(5)], account, clean_risk, ctx, cfg)
@@ -295,6 +331,26 @@ def test_tsmom_uses_its_smaller_asset_etf_liquidity_floor(
 ):
     result = evaluate(
         [buy("THIN", limit=50.0, sleeve="tsmom")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert len(result.approved) == 1
+
+
+def test_tsmom_liquidity_floor_requires_exact_sleeve_membership(cfg, account, clean_risk, ctx):
+    """A sleeve name that merely contains "tsmom" as a substring must not
+    inherit its lower liquidity floor — only an exact "tsmom" origin does.
+    """
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="not_tsmom_at_all")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert only_rejection(result).startswith("20d avg dollar volume")
+
+
+def test_tsmom_floor_applies_when_combined_with_another_sleeve(cfg, account, clean_risk, ctx):
+    """A `+`-joined sleeve string still finds the exact "tsmom" part."""
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="tsmom+equity_core")],
         account, clean_risk, ctx, cfg,
     )
     assert len(result.approved) == 1
@@ -464,6 +520,59 @@ def test_stop_is_capped_so_a_bad_atr_cannot_create_an_absurd_stop(cfg):
 # --------------------------------------------------------------------------
 
 
+def _risk_limits(**overrides):
+    from engine.config import RiskLimits
+
+    base = dict(
+        max_position_pct=0.15,
+        max_leveraged_exposure_pct=0.20,
+        max_long_exposure_pct=1.00,
+        max_gross_exposure_pct=1.15,
+        max_positions=120,
+        stop_loss_pct=0.08,
+        stop_atr_multiple=2.0,
+        max_stop_distance_pct=0.15,
+        daily_loss_limit_pct=0.04,
+        monthly_kill_switch_pct=0.10,
+        peak_drawdown_halt_pct=0.18,
+        allow_averaging_down=False,
+        loss_reentry_block_days=5,
+        max_short_exposure_pct=0.15,
+    )
+    base.update(overrides)
+    return RiskLimits(**base)
+
+
+class TestPositionCapPct:
+    def test_disabled_by_default(self):
+        limits = _risk_limits()
+        assert limits.position_cap_pct("equity_core+trend") == 0.15
+
+    def test_widens_for_a_fully_qualifying_sleeve(self):
+        limits = _risk_limits(
+            elevated_position_pct=0.65,
+            elevated_position_sleeves=frozenset({"equity_core", "trend"}),
+        )
+        assert limits.position_cap_pct("equity_core+trend") == 0.65
+        assert limits.position_cap_pct("equity_core") == 0.65
+        assert limits.position_cap_pct("trend") == 0.65
+
+    def test_does_not_widen_a_partial_match(self):
+        limits = _risk_limits(
+            elevated_position_pct=0.65,
+            elevated_position_sleeves=frozenset({"equity_core", "trend"}),
+        )
+        assert limits.position_cap_pct("equity_core+mom_ls") == 0.15
+        assert limits.position_cap_pct("mom_ls") == 0.15
+
+    def test_empty_sleeve_string_never_widens(self):
+        limits = _risk_limits(
+            elevated_position_pct=0.65,
+            elevated_position_sleeves=frozenset({"equity_core", "trend"}),
+        )
+        assert limits.position_cap_pct("") == 0.15
+
+
 def _cfg_with(tmp_path, **overrides):
     import yaml
 
@@ -492,6 +601,13 @@ def _cfg_with(tmp_path, **overrides):
         {"account.starting_equity": -100},
         {"risk.peak_drawdown_halt_pct": 0.05},   # below the monthly switch — unreachable
         {"risk.max_stop_distance_pct": 0.02},    # below the stop floor
+        # The shipped config already sets both together, so each of the next
+        # two cases explicitly nulls the other field to isolate "one without
+        # the other" rather than accidentally re-asserting the shipped pair.
+        {"risk.elevated_position_pct": 0.65, "risk.elevated_position_sleeves": None},
+        {"risk.elevated_position_pct": None, "risk.elevated_position_sleeves": ["equity_core", "trend"]},
+        {"risk.elevated_position_pct": 0.10, "risk.elevated_position_sleeves": ["equity_core"]},  # narrows, not widens
+        {"paper_portfolio.mom_ls_min_dollar_volume": 100},  # below the daily gate floor
     ],
 )
 def test_dangerous_config_is_rejected_at_load(tmp_path, override):

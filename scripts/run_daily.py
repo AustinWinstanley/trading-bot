@@ -449,7 +449,16 @@ def main() -> None:
     symbol_data = {}
     if proposals:
         need = sorted({pr["symbol"] for pr in proposals})
-        bars = t.get_bars(need, today - dt.timedelta(days=90), today)
+        # Alpaca's asset endpoint carries no listing/IPO date, so listed_days
+        # is proxied from how far back bar history actually goes — the same
+        # technique scripts/weekly.py already relies on for universe history
+        # length. The window has to comfortably clear exclude_ipo_days or an
+        # old symbol looks artificially "recent" just because the fetch
+        # didn't reach back far enough; a name genuinely newer than the
+        # window is unaffected since we only need to resolve the threshold,
+        # not the exact listing date.
+        history_days = max(400, cfg.universe.exclude_ipo_days * 2 + 40)
+        bars = t.get_bars(need, today - dt.timedelta(days=history_days), today)
         for sym in need:
             df = bars.get(sym)
             px = reference_prices.get(sym) or (
@@ -459,6 +468,12 @@ def main() -> None:
             )
             a = float(atr(df, 14).iloc[-1]) if df is not None and len(df) >= 15 else px * 0.02
             adv = float((df["close"] * df["volume"]).tail(20).mean()) if df is not None and len(df) >= 20 else 0.0
+            # No bars at all is treated as unlisted/unknown (0 days), not as
+            # "old enough" — a name with no history shouldn't clear the IPO
+            # gate by default, and the liquidity gate rejects it anyway.
+            listed_days = (
+                (today - df.index[0].date()).days if df is not None and len(df) else 0
+            )
             shortable = False
             if any(pr["symbol"] == sym and pr["side"] == "short" for pr in proposals):
                 try:
@@ -467,7 +482,7 @@ def main() -> None:
                 except Exception:
                     shortable = False
             symbol_data[sym] = SymbolData(price=px, atr14=a, avg_dollar_volume_20d=adv,
-                                          listed_days=10_000,
+                                          listed_days=listed_days,
                                           is_leveraged=sym in cfg.leveraged_symbols,
                                           shortable=shortable)
 
