@@ -3,15 +3,41 @@
 #  - flock so a slow run can never overlap the next
 #  - dated logs
 #  - a non-zero exit writes a CRITICAL line the weekly report surfaces
+#  - optional ET slot guard (see below)
+#
+# The server clock is UTC and Debian cron has no CRON_TZ, so an ET schedule
+# needs two UTC lines per job — one that lands correctly under EDT and one
+# under EST. Both fire year-round, which ran every job twice a day and let the
+# off-DST copy trade an hour late. Passing the intended ET time as $2 makes the
+# wrong-half-of-the-year copy exit as a no-op, so exactly one runs whatever the
+# offset. Omit $2 to run unconditionally.
 set -u
 BOT=/home/austin/trading-bot
-LOG_DIR=$BOT/logs
+# Overridable so tests can exercise the slot guard without writing into the
+# production log the weekly report scrapes.
+LOG_DIR=${PAPER_LOG_DIR:-$BOT/logs}
 mkdir -p "$LOG_DIR"
 LOG=$LOG_DIR/paper-$(date -u +%Y%m%d).log
 JOB=${1:-daily}
+SLOT=${2:-}
+
+# Minutes since ET midnight, for the slot comparison.
+et_minutes() { local h=${1%%:*} m=${1##*:}; echo $((10#$h * 60 + 10#$m)); }
+
+if [ -n "$SLOT" ]; then
+  now_et=$(TZ=America/New_York date '+%H:%M')
+  delta=$(( $(et_minutes "$now_et") - $(et_minutes "$SLOT") ))
+  [ $delta -lt 0 ] && delta=$(( -delta ))
+  # The two candidate firings are 60 min apart; a 5 min window separates them
+  # unambiguously while tolerating cron lag.
+  if [ $delta -gt 5 ]; then
+    echo "=== $(date -u '+%F %T UTC') job=$JOB skip: ET $now_et != slot $SLOT ===" >>"$LOG"
+    exit 0
+  fi
+fi
 
 {
-  echo "=== $(date -u '+%F %T UTC') job=$JOB ==="
+  echo "=== $(date -u '+%F %T UTC') job=$JOB slot=${SLOT:-any} ==="
   flock -n 200 || { echo "CRITICAL: previous run still holds the lock"; exit 1; }
   cd "$BOT"
   case "$JOB" in

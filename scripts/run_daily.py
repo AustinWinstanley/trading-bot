@@ -63,6 +63,20 @@ def set_profile(name: str) -> tuple[str, str]:
     return cfg_file, env_sfx
 
 
+def append_report(path, day, lines: list[str]) -> None:
+    """Add one run's block to the day's report, keeping the earlier runs.
+
+    The daily job fires more than once a session. This used to truncate, so
+    the file on disk was always the *last* run — which is reliably the quiet
+    one, every order having been placed hours earlier. Days of real trading
+    were journalled as "approved 0 | submitted 0".
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    header = "" if path.exists() else f"# Paper {day}\n\n"
+    with path.open("a") as fh:
+        fh.write(header + "\n".join(lines) + "\n\n")
+
+
 def db() -> sqlite3.Connection:
     DB.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB)
@@ -507,9 +521,8 @@ def main() -> None:
     conn.commit()
     save_risk_state(st)
 
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
     lines = [
-        f"# Paper run {ts}",
+        f"## run {ts}",
         f"- equity ${equity:,.2f} | cash ${cash:,.2f} | positions {len(positions)}",
         f"- sleeves {diag['sleeve_counts']} | invested {diag['total_weight']:.0%} | cash target {diag['cash_weight']:.0%}",
         f"- proposals {len(proposals)} | approved {len(result.approved)} | rejected {len(result.rejected)} | submitted {submitted}",
@@ -520,7 +533,7 @@ def main() -> None:
         lines.append(f"- **HALT: {result.halt_reason}**")
     for n in result.notes:
         lines.append(f"- note: {n}")
-    (REPORT_DIR / f"{today}.md").write_text("\n".join(lines) + "\n")
+    append_report(REPORT_DIR / f"{today}.md", today, lines)
     print(f"done: {submitted} orders submitted")
     if submission_failures:
         print(f"CRITICAL: {len(submission_failures)} broker submission(s) failed")

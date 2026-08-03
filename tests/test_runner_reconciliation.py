@@ -105,3 +105,18 @@ def test_cancel_symbol_orders_is_scoped_and_dry_run_safe():
     assert canceled == []
     assert cancel_symbol_orders(FakeTrader(), "XLK", orders, dry_run=False) == 1
     assert canceled == ["a"]
+
+
+def test_report_keeps_every_run_of_the_day(tmp_path):
+    """Two runs a day is normal; the second must not erase the first."""
+    from scripts.run_daily import append_report
+
+    report = tmp_path / "2026-08-03.md"
+    append_report(report, "2026-08-03", ["## run 09:47", "- submitted 14"])
+    append_report(report, "2026-08-03", ["## run 12:35", "- submitted 0"])
+
+    body = report.read_text()
+    assert body.count("# Paper 2026-08-03") == 1        # title written once
+    assert "- submitted 14" in body                     # morning run survives
+    assert "- submitted 0" in body
+    assert body.index("09:47") < body.index("12:35")    # chronological
