@@ -44,12 +44,38 @@ class RiskLimits:
     # inert without it. Empty means every sleeve is stopped, as before.
     stop_exempt_sleeves: frozenset[str] = frozenset()
     reentry_block_exempt_sleeves: frozenset[str] = frozenset()
+    # A diversified-index sleeve combination (e.g. equity_core + trend, both
+    # SPY) can have a combined target above max_position_pct even though it
+    # carries none of the single-name risk that cap exists to bound. Without
+    # this, max_position_pct silently strangles the sleeve's target below
+    # what portfolio.py builds — confirmed live: SPY was rejected at the base
+    # cap on 19 of the last ~19 rebalance opportunities. `None` (the default)
+    # disables this entirely, matching pre-existing behaviour.
+    elevated_position_pct: float | None = None
+    elevated_position_sleeves: frozenset[str] = frozenset()
 
     def stops_apply_to(self, sleeve: str) -> bool:
         return sleeve not in self.stop_exempt_sleeves
 
     def reentry_block_applies_to(self, sleeve: str) -> bool:
         return sleeve not in self.reentry_block_exempt_sleeves
+
+    def position_cap_pct(self, sleeve: str) -> float:
+        """Max single-position fraction of equity for this proposal's sleeve.
+
+        A symbol's sleeve attribution can be a `+`-joined combination of
+        origins (`portfolio.py` builds e.g. `"equity_core+trend"` for SPY
+        when both sleeves hold it). The elevated cap applies only when
+        *every* contributing sleeve qualifies — a name that is part
+        index-core and part something else does not inherit the wider cap
+        through a substring match.
+        """
+        if self.elevated_position_pct is None or not self.elevated_position_sleeves:
+            return self.max_position_pct
+        parts = {p for p in sleeve.split("+") if p}
+        if parts and parts <= self.elevated_position_sleeves:
+            return self.elevated_position_pct
+        return self.max_position_pct
 
 
 @dataclass(frozen=True)
@@ -197,6 +223,14 @@ def load_config(path: Path | str | None = None) -> Config:
         reentry_block_exempt_sleeves=_sleeve_set(
             r.get("reentry_block_exempt_sleeves"), "risk.reentry_block_exempt_sleeves"
         ),
+        elevated_position_pct=(
+            _fraction(r["elevated_position_pct"], "risk.elevated_position_pct", high=3.0)
+            if r.get("elevated_position_pct") is not None
+            else None
+        ),
+        elevated_position_sleeves=_sleeve_set(
+            r.get("elevated_position_sleeves"), "risk.elevated_position_sleeves"
+        ),
     )
 
     # Averaging down is never permitted. Refuse to start rather than honour it.
@@ -225,6 +259,19 @@ def load_config(path: Path | str | None = None) -> Config:
         raise ConfigError(
             "risk.peak_drawdown_halt_pct must exceed risk.monthly_kill_switch_pct — "
             "the absolute halt has to sit below the monthly flatten, or it can never fire"
+        )
+    if bool(risk.elevated_position_sleeves) != (risk.elevated_position_pct is not None):
+        raise ConfigError(
+            "risk.elevated_position_pct and risk.elevated_position_sleeves must be set "
+            "together — one without the other is a no-op that reads as configured"
+        )
+    if (
+        risk.elevated_position_pct is not None
+        and risk.elevated_position_pct < risk.max_position_pct
+    ):
+        raise ConfigError(
+            "risk.elevated_position_pct must be >= risk.max_position_pct — it is meant "
+            "to widen the cap for the listed sleeves, not narrow it"
         )
 
     e = _require(raw, "execution", "")
@@ -310,6 +357,17 @@ def load_config(path: Path | str | None = None) -> Config:
                 _require(overlay, "min_scale", "paper_portfolio.volatility_overlay"),
                 "paper_portfolio.volatility_overlay.min_scale",
             )
+        mom_ls_floor = alloc.get("mom_ls")
+        if mom_ls_floor and "mom_ls_min_dollar_volume" in paper:
+            mom_ls_dv = float(paper["mom_ls_min_dollar_volume"])
+            if mom_ls_dv < universe.min_avg_dollar_volume:
+                raise ConfigError(
+                    "paper_portfolio.mom_ls_min_dollar_volume "
+                    f"({mom_ls_dv:,.0f}) must be >= universe.min_avg_dollar_volume "
+                    f"({universe.min_avg_dollar_volume:,.0f}) — selection is meant to be "
+                    "at least as strict as the daily risk gate, or the gate silently "
+                    "becomes the real filter and the weekly one is decorative"
+                )
 
     return Config(
         mode=mode,

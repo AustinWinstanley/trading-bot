@@ -45,6 +45,18 @@ risk:
   # own signal. Empty lists restore the old behaviour everywhere.
   stop_exempt_sleeves: [mom_ls]
   reentry_block_exempt_sleeves: [mom_ls]
+  # equity_core (0.40) + trend (0.20) target 60% of equity in SPY whenever
+  # trend is on — both sleeves are the same diversified index, not a
+  # concentrated single-name bet, so the per-name cap that exists to bound
+  # idiosyncratic risk doesn't apply to their combination the way it does to
+  # a MOM_LS or TSMOM name. Without this, max_position_pct silently capped
+  # the sleeve at a quarter of its target: confirmed live, SPY was rejected
+  # at the 15% cap on 19 of the last ~19 rebalance opportunities
+  # (2026-07-24 through 2026-08-03), holding ~15% instead of 60%. 0.65 is
+  # the 60% target plus headroom so ordinary price drift between rebalances
+  # doesn't immediately re-trip the cap.
+  elevated_position_pct: 0.65
+  elevated_position_sleeves: [equity_core, trend]
 
 sleeves:
   momentum:
@@ -111,6 +123,15 @@ paper_portfolio:
   clone_top_n: 3
   mom_ls_top_n: 20
   mom_ls_min_price: 5.0
+  # Two liquidity floors govern MOM_LS, deliberately, at different times:
+  # this one filters candidates when scripts/weekly.py ranks the universe
+  # (stricter, so a name has to be liquid at selection); universe.
+  # min_avg_dollar_volume above is the daily risk-gate floor every proposal
+  # is re-checked against regardless of sleeve. This one must stay >= that
+  # one — it's the backstop against a name's liquidity decaying over the
+  # week between selection and the daily rebalance trade that fills it, not
+  # a second copy of the same number. If they ever need to diverge the other
+  # way, the gate becomes the binding constraint and this comment is wrong.
   mom_ls_min_dollar_volume: 5000000
   # weekly-built target file; sleeve stands down if this goes stale
   mom_ls_targets_file: state/mom_ls_targets.json

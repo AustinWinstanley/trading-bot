@@ -163,6 +163,19 @@ class GateResult:
 # --------------------------------------------------------------------------
 
 
+def _sleeve_contains(sleeve: str, name: str) -> bool:
+    """Whether `name` is one of the `+`-joined origins in a sleeve string.
+
+    `portfolio.py` builds sleeve attribution by concatenation (e.g.
+    `"equity_core+trend"` for SPY when both sleeves hold it), so a plain
+    substring test (`name in sleeve`) would also match an unrelated sleeve
+    whose name happens to contain `name`, or a compound string that merely
+    has it as a fragment. This checks exact membership among the split
+    parts instead — the same exactness the stop/re-entry exemption sets use.
+    """
+    return name in sleeve.split("+")
+
+
 def stop_distance_pct(cfg: Config, price: float, atr14: float) -> float:
     """Stop distance as a positive fraction of price.
 
@@ -479,7 +492,7 @@ def evaluate(
             adjustments = [] if approved_notional == requested else [
                 f"shrunk to max_short_exposure_pct ({requested:,.2f} -> {approved_notional:,.2f})"]
 
-            per_name_cap = cfg.risk.max_position_pct * account.equity
+            per_name_cap = cfg.risk.position_cap_pct(clean["sleeve"]) * account.equity
             if approved_notional > per_name_cap:
                 adjustments.append(f"shrunk to max_position_pct ({approved_notional:,.2f} -> {per_name_cap:,.2f})")
                 approved_notional = per_name_cap
@@ -529,7 +542,7 @@ def evaluate(
             )
             continue
         min_dollar_volume = cfg.universe.min_avg_dollar_volume
-        if "tsmom" in clean["sleeve"]:
+        if _sleeve_contains(clean["sleeve"], "tsmom"):
             min_dollar_volume = float(
                 cfg.sleeves_paper.get(
                     "tsmom_min_dollar_volume", min_dollar_volume
@@ -601,8 +614,12 @@ def evaluate(
 
         approved_notional = requested
 
-        # Max single position, counting anything already held.
-        cap = cfg.risk.max_position_pct * account.equity
+        # Max single position, counting anything already held. A symbol whose
+        # sleeve attribution is entirely within risk.elevated_position_sleeves
+        # (e.g. SPY held by both equity_core and trend) gets the wider cap —
+        # see RiskLimits.position_cap_pct.
+        position_cap_pct = cfg.risk.position_cap_pct(clean["sleeve"])
+        cap = position_cap_pct * account.equity
         existing = held.market_value if held else 0.0
         already_committed = committed_notional.get(symbol, 0.0)
         room = cap - existing - already_committed
@@ -611,14 +628,14 @@ def evaluate(
                 RejectedProposal(
                     symbol,
                     f"position cap reached: {existing + already_committed:,.2f} already at/over "
-                    f"{cfg.risk.max_position_pct:.0%} of equity ({cap:,.2f})",
+                    f"{position_cap_pct:.0%} of equity ({cap:,.2f})",
                     raw,
                 )
             )
             continue
         if approved_notional > room:
             adjustments.append(
-                f"shrunk to max_position_pct {cfg.risk.max_position_pct:.0%} "
+                f"shrunk to max_position_pct {position_cap_pct:.0%} "
                 f"({requested:,.2f} -> {room:,.2f})"
             )
             approved_notional = room

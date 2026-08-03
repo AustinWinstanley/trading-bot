@@ -23,6 +23,11 @@ risk:
   # See config.yaml — the overlay cost 1.38-1.44pp of CAGR on this profile.
   stop_exempt_sleeves: [mom_ls]
   reentry_block_exempt_sleeves: [mom_ls]
+  # See config.yaml — same gap, doubled: equity_core+trend target 120% here
+  # (0.60 * 2x leverage), confirmed live rejected at the 30% cap on 14 of the
+  # last ~14 opportunities. 1.30 is the 120% target plus headroom.
+  elevated_position_pct: 1.30
+  elevated_position_sleeves: [equity_core, trend]
 sleeves:
   momentum:
     allocation: 0.45
