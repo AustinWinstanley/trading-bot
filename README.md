@@ -44,19 +44,30 @@ a loss re-entry cooldown — see [Sleeves without stops](#sleeves-without-stops)
 
 ## Current research estimate
 
-The production-equivalent 2020–2026 backtest includes transaction costs, 3%
-short borrow, and 5% margin financing:
+The production-equivalent backtest includes transaction costs, 3% short
+borrow, and 5% margin financing, over 2020-07-28 through 2026-07-22:
 
 | Portfolio | CAGR | Sharpe | Max drawdown |
 | --- | ---: | ---: | ---: |
-| Base SPY-core profile | 12.55% | 1.081 | -13.23% |
-| 2× SPY-core profile | 19.13% | 0.879 | -25.81% |
-| SPY buy and hold | 14.99% | 0.883 | -24.50% |
+| Base SPY-core profile | 13.46% | 1.129 | -13.83% |
+| 2× SPY-core profile | 20.77% | 0.918 | -26.82% |
+| SPY buy and hold | 16.64% | 1.003 | -24.50% |
 
 These are estimates, not forecasts. The individual-stock universe contains
 currently listed companies and is survivorship-biased. Positive MOM_LS results
 are therefore an optimistic upper bound. The sample is also short and dominated
 by the post-2020 market.
+
+**The window starts 2020-07-28, not 2020-02-13, and contains no COVID-crash
+observation.** The cross-sectional stock panel behind MOM_LS has no usable
+data before that date for any symbol — it isn't a sampling choice, it's where
+the underlying free-tier data begins. An earlier version of this table used a
+panel with a handful of pre-2020-07-27 rows that each compressed several
+weeks of return into a single "daily" observation, which understated
+drawdown and overstated Sharpe; those rows are now dropped rather than
+trusted. See `AGENTS.md` ("The cross-sectional panel has no COVID-crash
+coverage") for exact bar counts and what this means for the `early_2020_2022`
+window specifically.
 
 **These numbers only describe what is deployed if production does not add
 untested behaviour on top.** `backtest/production_portfolio.py` models MOM_LS as
@@ -73,8 +84,8 @@ delisting a total loss bound the production estimate:
 
 | Delisting assumption | Base CAGR | Base Sharpe | 2× CAGR | 2× Sharpe |
 | --- | ---: | ---: | ---: | ---: |
-| Observed last price | 12.45% | 1.072 | 18.92% | 0.871 |
-| Every delisting loses 100% | 11.66% | 1.011 | 17.26% | 0.810 |
+| Observed last price | 13.32% | 1.118 | 20.47% | 0.907 |
+| Every delisting loses 100% | 12.33% | 1.042 | 18.36% | 0.832 |
 
 MOM_LS remains positive across those bounds, but historical borrowability and
 actual delisting proceeds are unavailable, so this reduces rather than removes
@@ -87,10 +98,10 @@ realizes 25.04% versus 30%, with 3.9% rounding to zero:
 
 | Construction | Base short | Base CAGR / Sharpe | 2× short | 2× CAGR / Sharpe |
 | --- | ---: | ---: | ---: | ---: |
-| Fractional benchmark | 15.00% | 12.63% / 1.087 | 30.00% | 19.31% / 0.886 |
-| Current whole-share bottom 20 | 9.14% | 12.33% / 1.041 | 25.04% | 18.95% / 0.868 |
-| Price-aware bottom 20 | 12.12% | 12.30% / 1.055 | 26.06% | 18.92% / 0.868 |
-| Whole-share bottom 10 | 12.26% | 12.57% / 1.061 | 27.62% | 18.64% / 0.849 |
+| Fractional benchmark | 15.00% | 13.56% / 1.136 | 30.00% | 20.97% / 0.925 |
+| Current whole-share bottom 20 | 9.18% | 13.09% / 1.078 | 25.21% | 20.42% / 0.901 |
+| Price-aware bottom 20 | 12.15% | 12.93% / 1.084 | 26.11% | 20.36% / 0.900 |
+| Whole-share bottom 10 | 12.30% | 13.33% / 1.094 | 27.59% | 19.70% / 0.865 |
 
 Neither alternative dominates across the early and held-out windows, so the
 current construction remains deployed while real paper fills accumulate.
@@ -102,10 +113,10 @@ estimates. With the deliberately severe universal-zero delisting drag applied:
 
 | Profile / horizon | CAGR p05 | Median | CAGR p95 | Chance of loss | Drawdown p05 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Base, 1 year | -4.3% | 12.4% | 31.3% | 11.4% | -15.8% |
-| Base, 3 years annualized | 2.2% | 12.3% | 22.9% | 2.0% | -20.3% |
-| 2×, 1 year | -13.1% | 18.4% | 60.4% | 18.1% | -30.4% |
-| 2×, 3 years annualized | -1.2% | 18.4% | 41.1% | 6.4% | -39.1% |
+| Base, 1 year | -4.9% | 12.4% | 31.3% | 12.0% | -15.8% |
+| Base, 3 years annualized | 2.1% | 12.2% | 23.2% | 2.3% | -20.4% |
+| 2×, 1 year | -14.0% | 19.2% | 59.9% | 18.2% | -30.0% |
+| 2×, 3 years annualized | -1.1% | 18.6% | 41.6% | 6.2% | -39.0% |
 
 These are conditional scenario ranges, not calibrated forecast probabilities.
 Resampling cannot create crises or regimes absent from the short 2020–2026
@@ -134,11 +145,11 @@ Because they trade the same sleeves, an equal-dollar split is approximately a
 
 | Capital in 2× account | Nominal combined leverage | Recent CAGR / max drawdown | 2007–2026 proxy CAGR / max drawdown |
 | ---: | ---: | ---: | ---: |
-| 0% | 1.00× | 12.33% / -13.99% | 7.80% / -26.25% |
-| 25% | 1.25× | 14.10% / -17.18% | 8.26% / -33.05% |
-| 50% (current paper split) | 1.50× | 15.80% / -20.28% | 8.66% / -39.31% |
-| 75% | 1.75× | 17.42% / -23.30% | 8.98% / -45.05% |
-| 100% | 2.00× | 18.95% / -26.23% | 9.22% / -50.30% |
+| 0% | 1.00× | 13.09% / -14.62% | 7.81% / -26.49% |
+| 25% | 1.25× | 15.03% / -17.87% | 8.28% / -33.34% |
+| 50% (current paper split) | 1.50× | 16.90% / -21.03% | 8.67% / -39.62% |
+| 75% | 1.75× | 18.70% / -24.09% | 8.99% / -45.38% |
+| 100% | 2.00× | 20.42% / -27.09% | 9.24% / -50.63% |
 
 For the current equal split, the severe recent-history bootstrap estimates a
 15.5% chance of a negative one-year CAGR and a 46.1% chance of a drawdown over

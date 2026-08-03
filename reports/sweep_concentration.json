@@ -41,7 +41,9 @@
         "avg_days": 14.4
       }
     ],
-    "overrides": {}
+    "overrides": {},
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "no-meanrev 60/40",
@@ -82,7 +84,9 @@
       "sleeves.mean_reversion.allocation": 0.0,
       "sleeves.pead.allocation": 0.0,
       "sleeves.leveraged.allocation": 0.4
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "no-meanrev top2",
@@ -124,7 +128,9 @@
       "sleeves.mean_reversion.allocation": 0.0,
       "sleeves.pead.allocation": 0.0,
       "sleeves.leveraged.allocation": 0.4
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "no-meanrev top3",
@@ -166,7 +172,9 @@
       "sleeves.mean_reversion.allocation": 0.0,
       "sleeves.pead.allocation": 0.0,
       "sleeves.leveraged.allocation": 0.4
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "momentum-only top2",
@@ -200,7 +208,9 @@
       "sleeves.mean_reversion.allocation": 0.0,
       "sleeves.pead.allocation": 0.0,
       "sleeves.leveraged.allocation": 0.0
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "momentum-only top4",
@@ -233,7 +243,9 @@
       "sleeves.mean_reversion.allocation": 0.0,
       "sleeves.pead.allocation": 0.0,
       "sleeves.leveraged.allocation": 0.0
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "leveraged-only",
@@ -268,7 +280,9 @@
       "sleeves.leveraged.allocation": 1.0,
       "risk.max_leveraged_exposure_pct": 1.0,
       "risk.max_position_pct": 0.4
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   },
   {
     "variant": "aggressive 40/60 top3",
@@ -312,6 +326,8 @@
       "sleeves.leveraged.allocation": 0.6,
       "risk.max_leveraged_exposure_pct": 0.6,
       "risk.max_position_pct": 0.25
-    }
+    },
+    "unreliable": true,
+    "unreliable_reason": "Same superseded legacy engine as backtest_2010.json, with 0 to 102 drawdown-halt/restart events across its variants \u2014 the halt mechanic makes the variants non-comparable to each other, let alone to current research. No campaign ever drew a decision from this file. Retained for history only."
   }
 ]

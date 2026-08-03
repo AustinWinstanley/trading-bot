@@ -125,5 +125,7 @@
       "insider_net": -0.4538,
       "mom_12_1": 1.0
     }
-  }
+  },
+  "unreliable": true,
+  "unreliable_reason": "reports/quality_momentum_filter_feasibility.json audited the code that produced these numbers and found it uses filed_date (not the SEC acceptance timestamp) and a current, not point-in-time, CIK-to-symbol map \u2014 both look-ahead risks, plus omission of delisted names. Treat every Sharpe here as upper-bound and contaminated, not a measured result; it is cited elsewhere only as the reason to defer the quality filter, never as a standalone finding."
 }
