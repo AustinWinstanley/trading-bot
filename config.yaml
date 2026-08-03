@@ -35,6 +35,16 @@ risk:
   allow_averaging_down: false       # never true
   loss_reentry_block_days: 5        # no re-entry in a ticker exited at a loss
   max_short_exposure_pct: 0.15      # total short notional cap (matches MOM_LS target)
+  # Per-position stops and the revenge-trade block were never backtested on
+  # MOM_LS — production_portfolio.py models a pure weekly rebalance. When they
+  # finally were (reports/risk_overlay_study.json) the stop cost 0.69-1.44pp of
+  # CAGR and Sharpe in BOTH windows and BOTH profiles, and raised turnover 36%.
+  # The block does nothing without the stop: a rotation exit drops a name from
+  # the ranks anyway, so only a stop-out leaves one ranked and then barred.
+  # A sleeve that rebalances weekly does not also need to be stopped out of its
+  # own signal. Empty lists restore the old behaviour everywhere.
+  stop_exempt_sleeves: [mom_ls]
+  reentry_block_exempt_sleeves: [mom_ls]
 
 sleeves:
   momentum:

@@ -575,10 +575,13 @@ def main() -> None:
                     order.symbol, alpaca_side, order.qty, order.limit_price,
                     order.stop_price, client_order_id=order_id,
                 )
-                if not broker_protected:
+                if not broker_protected and order.stop_price:
                     # Alpaca permits fractional entries only as simple orders.
                     # Persist the stop before committing the order journal so a
                     # later fill is protected by the software monitor.
+                    # A zero stop means the sleeve is deliberately unstopped;
+                    # writing the row would claim protection that is not there
+                    # and mask it from the healthcheck.
                     conn.execute(
                         "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
                         (

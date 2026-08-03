@@ -20,6 +20,9 @@ risk:
   allow_averaging_down: false
   loss_reentry_block_days: 5
   max_short_exposure_pct: 0.3
+  # See config.yaml — the overlay cost 1.38-1.44pp of CAGR on this profile.
+  stop_exempt_sleeves: [mom_ls]
+  reentry_block_exempt_sleeves: [mom_ls]
 sleeves:
   momentum:
     allocation: 0.45

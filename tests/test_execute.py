@@ -91,3 +91,28 @@ def test_protected_order_rejects_stop_on_wrong_side(side, entry, stop):
     trader = trader_without_network()
     with pytest.raises(AlpacaError):
         trader.submit_protected_limit("XLK", side, 1.0, entry, stop)
+
+
+def test_submit_entry_sends_a_plain_limit_when_there_is_no_stop(monkeypatch):
+    """A zero stop means the sleeve is deliberately unstopped. Sending it as an
+    OTO would attach a stop at 0 -- inert for a long, instant for a short."""
+    from engine.execute import Trader
+
+    t = Trader.__new__(Trader)
+    calls = []
+    monkeypatch.setattr(
+        Trader, "submit_limit",
+        lambda self, *a, **k: calls.append(("limit", a, k)) or {"id": "x"},
+    )
+    monkeypatch.setattr(
+        Trader, "submit_protected_limit",
+        lambda self, *a, **k: calls.append(("oto", a, k)) or {"id": "y"},
+    )
+
+    order, broker_protected = t.submit_entry("MU", "sell", 5.0, 100.0, 0.0)
+    assert [c[0] for c in calls] == ["limit"]
+    assert broker_protected is False
+
+    calls.clear()
+    t.submit_entry("MU", "sell", 5.0, 100.0, 110.0)
+    assert [c[0] for c in calls] == ["oto"]

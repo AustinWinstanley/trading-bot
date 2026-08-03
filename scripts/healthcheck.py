@@ -8,11 +8,29 @@ import os
 import sqlite3
 from zoneinfo import ZoneInfo
 
+from engine.config import load_config
 from engine.data import REPO_ROOT, load_env
 from engine.execute import Trader
 from scripts.run_daily import PROFILES, is_protective_order
 
 ET = ZoneInfo("America/New_York")
+
+
+def unstopped_from_journal(conn: sqlite3.Connection, exempt_sleeves: frozenset[str]) -> set[str]:
+    """Symbols whose most recent entry came from a deliberately unstopped sleeve.
+
+    Keyed on the latest opening order rather than the current target list: a
+    position lingers after its sleeve drops it, and until it is closed it is
+    still the unstopped position that sleeve opened.
+    """
+    if not exempt_sleeves:
+        return set()
+    rows = conn.execute(
+        "SELECT symbol, sleeve FROM orders WHERE side IN ('buy','short') "
+        "AND ts = (SELECT MAX(ts) FROM orders o2 WHERE o2.symbol = orders.symbol "
+        "          AND o2.side IN ('buy','short'))"
+    ).fetchall()
+    return {str(sym) for sym, sleeve in rows if str(sleeve) in exempt_sleeves}
 
 
 def assess_health(
@@ -26,6 +44,7 @@ def assess_health(
     max_age_hours: float,
     allow_pristine: bool = False,
     journal_is_pristine: bool = False,
+    unstopped_symbols: set[str] | None = None,
 ) -> list[str]:
     problems: list[str] = []
     if account_status != "ACTIVE":
@@ -55,9 +74,15 @@ def assess_health(
         for order in open_orders
         if is_protective_order(order)
     }
+    # Positions opened by a sleeve in risk.stop_exempt_sleeves carry no stop by
+    # design, so an alert on them would be permanent noise. Everything else
+    # missing a stop is still a real problem.
+    unstopped = unstopped_symbols or set()
     for position in positions:
         symbol = str(position.get("symbol", ""))
-        if symbol and symbol not in protected and symbol not in fallback_stops:
+        if not symbol or symbol in unstopped:
+            continue
+        if symbol not in protected and symbol not in fallback_stops:
             problems.append(f"{symbol}: position has no broker or fallback stop")
 
     for order in open_orders:
@@ -100,11 +125,16 @@ def main() -> None:
     positions = trader.get_positions()
     orders = trader.open_orders()
 
+    cfg_file, _, _ = PROFILES[args.profile]
+    exempt_sleeves = load_config(REPO_ROOT / cfg_file).risk.stop_exempt_sleeves
+
     last_snapshot = None
     fallback_stops: set[str] = set()
+    unstopped_symbols: set[str] = set()
     journal_is_pristine = True
     if db_path.exists():
         conn = sqlite3.connect(db_path)
+        unstopped_symbols = unstopped_from_journal(conn, exempt_sleeves)
         row = conn.execute("SELECT MAX(ts) FROM snapshots").fetchone()
         if row and row[0]:
             last_snapshot = dt.datetime.fromisoformat(row[0])
@@ -127,6 +157,7 @@ def main() -> None:
         max_age_hours=args.max_age_hours,
         allow_pristine=args.allow_pristine,
         journal_is_pristine=journal_is_pristine,
+        unstopped_symbols=unstopped_symbols,
     )
     print(
         f"profile={args.profile} equity={account.get('equity')} "
