@@ -13,14 +13,20 @@ from backtest.production_portfolio import (
     TD,
     build_streams,
     norm_index,
+    require_history,
     returns_summary,
 )
 from engine.config import load_config
 from engine.tiingo import load_parquet
 
 
-def trend_stream(close: pd.DataFrame, variant: str) -> pd.Series:
-    returns = close.pct_change()
+def trend_stream(
+    close: pd.DataFrame,
+    variant: str,
+    *,
+    min_assets: int = 1,
+) -> pd.Series:
+    returns = close.pct_change(fill_method=None)
     inverse_vol = 1 / (
         returns.rolling(63, min_periods=40).std() * np.sqrt(TD)
     ).clip(lower=0.04)
@@ -41,13 +47,18 @@ def trend_stream(close: pd.DataFrame, variant: str) -> pd.Series:
     weights = weights.div(weights.abs().sum(axis=1).replace(0, np.nan), axis=0)
     weights = weights.fillna(0).shift(1)
     gross = (weights * returns).sum(axis=1)
-    return gross - weights.diff().abs().sum(axis=1) * 8 / 10_000
+    result = gross - weights.diff().abs().sum(axis=1) * 8 / 10_000
+    enough_history = close.shift(252).notna().sum(axis=1) >= min_assets
+    return result.where(enough_history).dropna()
 
 
 def main() -> None:
     cfg = load_config()
     frames = load_parquet(
         cfg.sleeves_paper["tsmom_universe"], Path("state/history_assets")
+    )
+    require_history(
+        cfg.sleeves_paper["tsmom_universe"], frames, label="TSMOM"
     )
     close = pd.DataFrame({
         symbol: norm_index(frame["close"]) for symbol, frame in frames.items()
@@ -58,7 +69,9 @@ def main() -> None:
         "ensemble majority long_flat",
         "ensemble long_short",
     )
-    streams = {name: trend_stream(close, name) for name in variants}
+    streams = {
+        name: trend_stream(close, name, min_assets=8) for name in variants
+    }
     production = build_streams()
     core = (
         0.40 * production["spy"]
@@ -85,6 +98,7 @@ def main() -> None:
             "Keep deployed 12-month long/flat. Multi-horizon and long/short "
             "variants do not improve the production portfolio."
         ),
+        "minimum_assets_with_12m_history": 8,
         "standalone": standalone,
         "production_portfolio": portfolio,
     }, indent=2))

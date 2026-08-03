@@ -15,9 +15,11 @@ import json
 import sqlite3
 from pathlib import Path
 
+from engine.attribution import execution_summary
 from engine.data import REPO_ROOT
 
 DB = REPO_ROOT / "state" / "paper.db"
+DB_2X = REPO_ROOT / "state" / "paper_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
@@ -140,11 +142,11 @@ def build_mom_ls_targets() -> list[str]:
     return notes
 
 
-def summarize_week() -> list[str]:
+def summarize_week(db_path: Path = DB) -> list[str]:
     lines = []
-    if not DB.exists():
+    if not db_path.exists():
         return ["no journal yet"]
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(db_path)
     week_ago = (dt.datetime.now() - dt.timedelta(days=7)).isoformat()
 
     snaps = conn.execute(
@@ -168,6 +170,62 @@ def summarize_week() -> list[str]:
     if rejs:
         lines.append("top gate rejections:")
         lines += [f"  {n:>4}x {reason[:100]}" for reason, n in rejs]
+
+    attribution = execution_summary(conn, week_ago)
+    execution = attribution["overall"]
+    if execution["orders"]:
+        slippage = execution["adverse_slippage_bps"]
+        slip_text = f"{slippage:+.2f} bp" if slippage is not None else "pending"
+        lines.append(
+            f"execution: {execution['filled_orders']}/{execution['orders']} orders "
+            f"filled; {execution['fill_pct']:.1f}% of approved notional; "
+            f"approval {execution['approval_pct']:.1f}% of requested; "
+            f"adverse slippage {slip_text}"
+        )
+        for sleeve, row in attribution["by_sleeve"].items():
+            sleeve_slip = row["adverse_slippage_bps"]
+            sleeve_slip_text = (
+                f"{sleeve_slip:+.2f} bp"
+                if sleeve_slip is not None else "pending"
+            )
+            lines.append(
+                f"  {sleeve}: {row['filled_orders']}/{row['orders']} filled, "
+                f"{row['fill_pct']:.1f}% notional, slippage {sleeve_slip_text}"
+            )
+    rejects = attribution["rejections"]
+    if rejects["whole_share_rounding"] or rejects["hard_to_borrow"]:
+        lines.append(
+            f"short execution gaps: {rejects['whole_share_rounding']} whole-share "
+            f"rounding, {rejects['hard_to_borrow']} hard-to-borrow; "
+            f"${rejects['requested_notional']:,.2f} total rejected notional"
+        )
+    exposure = attribution["latest_exposure"]
+    if exposure:
+        lines.append(
+            f"latest exposure target L/S/G "
+            f"{exposure['target_long']:.1%}/{exposure['target_short']:.1%}/"
+            f"{exposure['target_gross']:.1%}; actual "
+            f"{exposure['actual_long']:.1%}/{exposure['actual_short']:.1%}/"
+            f"{exposure['actual_gross']:.1%}"
+        )
+        for sleeve, row in exposure["by_sleeve"].items():
+            lines.append(
+                f"  {sleeve}: actual gross {row['gross']:.1%}, "
+                f"net {row['net']:+.1%}, unrealized P&L "
+                f"${row['unrealized_pl']:+,.2f}"
+            )
+    leverage = attribution["latest_leverage_recommendation"]
+    if leverage and leverage["mode"] != "off":
+        vol_text = (
+            f"{leverage['realized_vol']:.1%}"
+            if leverage["realized_vol"] is not None else "pending"
+        )
+        lines.append(
+            f"volatility overlay {leverage['mode']}: "
+            f"{leverage['observations']} observations, realized {vol_text}, "
+            f"recommended {leverage['recommended_leverage']:.2f}× "
+            f"({leverage['reason']})"
+        )
 
     # CRITICAL lines from this week's logs. Windowed by date, not by file
     # count — logs only exist for days the bot ran, so "last 8 files" silently
@@ -195,8 +253,10 @@ def main() -> None:
         body += [f"- {n}" for n in build_mom_ls_targets()]
     except Exception as exc:
         body += [f"- CRITICAL: mom_ls target build failed: {type(exc).__name__}: {exc}"]
-    body += ["", "## Week in review"]
-    body += [f"- {l}" for l in summarize_week()]
+    body += ["", "## Base account"]
+    body += [f"- {l}" for l in summarize_week(DB)]
+    body += ["", "## 2× account"]
+    body += [f"- {l}" for l in summarize_week(DB_2X)]
     out = REPORT_DIR / f"weekly-{today}.md"
     out.write_text("\n".join(body) + "\n")
     print(f"wrote {out}")

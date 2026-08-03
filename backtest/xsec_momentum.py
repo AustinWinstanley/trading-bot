@@ -31,6 +31,21 @@ from backtest.xsec_data import load
 TRADING_DAYS = 252
 
 
+def operating_stock_symbols(
+    classified: list[str],
+    available: pd.Index,
+    *,
+    exclude: set[str] | None = None,
+) -> list[str]:
+    """Return unique operating stocks without benchmark/ETF duplicates."""
+    excluded = exclude or set()
+    available_set = set(available)
+    return list(dict.fromkeys(
+        symbol for symbol in classified
+        if symbol in available_set and symbol not in excluded
+    ))
+
+
 def build_portfolio(
     close: pd.DataFrame,
     volume: pd.DataFrame,
@@ -44,6 +59,7 @@ def build_portfolio(
     cost_bps: float = 15.0,
     long_only: bool = True,
     short_bottom: bool = False,
+    return_overrides: pd.DataFrame | None = None,
 ) -> tuple[pd.Series, pd.DataFrame]:
     """Equal-weight the top momentum names, rebalanced every `rebalance` days."""
     dollar_volume = (close * volume).rolling(20, min_periods=10).mean()
@@ -61,6 +77,11 @@ def build_portfolio(
     )
 
     daily_returns = close.pct_change()
+    if return_overrides is not None:
+        aligned = return_overrides.reindex(
+            index=daily_returns.index, columns=daily_returns.columns
+        )
+        daily_returns = daily_returns.mask(aligned.notna(), aligned)
     rebalance_days = close.index[lookback + skip :: rebalance]
 
     weights = pd.DataFrame(0.0, index=close.index, columns=close.columns, dtype="float32")
@@ -127,7 +148,9 @@ def main() -> None:
     # products (TQQQ, SOXL, UPRO) dominate every momentum ranking in a bull
     # market, which measures embedded leverage, not the momentum anomaly.
     classified = json.loads(Path("state/universe_classified.json").read_text())
-    stocks = [s for s in classified["stocks"] if s in close.columns]
+    stocks = operating_stock_symbols(
+        classified["stocks"], close.columns, exclude={"SPY"}
+    )
     keep = stocks + (["SPY"] if "SPY" in close.columns else [])
     close, volume = close[keep], volume[keep]
     print(f"  restricted to {len(stocks):,} operating companies (+SPY benchmark)")
