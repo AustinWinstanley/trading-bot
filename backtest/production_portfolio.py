@@ -88,6 +88,21 @@ def trend_stream(spy: pd.Series, ma_days: int = 200) -> pd.Series:
     return trend_on * spy_return
 
 
+def resample_returns(daily_returns: pd.Series, target_index: pd.DatetimeIndex) -> pd.Series:
+    """Compound a daily return series onto a sparser target index.
+
+    Reindexing a return series directly onto a sparser index keeps only the
+    return realised on the matching day and silently drops every day in
+    between - a multi-day gap in `target_index` becomes a zero-return no-op
+    instead of the return the position actually earned. Building the equity
+    curve first and resampling that instead compounds the skipped days, the
+    same way a plain price series naturally compounds under
+    `reindex().ffill().pct_change()`.
+    """
+    equity = (1 + daily_returns.fillna(0)).cumprod()
+    return equity.reindex(target_index).ffill().pct_change()
+
+
 def clone_stream(close: pd.DataFrame) -> pd.Series:
     holdings = build_holdings().merge(cusip_ticker_map(), on="cusip", how="inner")
     holdings = holdings[holdings["symbol"].isin(close.columns)]
@@ -130,7 +145,11 @@ def build_streams() -> pd.DataFrame:
 
     spy_frame = load_parquet(["SPY"])["SPY"]
     spy_history = norm_index(spy_frame["close"])
-    trend = trend_stream(spy_history).reindex(close.index)
+    # Both legs must compound the same way across any gap between panel
+    # dates: `spy_ret` does so naturally because it reindexes a price series;
+    # `trend` needs the equity-curve resample below to match, since it starts
+    # from a return series that already has the trend filter applied per day.
+    trend = resample_returns(trend_stream(spy_history), close.index)
     spy = spy_history.reindex(close.index).ffill()
     spy_ret = spy.pct_change()
 

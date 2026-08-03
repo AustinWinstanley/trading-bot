@@ -68,6 +68,81 @@ evidence, not a fresh opinion.
 
 Campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`.
 
+### The cross-sectional panel has no COVID-crash coverage
+
+`state/xsec/close.parquet` — the panel behind MOM_LS, the retired clone
+sleeve, and every study that imports `backtest.xsec_data.load` — has no
+usable data before **2020-07-27**. This isn't a handful of failed fetch
+batches: every symbol checked, including AAPL and MSFT, has zero coverage
+before that date. It lines up with Alpaca's free-tier IEX historical-bar
+depth, matching the delisted-symbol cache's own mid-2020 floor
+(`reports/survivorship_study.json`). `xsec_data.load()` drops the ~14 rows
+before that date that did carry a stray symbol or two — keeping them
+silently compressed multi-week returns into single "daily" observations,
+which understated early-window drawdown and overstated Sharpe (verified:
+panel-derived SPY max-DD moved from -24.5% to matching the true daily
+-24.5% only once those rows were dropped; before the fix it silently used a
+different, shallower number).
+
+Dropping those rows is correct, but it means the `early_2020_2022` window is
+shorter than its name implies for any panel-dependent sleeve, and contains
+**no COVID crash observation at all** — the March 2020 trough is entirely
+before the panel starts. Concretely, with the panel's actual span
+(2020-07-27 → 2026-07-22): `early_2020_2022` has 614 bars, of which only
+**341** have a live MOM_LS sleeve (its 252-day lookback + 21-day skip pushes
+the first rebalance to 2021-08-25); `heldout_2023_plus` has 890 bars, all
+live. Treat any MOM_LS or clone result attributed to `early_2020_2022` as
+covering roughly Aug 2020–Dec 2022 with a thin first year, not the full
+crash-inclusive window the label suggests. The only crash-era evidence for
+these strategies is the French-Mom long-history proxy in
+`long_history_stress_study.py`, itself only 0.55–0.60 correlated with the
+sleeve it stands in for — read GFC/COVID rows from that study as directional,
+not precise.
+
+Pure price-history sleeves (SPY, TSMOM assets) are unaffected — they come
+from Tiingo via `state/history*`, which goes back to 2010 or earlier, and
+their return streams cover the crash normally.
+
+### Cost schedule and two known, unresolved measurement gaps
+
+The 15 bps figure above is the convention for cross-sectional stock
+turnover. Other instruments intentionally use a different number and always
+have: 8 bps for the TSMOM asset-ETF sleeve, 5 bps for the sleeve/portfolio
+volatility overlays, 2 bps for single-name ETF pairs. These are deliberate,
+not drift — but they were undocumented until now, so a reader diffing
+`cost_bps` across studies had no way to tell "intentional" from "someone
+typoed it." Record any new instrument-specific rate here when you add one.
+
+Two known gaps are **not** resolved by this campaign and should be treated
+as open questions, not settled conventions, in any study that touches them:
+
+- **Risk-free rate is zero everywhere** (`returns_summary`, `engine.py`,
+  `signal_library.py`, `portfolio_study.py`). Across a sample that straddles
+  the 2022+ rate hike, this flatters `heldout_2023_plus` Sharpe (real cash
+  and short-collateral earned ~5%, modeled as 0%) while also penalizing it
+  (idle sleeves are modeled as literally 0-yielding). Fixing this needs an
+  actual T-bill/EFFR series wired into `returns_summary` as an optional
+  excess-return Sharpe — no such series is in `state/` yet
+  (`state/french/` only has the momentum factor, not the 3-factor file with
+  RF). Do not compare absolute Sharpe across windows without this caveat.
+- **Short-borrow cost uses two different, disagreeing conventions.**
+  `production_portfolio.py` charges a **constant** `0.15 * 3%` against the
+  idealized fractional-short MOM_LS construction it evaluates
+  (`backtest.xsec_momentum.build_portfolio`, which has no whole-share
+  floor). `short_capacity_study.py` charges **realized, time-varying**
+  `short_gross * 3%` against a separately-simulated whole-share-constrained
+  $10,000-equity model, which per that same study only achieves ~60.9%
+  (base) / ~83.5% (2x) of the target short gross. These are two different
+  models of the same sleeve, not one model with a units bug — the headline
+  README numbers come from the idealized fractional model, not the
+  realistic capacity-constrained one. Reconciling them (either by porting
+  the whole-share simulation into `production_portfolio.py`, or by
+  explicitly labelling the headline numbers as an idealized-capacity upper
+  bound) changes what every reported CAGR/Sharpe in this repo means, so
+  don't fold that change into an unrelated study — it needs its own
+  reviewed pass with the resulting headline numbers re-verified against
+  `short_capacity_study.json`'s existing whole-share figures.
+
 ### Validate a new study against the accepted one
 
 If a study reimplements a sleeve, prove the control reproduces the existing

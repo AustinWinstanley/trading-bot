@@ -107,12 +107,33 @@ def save(close: pd.DataFrame, volume: pd.DataFrame, out_dir: Path | None = None)
     return out_dir
 
 
-def load(out_dir: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load(
+    out_dir: Path | None = None, *, min_symbols: int = 100
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load the close/volume panel, dropping sparse warm-up rows.
+
+    The batched fetch in `build_matrices` can leave a handful of early rows
+    with only one or two symbols populated (a single failed or partial batch)
+    while the rest of that day's batches never landed. A downstream reindex
+    onto those rows turns a multi-week gap into a single "daily" observation
+    with the whole gap's return compressed into it, which measurably distorts
+    early-window volatility and drawdown for every study built on this panel.
+    `min_symbols` is a low bar deliberately: it exists to catch dropped-batch
+    rows, not to second-guess a day with genuinely thin market-wide coverage.
+    """
     out_dir = out_dir or OUT_DIR
-    return (
-        pd.read_parquet(out_dir / "close.parquet"),
-        pd.read_parquet(out_dir / "volume.parquet"),
-    )
+    close = pd.read_parquet(out_dir / "close.parquet")
+    volume = pd.read_parquet(out_dir / "volume.parquet")
+    coverage = close.notna().sum(axis=1)
+    keep = coverage >= min_symbols
+    dropped = int((~keep).sum())
+    if dropped:
+        print(
+            f"xsec_data.load: dropping {dropped} sparse row(s) with <{min_symbols} "
+            f"populated symbols (last dropped: {coverage.index[~keep][-1].date()})",
+            flush=True,
+        )
+    return close.loc[keep], volume.loc[keep]
 
 
 def main() -> None:
