@@ -44,6 +44,7 @@ from engine.data import REPO_ROOT
 FUND_PARQUET = next((REPO_ROOT / "state" / "fundamentals").glob("fundamentals_*.parquet"), None)
 INSIDER_PARQUET = next((REPO_ROOT / "state" / "edgar").glob("insider_*.parquet"), None)
 STALE_DAYS = 400
+LAST_CIK_COVERAGE: dict | None = None
 
 
 # --------------------------------------------------------------------------
@@ -71,6 +72,44 @@ def _pivot_pit(facts: pd.DataFrame, dates: pd.DatetimeIndex, value_col: str = "v
     return wide.where(age.le(STALE_DAYS))
 
 
+def _trailing_4q_sum(quarterly: pd.DataFrame) -> pd.DataFrame:
+    """Per-symbol trailing-4-quarter sum from discrete quarterly (qtrs=1) facts.
+
+    Keyed on each filing's own `avail_date`, so the figure updates every
+    quarter as a new 10-Q lands, rather than sitting still for a year
+    between 10-Ks. Requires 4 accumulated quarterly filings before it
+    produces a value; callers should fall back to the annual (qtrs=4) figure
+    until then.
+    """
+    q = quarterly.dropna(subset=["symbol", "avail_date", "value"])
+    q = q.sort_values("avail_date").drop_duplicates(["symbol", "avail_date"], keep="last")
+    if q.empty:
+        return q.assign(value=q["value"])
+    q["value"] = q.groupby("symbol")["value"].transform(
+        lambda s: s.rolling(4, min_periods=4).sum()
+    )
+    return q.dropna(subset=["value"])[["symbol", "avail_date", "value"]]
+
+
+def cik_map_coverage(df: pd.DataFrame, cmap: pd.DataFrame) -> dict:
+    """How much of the fundamentals CIK population the current-only ticker
+    map actually joins - see engine.fundamentals.cik_map's docstring.
+    Computed fresh on every run so this doesn't silently drift stale."""
+    all_ciks = set(df["cik"].dropna().astype("int64"))
+    mapped_ciks = set(cmap["cik"].dropna().astype("int64"))
+    matched = all_ciks & mapped_ciks
+    return {
+        "total_ciks_with_facts": len(all_ciks),
+        "ciks_matched_to_a_current_ticker": len(matched),
+        "coverage_pct": round(100 * len(matched) / len(all_ciks), 1) if all_ciks else 0.0,
+        "note": (
+            "cik_map() is current-listing only; delisted/deregistered CIKs "
+            "are dropped, not mismapped. Every signal here inherits this "
+            "survivorship bias in addition to the price panel's own."
+        ),
+    }
+
+
 def load_fundamental_matrices(dates: pd.DatetimeIndex) -> dict[str, pd.DataFrame]:
     from engine.fundamentals import cik_map
 
@@ -78,19 +117,29 @@ def load_fundamental_matrices(dates: pd.DatetimeIndex) -> dict[str, pd.DataFrame
         raise FileNotFoundError("run engine.fundamentals.build() first")
     df = pd.read_parquet(FUND_PARQUET)
     cmap = cik_map()
+    global LAST_CIK_COVERAGE
+    LAST_CIK_COVERAGE = cik_map_coverage(df, cmap)
     df = df.merge(cmap[["cik", "symbol"]], on="cik", how="inner")
     df["avail_date"] = (df["filed"] + pd.Timedelta(days=1)).dt.tz_localize("UTC").dt.normalize()
 
-    # Trailing-12m flows: sum of the last 4 quarterly (qtrs=1) values, or the
-    # annual (qtrs=4) figure from a 10-K, whichever is fresher. Keep it simple:
-    # prefer qtrs=4 rows (annual), fall back to qtrs=1 rolling sum per filing.
+    # Trailing-12m flows: a rolling sum of the last 4 discrete quarterly
+    # (qtrs=1) facts, updating every 10-Q — falling back to the annual
+    # (qtrs=4) 10-K figure only before 4 quarterly filings have accumulated
+    # for that symbol. The previous version only ever used the qtrs=4 rows,
+    # so every flow figure (net income, OCF, gross profit) was up to a year
+    # stale between 10-Ks despite fresher 10-Q data being available in the
+    # same cache — the quality_momentum_filter_feasibility.json audit's
+    # "prefers annual instead of true trailing four quarters" finding.
     out: dict[str, pd.DataFrame] = {}
 
     def matrix_for(tag: str, *, flow: bool) -> pd.DataFrame:
         sub = df[df["tag"] == tag]
         if flow:
-            annual = sub[sub["qtrs"] == "4"]
-            m = _pivot_pit(annual[["symbol", "avail_date", "value"]], dates)
+            quarterly = sub[sub["qtrs"] == "1"][["symbol", "avail_date", "value"]]
+            annual = sub[sub["qtrs"] == "4"][["symbol", "avail_date", "value"]]
+            m_ttm = _pivot_pit(_trailing_4q_sum(quarterly), dates)
+            m_annual = _pivot_pit(annual, dates)
+            m = m_ttm.combine_first(m_annual)
         else:
             point = sub[sub["qtrs"] == "0"] if (sub["qtrs"] == "0").any() else sub
             m = _pivot_pit(point[["symbol", "avail_date", "value"]], dates)
@@ -228,10 +277,30 @@ def main() -> None:
         out = [summarize(df[n], n) for n in keep_all] + [summarize(combo, "COMBO equal-weight")]
         print(pd.DataFrame(out).to_string(index=False))
 
+    print("\nCIK->ticker map coverage (see engine.fundamentals.cik_map docstring):")
+    print(json.dumps(LAST_CIK_COVERAGE, indent=2))
+
     Path("reports/fund_signals.json").write_text(json.dumps({
         "standalone": rows,
         "correlation_to_momentum": corr["mom_12_1"].drop("mom_12_1").round(4).to_dict(),
         "correlation_matrix": corr.round(4).to_dict(),
+        "cik_map_coverage": LAST_CIK_COVERAGE,
+        "limitations": [
+            "cik_map_coverage above: the current-only CIK->ticker map drops "
+            "delisted/deregistered companies entirely (not mismapped) - "
+            "verified 2026-08-03 at ~45% of the CIK population with "
+            "fundamental facts. This compounds the price panel's own "
+            "current-listing survivorship bias. Treat any positive result "
+            "here as an unvalidated upper bound; a negative result is "
+            "trustworthy since the bias runs in the signal's favor.",
+            "Trailing-12m flow figures (net income, OCF, gross profit) use a "
+            "rolling sum of the last 4 discrete quarterly (qtrs=1) facts, "
+            "falling back to the annual (qtrs=4) 10-K figure only before 4 "
+            "quarterly filings have accumulated. Point-type facts (assets, "
+            "equity, shares) use the latest point-in-time value as filed.",
+            "Point-in-time discipline: every fact is keyed on filed+1 "
+            "trading day, not period end.",
+        ],
     }, indent=2, default=str))
     print("\nWrote reports/fund_signals.json")
 

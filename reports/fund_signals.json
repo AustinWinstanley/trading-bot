@@ -2,130 +2,139 @@
   "standalone": [
     {
       "signal": "value",
-      "sharpe": 0.292,
-      "ann_ret": 0.0634,
-      "vol": 0.2175,
-      "max_dd": -0.4528,
-      "hit_rate": 0.497,
-      "gross": 0.382,
-      "oos_1st": 1.116,
-      "oos_2nd": -0.269,
+      "sharpe": 0.15,
+      "ann_ret": 0.0341,
+      "vol": 0.2279,
+      "max_dd": -0.4756,
+      "hit_rate": 0.493,
+      "gross": 0.231,
+      "oos_1st": 0.948,
+      "oos_2nd": -0.391,
       "sign_stable": false
     },
     {
       "signal": "quality",
-      "sharpe": 0.06,
-      "ann_ret": 0.0153,
-      "vol": 0.2535,
-      "max_dd": -0.6383,
-      "hit_rate": 0.504,
-      "gross": 0.118,
-      "oos_1st": 0.978,
-      "oos_2nd": -0.401,
+      "sharpe": -0.313,
+      "ann_ret": -0.0776,
+      "vol": 0.2477,
+      "max_dd": -0.6437,
+      "hit_rate": 0.491,
+      "gross": -0.254,
+      "oos_1st": 0.444,
+      "oos_2nd": -0.675,
       "sign_stable": false
     },
     {
       "signal": "cashflow",
-      "sharpe": 0.069,
-      "ann_ret": 0.0169,
-      "vol": 0.2463,
-      "max_dd": -0.5495,
-      "hit_rate": 0.494,
-      "gross": 0.128,
-      "oos_1st": 1.03,
-      "oos_2nd": -0.696,
+      "sharpe": 0.21,
+      "ann_ret": 0.0396,
+      "vol": 0.1883,
+      "max_dd": -0.3984,
+      "hit_rate": 0.498,
+      "gross": 0.296,
+      "oos_1st": 1.14,
+      "oos_2nd": -0.618,
       "sign_stable": false
     },
     {
       "signal": "accruals",
-      "sharpe": 0.05,
-      "ann_ret": 0.0062,
-      "vol": 0.124,
-      "max_dd": -0.2724,
-      "hit_rate": 0.502,
-      "gross": 0.177,
-      "oos_1st": 0.027,
-      "oos_2nd": 0.294,
+      "sharpe": 0.313,
+      "ann_ret": 0.0485,
+      "vol": 0.155,
+      "max_dd": -0.1964,
+      "hit_rate": 0.532,
+      "gross": 0.421,
+      "oos_1st": 0.5,
+      "oos_2nd": 0.348,
       "sign_stable": true
     },
     {
       "signal": "insider_net",
-      "sharpe": -0.297,
-      "ann_ret": -0.0526,
-      "vol": 0.177,
-      "max_dd": -0.489,
-      "hit_rate": 0.454,
-      "gross": -0.143,
-      "oos_1st": 0.324,
-      "oos_2nd": -0.517,
+      "sharpe": -0.298,
+      "ann_ret": -0.0517,
+      "vol": 0.1734,
+      "max_dd": -0.5001,
+      "hit_rate": 0.469,
+      "gross": -0.137,
+      "oos_1st": 0.384,
+      "oos_2nd": -0.526,
       "sign_stable": false
     },
     {
       "signal": "mom_12_1",
-      "sharpe": 0.62,
-      "ann_ret": 0.2149,
-      "vol": 0.3467,
-      "max_dd": -0.401,
-      "hit_rate": 0.539
+      "sharpe": 0.748,
+      "ann_ret": 0.2662,
+      "vol": 0.3558,
+      "max_dd": -0.3479,
+      "hit_rate": 0.55
     }
   ],
   "correlation_to_momentum": {
-    "value": -0.1723,
-    "quality": -0.3417,
-    "cashflow": -0.1741,
-    "accruals": 0.0933,
-    "insider_net": -0.4538
+    "value": -0.1227,
+    "quality": -0.3568,
+    "cashflow": -0.0924,
+    "accruals": 0.0353,
+    "insider_net": -0.4499
   },
   "correlation_matrix": {
     "value": {
       "value": 1.0,
-      "quality": 0.6526,
-      "cashflow": 0.8012,
-      "accruals": -0.4083,
-      "insider_net": 0.4669,
-      "mom_12_1": -0.1723
+      "quality": 0.5893,
+      "cashflow": 0.7129,
+      "accruals": -0.7047,
+      "insider_net": 0.4082,
+      "mom_12_1": -0.1227
     },
     "quality": {
-      "value": 0.6526,
+      "value": 0.5893,
       "quality": 1.0,
-      "cashflow": 0.7256,
-      "accruals": -0.2095,
-      "insider_net": 0.3498,
-      "mom_12_1": -0.3417
+      "cashflow": 0.611,
+      "accruals": -0.4063,
+      "insider_net": 0.3081,
+      "mom_12_1": -0.3568
     },
     "cashflow": {
-      "value": 0.8012,
-      "quality": 0.7256,
+      "value": 0.7129,
+      "quality": 0.611,
       "cashflow": 1.0,
-      "accruals": -0.1656,
-      "insider_net": 0.3827,
-      "mom_12_1": -0.1741
+      "accruals": -0.4054,
+      "insider_net": 0.2783,
+      "mom_12_1": -0.0924
     },
     "accruals": {
-      "value": -0.4083,
-      "quality": -0.2095,
-      "cashflow": -0.1656,
+      "value": -0.7047,
+      "quality": -0.4063,
+      "cashflow": -0.4054,
       "accruals": 1.0,
-      "insider_net": -0.28,
-      "mom_12_1": 0.0933
+      "insider_net": -0.3954,
+      "mom_12_1": 0.0353
     },
     "insider_net": {
-      "value": 0.4669,
-      "quality": 0.3498,
-      "cashflow": 0.3827,
-      "accruals": -0.28,
+      "value": 0.4082,
+      "quality": 0.3081,
+      "cashflow": 0.2783,
+      "accruals": -0.3954,
       "insider_net": 1.0,
-      "mom_12_1": -0.4538
+      "mom_12_1": -0.4499
     },
     "mom_12_1": {
-      "value": -0.1723,
-      "quality": -0.3417,
-      "cashflow": -0.1741,
-      "accruals": 0.0933,
-      "insider_net": -0.4538,
+      "value": -0.1227,
+      "quality": -0.3568,
+      "cashflow": -0.0924,
+      "accruals": 0.0353,
+      "insider_net": -0.4499,
       "mom_12_1": 1.0
     }
   },
-  "unreliable": true,
-  "unreliable_reason": "reports/quality_momentum_filter_feasibility.json audited the code that produced these numbers and found it uses filed_date (not the SEC acceptance timestamp) and a current, not point-in-time, CIK-to-symbol map \u2014 both look-ahead risks, plus omission of delisted names. Treat every Sharpe here as upper-bound and contaminated, not a measured result; it is cited elsewhere only as the reason to defer the quality filter, never as a standalone finding."
+  "cik_map_coverage": {
+    "total_ciks_with_facts": 9459,
+    "ciks_matched_to_a_current_ticker": 5151,
+    "coverage_pct": 54.5,
+    "note": "cik_map() is current-listing only; delisted/deregistered CIKs are dropped, not mismapped. Every signal here inherits this survivorship bias in addition to the price panel's own."
+  },
+  "limitations": [
+    "cik_map_coverage above: the current-only CIK->ticker map drops delisted/deregistered companies entirely (not mismapped) - verified 2026-08-03 at ~45% of the CIK population with fundamental facts. This compounds the price panel's own current-listing survivorship bias. Treat any positive result here as an unvalidated upper bound; a negative result is trustworthy since the bias runs in the signal's favor.",
+    "Trailing-12m flow figures (net income, OCF, gross profit) use a rolling sum of the last 4 discrete quarterly (qtrs=1) facts, falling back to the annual (qtrs=4) 10-K figure only before 4 quarterly filings have accumulated. Point-type facts (assets, equity, shares) use the latest point-in-time value as filed.",
+    "Point-in-time discipline: every fact is keyed on filed+1 trading day, not period end."
+  ]
 }
