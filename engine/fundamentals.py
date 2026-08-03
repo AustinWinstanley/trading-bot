@@ -153,7 +153,23 @@ def build(start_year: int = 2018, end_year: int | None = None, *, refresh: bool 
 
 
 def cik_map() -> pd.DataFrame:
-    """CIK -> ticker via SEC's public company_tickers.json (free, no key)."""
+    """CIK -> ticker via SEC's public company_tickers.json (free, no key).
+
+    This is a CURRENT-only map and induces real survivorship bias: verified
+    2026-08-03, it drops 45.5% of CIKs with fundamental facts in
+    `state/fundamentals` (4,308 of 9,459) - not a long tail of tiny filers,
+    since it drops known large-caps like Twitter (delisted 2022) too. Once a
+    company deregisters, SEC's own free APIs stop reporting a ticker for it
+    at all: `data.sec.gov/submissions/CIK##########.json`'s `tickers` field
+    goes empty, and `data.sec.gov/api/xbrl/companyfacts/...` only carries
+    numeric facts, not the text `dei:TradingSymbol` cover-page tag. The only
+    place a delisted company's historical ticker survives is individual
+    filings' XBRL cover pages, which has no clean bulk source - recovering
+    it means parsing filings one at a time. Any signal built on this map
+    should be read the same way `backtest/xsec_data.py` already reads its
+    own current-listing bias: a rejection is trustworthy (the bias favors
+    the signal), a positive result is an unvalidated upper bound.
+    """
     r = requests.get(
         "https://www.sec.gov/files/company_tickers.json",
         headers={"User-Agent": USER_AGENT}, timeout=120,
