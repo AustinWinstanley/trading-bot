@@ -717,6 +717,21 @@ def main() -> None:
             "Do not add the bullish call spread; it failed the preselected "
             "cross-window evidence or executable-sizing gate."
         ),
+        "decision": "promote" if passed else "insufficient_evidence",
+        "evidence_note_2026_08_03": (
+            "Relabeled from a flat rejection, mirroring "
+            "anticipatory_tail_hedge_study.json: only 6 of 28 planned exact "
+            "spreads completed (78% attrition, mostly 'missing entry bar', "
+            "not randomly distributed in time) against a self-declared "
+            "minimum of 12, and the long_history_synthetic arm - which "
+            "supplies most of the failure_reasons here too - overpays for "
+            "the spread by a median 1.5547x versus the six comparable "
+            "exact-contract debits (individual entries up to 2.79x); see "
+            "exact_contract.synthetic_entry_price_check. Recalibrate the "
+            "synthetic pricing before citing the long-history rows again, "
+            "and treat the exact-contract arm as inconclusive rather than "
+            "negative until more spreads complete."
+        ),
         "promotion_rule_passed": passed,
         "failure_reasons": reasons,
         "preselected_policy": {

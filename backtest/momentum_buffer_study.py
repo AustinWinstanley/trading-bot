@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from backtest.production_portfolio import build_streams, norm_index, returns_summary
+from backtest.promotion import passes_gate
 from backtest.short_capacity_study import (
     MOM_ACCOUNT_MULTIPLIER,
     STARTING_EQUITY,
@@ -167,6 +168,7 @@ def solve_dynamic_equity(
     *,
     profile: str,
     hold_n: int,
+    cost_bps: float = 15.0,
     iterations: int = 3,
 ) -> tuple[pd.Series, BufferResult]:
     equity = pd.Series(STARTING_EQUITY, index=close.index)
@@ -179,6 +181,7 @@ def solve_dynamic_equity(
             account_equity=equity,
             account_multiplier=MOM_ACCOUNT_MULTIPLIER[profile],
             hold_n=hold_n,
+            cost_bps=cost_bps,
         )
         portfolio = profile_returns(common, result, profile=profile)
         equity = (
@@ -223,6 +226,53 @@ def main() -> None:
                     close, volume, common, profile=profile, hold_n=hold_n
                 )
             )
+
+    # Cost sensitivity: the study's whole thesis is that fewer rebalances
+    # save more than the diluted signal costs, but the only gate that ever
+    # failed (sharpe_improves) was tested at a single, fixed 15 bps. Sweep
+    # cost to find where — if anywhere — the Sharpe comparison flips, using
+    # backtest.promotion's cost_reducer objective class rather than a
+    # bespoke comparison. This does not change the pre-registered decision
+    # above; it answers a question that decision left open.
+    cost_levels = (15.0, 20.0, 25.0, 30.0)
+    cost_sensitivity: dict[str, dict] = {}
+    for profile in ("base", "2x"):
+        cost_sensitivity[profile] = {}
+        for cost_bps in cost_levels:
+            print(f"Cost sensitivity {profile} @ {cost_bps:.0f}bps...", flush=True)
+            control_p, control_r = solve_dynamic_equity(
+                close, volume, common, profile=profile, hold_n=20, cost_bps=cost_bps
+            )
+            candidate_p, candidate_r = solve_dynamic_equity(
+                close, volume, common, profile=profile, hold_n=40, cost_bps=cost_bps
+            )
+            windows_cs = {
+                "early_2020_2022": slice(None, "2022-12-31"),
+                "heldout_2023_plus": slice("2023-01-01", None),
+            }
+            cells = {}
+            for window, slicer in windows_cs.items():
+                control_summary = returns_summary(control_p.loc[slicer], "control")
+                candidate_summary = returns_summary(candidate_p.loc[slicer], "candidate")
+                control_turnover = float(
+                    control_r.long_turnover.loc[slicer].sum()
+                    + control_r.short_turnover.loc[slicer].sum()
+                )
+                candidate_turnover = float(
+                    candidate_r.long_turnover.loc[slicer].sum()
+                    + candidate_r.short_turnover.loc[slicer].sum()
+                )
+                gate = passes_gate(
+                    control_summary,
+                    candidate_summary,
+                    "cost_reducer",
+                    min_turnover_reduction_pct=0.30,
+                    max_sharpe_cost=0.0,  # candidate must not cost any Sharpe at all
+                    control_turnover=control_turnover,
+                    candidate_turnover=candidate_turnover,
+                )
+                cells[window] = gate.to_dict()
+            cost_sensitivity[profile][f"{cost_bps:.0f}bps"] = cells
 
     windows = {
         "early_2020_2022": slice(None, "2022-12-31"),
@@ -319,11 +369,30 @@ def main() -> None:
         "gates": gates,
         "performance": performance,
         "sleeve_attribution": attribution,
+        "cost_sensitivity_2026_08_03": {
+            "note": (
+                "The pre-registered gate above is unchanged and was tested only "
+                "at 15 bps. This sweep re-runs just the control (20) vs "
+                "candidate (20/40 buffer) pair at 15/20/25/30 bps, using "
+                "backtest.promotion's cost_reducer gate with max_sharpe_cost=0.0 "
+                "(candidate must not lose any Sharpe at all, on top of the >=30% "
+                "turnover cut) — a stricter bar than the original's plain "
+                "'higher Sharpe', chosen because it directly answers whether "
+                "higher assumed costs ever flip the comparison in the "
+                "candidate's favor, not just how far it falls short at 15 bps."
+            ),
+            "results": cost_sensitivity,
+        },
         "limitations": [
             "The operating-company universe contains current listings and is survivorship-biased.",
             "Historical easy-to-borrow and locate availability is unavailable.",
             "Costs use a fixed 15 bps per unit of one-way turnover plus the portfolio borrow assumption.",
             "Whole-share short capacity is modeled from a dynamic $10,000 starting account.",
+            "The eligible-universe skip threshold (len(ranked) < 2*hold_n) scales "
+            "with hold_n, so control (needs 40 eligible) and the 20/40 candidate "
+            "(needs 80) can skip different early rebalance dates — unmeasured "
+            "here, but the ~3,400+ eligible names per day on the corrected panel "
+            "make this unlikely to bind materially.",
         ],
     }
     out = Path("reports/momentum_buffer_study.json")

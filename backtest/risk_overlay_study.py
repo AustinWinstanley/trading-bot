@@ -48,6 +48,7 @@ from backtest.production_portfolio import (
     norm_index,
     returns_summary,
 )
+from backtest.promotion import passes_gate_all_cells
 from backtest.short_capacity_study import (
     MOM_ACCOUNT_MULTIPLIER,
     STARTING_EQUITY,
@@ -392,33 +393,42 @@ def main() -> None:
 
     # Verdict: the live overlay has to beat the construction that was actually
     # validated, in both profiles and both windows, to justify staying on.
+    #
+    # 2026-08-03 re-audit fix: this used to compute live_ever_better = any(...)
+    # over the 4 cells while this very comment said "both profiles and both
+    # windows" (i.e. all 4), and it compared only sharpe/cagr despite
+    # collecting max_dd. On the data at the time neither bug changed the
+    # decision (any() was already false, and all() implies any()), but it
+    # was the wrong check and could have. Now uses
+    # backtest.promotion.passes_gate_all_cells (return_enhancer: sharpe
+    # higher, cagr and max_dd not worse) requiring every one of the 4 cells
+    # to pass before keeping the live overlay.
     control = "control (no stop, no block)"
     live = "live (ATR stop + 5d block)"
-    checks = []
+    cells = []
     for window in WINDOWS:
         for profile in ("base", "2x"):
             rows = {r["variant"]: r for r in performance[window] if r["profile"] == profile}
             if control not in rows or live not in rows:
                 continue
-            checks.append(
-                {
-                    "window": window,
-                    "profile": profile,
-                    "control_sharpe": rows[control]["sharpe"],
-                    "live_sharpe": rows[live]["sharpe"],
-                    "control_cagr": rows[control]["cagr"],
-                    "live_cagr": rows[live]["cagr"],
-                    "control_max_dd": rows[control]["max_dd"],
-                    "live_max_dd": rows[live]["max_dd"],
-                    "live_better": bool(
-                        rows[live]["sharpe"] >= rows[control]["sharpe"]
-                        and rows[live]["cagr"] >= rows[control]["cagr"]
-                    ),
-                }
-            )
+            cells.append((window, profile, rows[control], rows[live]))
+    gate = passes_gate_all_cells(cells, "return_enhancer")
+    checks = [
+        {
+            "window": window,
+            "profile": profile,
+            "control_sharpe": control_row["sharpe"],
+            "live_sharpe": live_row["sharpe"],
+            "control_cagr": control_row["cagr"],
+            "live_cagr": live_row["cagr"],
+            "control_max_dd": control_row["max_dd"],
+            "live_max_dd": live_row["max_dd"],
+            "live_better": gate_cell["passed"],
+        }
+        for (window, profile, control_row, live_row), gate_cell in zip(cells, gate["cells"])
+    ]
 
-    live_ever_better = any(c["live_better"] for c in checks)
-    decision = "keep_live_overlay" if live_ever_better else "remove_overlay_from_mom_ls"
+    decision = "keep_live_overlay" if gate["passed"] else "remove_overlay_from_mom_ls"
 
     out = {
         "decision": decision,
@@ -427,6 +437,21 @@ def main() -> None:
             "MOM_LS sleeve. production_portfolio.py models neither. Do they help?"
         ),
         "control_is_production_backtest": True,
+        "gate_2026_08_03": gate,
+        "reexamination_note_2026_08_03": (
+            "Before the panel/gate fixes, held-out Sharpe and drawdown both "
+            "favored the live overlay in both profiles, while only the early "
+            "(COVID-containing) window supported removal - the quantitative "
+            "case rested on a window later found to have no COVID-crash "
+            "coverage at all. On the corrected panel, that ambiguity is gone: "
+            "the live overlay now has lower Sharpe AND lower CAGR than "
+            "control in all 4 cells, not just early_2020_2022. Max drawdown "
+            "is still mixed (worse with the overlay in the early window, "
+            "better in held-out), but Sharpe and CAGR no longer disagree "
+            "across windows. The removal decision is unchanged but now rests "
+            "on more consistent evidence than it did in the 2026-08-03 "
+            "campaign that made it."
+        ),
         "verdict_checks": checks,
         "performance": performance,
         "limitations": [

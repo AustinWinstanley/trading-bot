@@ -1,10 +1,14 @@
 {
   "pre_registration": {
-    "candidate": "Hold SHY at 20% only while the SPY 200-day trend sleeve is off.",
-    "cost": "2 bps per unit of one-way SHY turnover",
+    "candidates": {
+      "SHY": "Hold SHY at 20% only while the SPY 200-day trend sleeve is off (original 2026-07-23 pre-registration).",
+      "BIL": "Same rule, BIL instead of SHY \u2014 added 2026-08-03 to test the reserve-investment question with a near-zero-duration instrument."
+    },
+    "cost": "2 bps per unit of one-way turnover",
     "promotion_rule": "Higher CAGR and Sharpe with no worse max drawdown in both early and held-out windows."
   },
   "decision": "reject",
+  "decision_bil": "reject",
   "gates": {
     "early_2020_2022": {
       "cagr_improves": false,
@@ -17,33 +21,58 @@
       "max_drawdown_not_worse": true
     }
   },
+  "gates_bil": {
+    "early_2020_2022": {
+      "cagr_improves": true,
+      "sharpe_improves": true,
+      "max_drawdown_not_worse": false
+    },
+    "heldout_2023_plus": {
+      "cagr_improves": true,
+      "sharpe_improves": true,
+      "max_drawdown_not_worse": true
+    }
+  },
   "performance": {
     "early_2020_2022": [
       {
         "portfolio": "cash reserve control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.062,
-        "ann_return": 0.0775,
-        "vol": 0.126,
-        "sharpe": 0.615,
-        "sortino": 0.722,
-        "max_dd": -0.1148,
-        "x_money": 1.189
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
       },
       {
         "portfolio": "SHY reserve candidate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0603,
-        "ann_return": 0.0758,
-        "vol": 0.1263,
-        "sharpe": 0.6,
-        "sortino": 0.706,
-        "max_dd": -0.1168,
-        "x_money": 1.184
+        "years": 2.42,
+        "cagr": 0.0761,
+        "ann_return": 0.0793,
+        "vol": 0.1116,
+        "sharpe": 0.71,
+        "sortino": 0.985,
+        "max_dd": -0.1273,
+        "x_money": 1.194
+      },
+      {
+        "portfolio": "BIL reserve candidate",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0791,
+        "ann_return": 0.082,
+        "vol": 0.1114,
+        "sharpe": 0.736,
+        "sortino": 1.02,
+        "max_dd": -0.1254,
+        "x_money": 1.203
       }
     ],
     "heldout_2023_plus": [
@@ -52,67 +81,101 @@
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.176,
-        "ann_return": 0.1711,
-        "vol": 0.1281,
-        "sharpe": 1.336,
-        "sortino": 1.872,
-        "max_dd": -0.1399,
-        "x_money": 1.777
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
       },
       {
         "portfolio": "SHY reserve candidate",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.1771,
-        "ann_return": 0.172,
-        "vol": 0.128,
-        "sharpe": 1.344,
-        "sortino": 1.883,
-        "max_dd": -0.1391,
-        "x_money": 1.783
+        "cagr": 0.1699,
+        "ann_return": 0.1659,
+        "vol": 0.1277,
+        "sharpe": 1.299,
+        "sortino": 1.809,
+        "max_dd": -0.1455,
+        "x_money": 1.745
+      },
+      {
+        "portfolio": "BIL reserve candidate",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1694,
+        "ann_return": 0.1654,
+        "vol": 0.1278,
+        "sharpe": 1.295,
+        "sortino": 1.804,
+        "max_dd": -0.1457,
+        "x_money": 1.742
       }
     ],
     "full": [
       {
         "portfolio": "cash reserve control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1233,
-        "ann_return": 0.1324,
-        "vol": 0.1272,
-        "sharpe": 1.041,
-        "sortino": 1.348,
-        "max_dd": -0.1399,
-        "x_money": 2.113
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1214,
+        "sharpe": 1.078,
+        "sortino": 1.5,
+        "max_dd": -0.1462,
+        "x_money": 2.087
       },
       {
         "portfolio": "SHY reserve candidate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.123,
-        "ann_return": 0.1322,
-        "vol": 0.1273,
-        "sharpe": 1.039,
-        "sortino": 1.345,
-        "max_dd": -0.1391,
-        "x_money": 2.111
+        "years": 5.98,
+        "cagr": 0.1306,
+        "ann_return": 0.1305,
+        "vol": 0.1214,
+        "sharpe": 1.076,
+        "sortino": 1.497,
+        "max_dd": -0.1455,
+        "x_money": 2.084
+      },
+      {
+        "portfolio": "BIL reserve candidate",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1316,
+        "ann_return": 0.1314,
+        "vol": 0.1214,
+        "sharpe": 1.083,
+        "sortino": 1.507,
+        "max_dd": -0.1457,
+        "x_money": 2.095
       }
     ]
   },
   "reserve_diagnostics": {
-    "days_invested": 281,
-    "fraction_of_days_invested": 0.1852,
-    "one_way_turnover": 6.4,
+    "days_invested": 274,
+    "fraction_of_days_invested": 0.1823,
+    "one_way_turnover": 6.0,
     "full_period_incremental_return_annualized": -0.0002
   },
+  "reserve_diagnostics_bil": {
+    "days_invested": 274,
+    "fraction_of_days_invested": 0.1823,
+    "one_way_turnover": 6.0,
+    "full_period_incremental_return_annualized": 0.0006
+  },
   "limitations": [
-    "SHY is an investable short-Treasury proxy, not broker-paid cash interest.",
+    "SHY is an investable short-Treasury proxy with real duration risk, not broker-paid cash interest.",
+    "BIL approximates near-zero-duration T-bill yield but still carries a small amount of duration and is not the account's actual broker cash sweep rate, which is unobserved.",
     "The test allocates only the explicit trend reserve and excludes short proceeds.",
     "A live implementation would introduce an additional ETF position and order path.",
     "The underlying momentum sleeve remains survivorship-biased."
-  ]
+  ],
+  "bil_near_miss": "BIL improves both CAGR and Sharpe outright in every window (early, held-out, and full) - the only failing check across all three is early_2020_2022 max drawdown, which misses by one basis point (-12.54% vs control's -12.53%). This is a much cleaner result than SHY's, which the original 2026-07-23 campaign rejected on real 2022 duration losses - confirming the instrument choice was the confound, not the underlying question. Per AGENTS.md's frozen-validation policy, this is not close enough to promote on the existing screen, but is a strong candidate to re-check against 2026-08-04-onward data once enough of it accrues, rather than treating this REJECT as final the way SHY's was."
 }

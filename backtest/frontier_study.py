@@ -32,12 +32,9 @@ import numpy as np
 import pandas as pd
 import requests
 
-from engine.cboe import series
 from engine.data import load_env
 from engine.tiingo import load_parquet
-from backtest.production_portfolio import require_history
-from backtest.xsec_data import load as xload
-from backtest.xsec_momentum import build_portfolio, operating_stock_symbols
+from backtest.production_portfolio import SHORT_BORROW, build_streams, require_history
 
 TD = 252
 
@@ -165,22 +162,32 @@ def crypto_streams() -> dict[str, pd.Series]:
 
 
 def existing_combo() -> pd.Series:
-    spy = norm(load_parquet(["SPY"], Path("state/history_deep"))["SPY"]["close"])
-    put = norm(series("PUT"))
-    on = (spy > spy.rolling(200).mean()).shift(1).fillna(False)
-    trend = spy.pct_change().fillna(0).where(on, 0.0)
-    close, volume = xload()
-    cls = json.loads(Path("state/universe_classified.json").read_text())
-    stocks = operating_stock_symbols(
-        cls["stocks"], close.columns, exclude={"SPY"}
+    """The actual deployed base-profile portfolio, not an approximation of it.
+
+    This used to hand-roll SPY + a CBOE PUT-index benchmark + a bare
+    SPY-trend signal + a *monthly*-rebalanced MOM_LS, at equal 25% weights.
+    None of that matches production: the real sleeves are SPY(equity_core)
+    40% + TSMOM (asset-class trend, not an options index) 25% + TREND 20% +
+    MOM_LS (weekly rebalance) 15% long + 15% short. The tell that this
+    mattered: TSMOM, an actually-deployed sleeve, scored *negative* marginal
+    Sharpe against the old combo it wasn't even part of. Reusing
+    `production_portfolio.build_streams` directly (the same construction
+    every headline number in this repo is built from) removes the
+    reimplementation risk entirely rather than trying to match it by hand.
+    """
+    streams = build_streams()
+    raw = (
+        0.40 * streams["spy"]
+        + 0.25 * streams["tsmom"]
+        + 0.20 * streams["trend"]
+        + 0.30 * streams["mom_ls"]
     )
-    mls, _ = build_portfolio(close[stocks + ["SPY"]], volume[stocks + ["SPY"]],
-                             lookback=252, skip=21, top_n=20, rebalance=21,
-                             cost_bps=15, short_bottom=True)
-    df = pd.DataFrame({"SPY": spy.pct_change(), "PUT": put.pct_change(),
-                       "TREND": trend, "MOM_LS": norm(mls).pct_change()}).dropna()
-    df = df[(df != 0).any(axis=1)]
-    return df.mean(axis=1)
+    combo = raw - (0.15 * SHORT_BORROW / TD)
+    # build_streams() runs through production_portfolio.norm_index, which
+    # strips tz to naive-UTC; every other stream in this file keeps tz-aware
+    # UTC via the local norm() above. Re-attach it so the two are joinable.
+    combo.index = combo.index.tz_localize("UTC")
+    return combo
 
 
 def main() -> None:
@@ -218,8 +225,42 @@ def main() -> None:
     df = pd.DataFrame(add_rows).sort_values("marginal", ascending=False)
     print(df.to_string(index=False))
 
+    limitations = [
+        "The existing combo excludes clone/legacy (retired) and models the base "
+        "profile only; streams have wildly different start dates (1993-2026) and "
+        "the marginal comparison uses whatever overlap each pair shares.",
+        "Overnight/intraday streams and crypto streams carry zero modeled "
+        "transaction cost - marginal Sharpe for those rows is a costless-execution "
+        "upper bound, not an implementable estimate.",
+        "Crypto history covers only 2021 onward, one regime.",
+    ]
+    reexamination_2026_08_03 = (
+        "The combo previously used SPY + a CBOE PUT index + a bare SPY-trend "
+        "signal + monthly-rebalanced MOM_LS at equal 25% weights - not the "
+        "deployed portfolio, which is SPY(40%)+TSMOM(25%)+TREND(20%)+MOM_LS"
+        "(15%+15%, weekly). The tell was TSMOM, an actually-deployed sleeve, "
+        "scoring negative marginal value against a combo that didn't contain "
+        "it. Fixed by reusing production_portfolio.build_streams() directly. "
+        "Now TSMOM's marginal Sharpe (~-0.02) is expected and uninformative - "
+        "it's already 25% of the combo, so adding more of the same factor is "
+        "redundant exposure, not a rejection of TSMOM itself. SPY_overnight "
+        "and QQQ_overnight still show the largest positive marginal Sharpe "
+        "(+0.085/+0.089) against the corrected baseline, but this uses raw, "
+        "cost-free overnight returns; reports/overnight_cost_study.json already "
+        "found realistic break-even cost is only ~1.9-2.0bps/leg and rejected "
+        "every tested production replacement in the held-out window. This "
+        "result should not be read as new evidence for an overnight sleeve "
+        "without re-running it through that cost model - it is included here "
+        "for completeness, not as a fresh candidate."
+    )
     Path("reports/frontier_study.json").write_text(json.dumps(
-        {"standalone": rows, "marginal": add_rows}, indent=2, default=str))
+        {
+            "standalone": rows,
+            "marginal": add_rows,
+            "limitations": limitations,
+            "reexamination_2026_08_03": reexamination_2026_08_03,
+        },
+        indent=2, default=str))
     print("\nWrote reports/frontier_study.json")
 
 

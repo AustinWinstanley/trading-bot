@@ -470,6 +470,23 @@ def main() -> None:
             "Do not add the anticipatory hedge; it failed the preselected "
             "cross-window evidence gate."
         ),
+        "decision": "promote" if passed else "insufficient_evidence",
+        "evidence_note_2026_08_03": (
+            "Relabeled from a flat rejection. Two independent problems, not "
+            "one clean result: (1) only 6 exact-contract spreads completed "
+            "against a self-declared minimum of 12 - too few to conclude "
+            "anything from the exact-contract arm alone. (2) The "
+            "long_history_synthetic arm supplies 5 of the 9 failure_reasons "
+            "(design_2007_2016 and heldout_2017_plus rows) and its pricing "
+            "model overpays for the hedge by a median 1.4311x versus the six "
+            "comparable exact-contract debits observed (individual entries up "
+            "to 4.11x) - see exact_contract.synthetic_entry_price_check. A "
+            "hedge-cost model biased 43% high cannot produce an informative "
+            "rejection of a hedge. Recalibrate the synthetic pricing against "
+            "observed exact-contract debits before citing the long-history "
+            "failure reasons again, and let more Alpaca option history "
+            "accrue before treating the exact-contract arm as decisive."
+        ),
         "promotion_rule_passed": passed,
         "failure_reasons": reasons,
         "preselected_policy": {
