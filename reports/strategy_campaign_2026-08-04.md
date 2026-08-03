@@ -13,6 +13,14 @@ than before, one (the option-hedge trio) relabeled from a flat rejection to
 insufficient evidence, and one (liquid pairs) relabeled from rejected to
 untestable at this account size.
 
+A same-day follow-on (below, "Phase 4") built point-in-time fundamentals and
+insider-transaction data from SEC's free bulk sources, fixed a real staleness
+bug in the fundamentals pipeline, and ran the previously-deferred quality
+filter and the accruals signal through the full promotion gate for the first
+time. Neither is promoted. Quality is deferred again on insufficient data
+coverage; accruals is rejected under the standard gate but passes a
+purpose-appropriate risk-reduction gate cleanly in both held-out cells.
+
 The one live-trading fix in this campaign — the SPY position-cap correction
 — already shipped in its own reviewed commit ahead of this summary, since it
 corrects a bug actively suppressing ~45-90 percentage points of intended
@@ -105,3 +113,82 @@ model, not the realistic capacity-constrained one.
   and `fund_signals.json` were marked `unreliable`** with reasons, rather
   than deleted — a superseded legacy engine, an empty result set, and a
   look-ahead-contaminated point-in-time construction respectively.
+  `fund_signals.json`'s marking is superseded by the Phase 4 fix below; its
+  current version is a fresh, corrected run, not the flagged one.
+
+## Phase 4 — point-in-time fundamentals, quality filter, accruals
+
+The 2026-07-23 campaign deferred a point-in-time quality filter because its
+source SEC parquet was absent and a reproducibility audit found the code that
+had produced the earlier `fund_signals.json` numbers used `filed_date`
+incorrectly, a current (non-point-in-time) CIK-to-symbol map, and annual
+flow facts instead of true trailing four quarters
+(`reports/quality_momentum_filter_feasibility.json`).
+
+**The fundamentals pipeline already existed** (`engine/fundamentals.py`),
+correctly keyed on the SEC acceptance (`filed`) date, not period end — the
+audit's `filed_date` concern turned out to describe a *different*, no-longer-
+present script, not this one. What was real: `backtest/fund_signals.py`'s
+trailing-12-month flow calculation only ever used the annual (qtrs=4) 10-K
+figure, so net income/OCF/gross profit sat stale for up to a year between
+10-Ks despite fresher 10-Q facts sitting in the same cache. Fixed with a
+proper rolling 4-quarter sum, falling back to the annual figure only before
+four quarterly filings have accumulated.
+
+Built point-in-time fundamentals (2019–2026, 4.29M facts) and insider
+transactions (2019–2026, 2.53M rows) from SEC's free bulk data sets to run
+this. Investigating the CIK-to-symbol map surfaced a bigger problem than
+expected: `engine.fundamentals.cik_map()` is current-listing only and drops
+**45.5%** of CIKs with fundamental facts (4,308 of 9,459) — not a long tail
+of tiny filers; it drops known large delisted names (verified on Twitter/
+TWTR) too. A proposed quick fix (SEC's per-company submissions API) does not
+work: verified empirically that the API returns an empty ticker field for
+every deregistered company, and the company-facts API only carries numeric
+facts, not the text ticker tag. There is no clean bulk source for a delisted
+company's historical ticker; recovering it would mean parsing individual
+filings' XBRL cover pages one at a time. Documented rather than built —
+every run now reports the exact coverage number
+(`cik_map_coverage`/`coverage_by_variant` in the report JSONs) so this can't
+silently drift stale, and results are read the same way this repo already
+reads the price panel's own survivorship bias: a rejection is trustworthy, a
+positive result is an unvalidated upper bound.
+
+### Quality filter — deferred again, on coverage this time
+
+Ran the feasibility contract's exact pre-registered design (remove bottom-
+quality-quintile names from MOM_LS longs, top-quintile from shorts, continue
+down the unchanged momentum rank) through `xsec_momentum.build_portfolio`,
+reproduced to `0.00e+00` against the unfiltered control. Coverage came in at
+**35.2%**, far short of the contract's 80% requirement — quality needs both
+gross profit and operating cash flow simultaneously, compounding the 45.5%
+CIK-map gap. Correctly deferred rather than judged on an underpowered
+sample; the underlying data contract's coverage requirement did its job.
+
+### Accruals — rejected under the standard gate, but a real risk/return split
+
+`reports/fund_signals.json` (fixed pipeline) confirms the 2026-07-23 audit's
+flagged finding: accruals is the standout fundamental signal — Sharpe 0.313
+standalone, the only sign-stable signal across both halves (0.500 / 0.348),
+near-zero momentum correlation (0.035), and a genuine diversification
+benefit combined with momentum (0.748 → 0.800 Sharpe).
+
+Run through the same MOM_LS filter contract as quality, coverage clears
+**80.6%**. Under the standard `return_enhancer` gate it is rejected: Sharpe
+and CAGR are both modestly lower than control in all 4 cells. But the
+feasibility contract's own hypothesis frames this as a risk reducer ("may
+reduce momentum crashes and distress exposure without replacing the momentum
+rank"), so it was also evaluated under `backtest.promotion`'s `risk_reducer`
+class with bounds fixed before running (≤1.5pp CAGR cost for ≥5% relative
+drawdown improvement, a smaller budget than `account_mandate_study.json`'s
+3.0pp/10% since this is a milder adjustment than a dedicated defensive
+mandate): it **passes cleanly in both held-out cells** and fails in both
+early-window cells. Rejected under the primary gate — the split is reported
+rather than smoothed into either a clean pass or a clean fail.
+
+### Not yet built
+
+Sector-neutral momentum (dated SIC codes) and true PEAD (8-K acceptance
+timestamps) remain deferred. Given the CIK-map investigation's outcome —
+a proposed quick fix that didn't survive first contact with SEC's actual
+API behavior — their feasibility should be verified before committing to
+either, rather than assuming a clean bulk source exists.
