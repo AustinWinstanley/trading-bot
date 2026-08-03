@@ -599,6 +599,17 @@ def main() -> None:
             "Do not implement the paper hedge; exact-contract evidence failed "
             "or remains insufficient."
         ),
+        "decision": "promote" if passed else "insufficient_evidence",
+        "evidence_note_2026_08_03": (
+            "Relabeled from a flat rejection: only 3 completed exact spreads "
+            "exist against a self-declared minimum of 36. A hedge tested over "
+            "a window with no completed crash event will look like a cost "
+            "almost by construction. This is not evidence the hedge doesn't "
+            "work, only that the sample is too small to say either way — do "
+            "not cite this as a rejection of the hedge concept, and do not "
+            "re-run with a lower completed-spread minimum to force a verdict; "
+            "let more Alpaca option history accrue instead."
+        ),
         "promotion_rule_passed": passed,
         "failure_reasons": reasons,
         "method": {

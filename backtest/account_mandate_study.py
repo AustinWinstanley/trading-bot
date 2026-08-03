@@ -25,6 +25,7 @@ from backtest.production_portfolio import (
     norm_index,
     returns_summary,
 )
+from backtest.promotion import passes_gate
 from backtest.short_capacity_study import STARTING_EQUITY, build_capacity_stream
 from backtest.xsec_data import load
 
@@ -134,6 +135,27 @@ def main() -> None:
         gates[window] = checks
         passed = passed and all(checks.values())
 
+    # This candidate exists to trade CAGR for household drawdown reduction —
+    # a risk_reducer, not a return_enhancer — but the original gate demanded
+    # a strict Sharpe/drawdown improve plus an unexplained 90% CAGR floor,
+    # which killed a held-out result that improved both risk metrics
+    # outright. Re-judged here under backtest.promotion's risk_reducer class
+    # with bounds fixed before running on the corrected panel: up to 3.0
+    # CAGR points given up is an acceptable price for at least a 10%
+    # relative reduction in household max drawdown. This does not replace
+    # the pre-registered decision below; it answers whether the original
+    # 90% floor was the actual reason this was rejected.
+    risk_reducer_gates = {}
+    for window in ("early_2020_2022", "heldout_2023_plus"):
+        rows = {row["portfolio"]: row for row in performance[window]}
+        risk_reducer_gates[window] = passes_gate(
+            rows["household same mandate control"],
+            rows["household differentiated mandates"],
+            "risk_reducer",
+            max_cagr_cost_pp=3.0,
+            min_dd_improvement_pct=0.10,
+        ).to_dict()
+
     payload = {
         "pre_registration": {
             "household_capital": {"base": 0.20, "2x": 0.80},
@@ -146,6 +168,21 @@ def main() -> None:
         },
         "decision": "promote" if passed else "reject",
         "gates": gates,
+        "risk_reducer_reexamination_2026_08_03": {
+            "objective_class": "risk_reducer",
+            "pre_declared_bounds": {"max_cagr_cost_pp": 3.0, "min_dd_improvement_pct": 0.10},
+            "gates": risk_reducer_gates,
+            "note": (
+                "capital_split_study.json finds the base+2x household at the "
+                "deployed 50/50 split behaves as roughly one 1.5x portfolio, "
+                "not two diversified mandates - the 80/20 household weighting "
+                "used here is a synthetic reweighting of two correlated "
+                "accounts (both trade the same sleeves), not real "
+                "diversification. That doesn't invalidate this test, but the "
+                "'differentiated mandate' framing should not be read as "
+                "adding a second independent return source."
+            ),
+        },
         "performance": performance,
         "limitations": [
             "Household returns assume daily rebalancing to an 80/20 account capital split.",

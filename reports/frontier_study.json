@@ -48,121 +48,127 @@
     {
       "stream": "BTC_hold",
       "from": "2021-01-02",
-      "to": "2026-07-22",
-      "ann_ret": 0.2157,
-      "sharpe": 0.449,
-      "vol": 0.4801,
+      "to": "2026-08-02",
+      "ann_ret": 0.2098,
+      "sharpe": 0.438,
+      "vol": 0.4791,
       "max_dd": -0.7668
     },
     {
       "stream": "BTC_trend100",
       "from": "2021-01-01",
-      "to": "2026-07-22",
-      "ann_ret": 0.1304,
-      "sharpe": 0.444,
-      "vol": 0.2934,
+      "to": "2026-08-02",
+      "ann_ret": 0.1297,
+      "sharpe": 0.443,
+      "vol": 0.2926,
       "max_dd": -0.385
     },
     {
       "stream": "ETH_hold",
       "from": "2021-01-02",
-      "to": "2026-07-22",
-      "ann_ret": 0.3301,
-      "sharpe": 0.51,
-      "vol": 0.6473,
+      "to": "2026-08-02",
+      "ann_ret": 0.3254,
+      "sharpe": 0.504,
+      "vol": 0.6461,
       "max_dd": -0.7931
     },
     {
       "stream": "ETH_trend100",
       "from": "2021-01-01",
-      "to": "2026-07-22",
-      "ann_ret": 0.1155,
+      "to": "2026-08-02",
+      "ann_ret": 0.1149,
       "sharpe": 0.273,
-      "vol": 0.4227,
+      "vol": 0.4215,
       "max_dd": -0.7454
     },
     {
       "stream": "EXISTING 4-way combo",
-      "from": "2020-02-13",
+      "from": "2020-07-28",
       "to": "2026-07-22",
-      "ann_ret": 0.1368,
-      "sharpe": 1.252,
-      "vol": 0.1093,
-      "max_dd": -0.1266
+      "ann_ret": 0.1337,
+      "sharpe": 1.129,
+      "vol": 0.1184,
+      "max_dd": -0.1383
     }
   ],
   "marginal": [
     {
       "stream": "TSMOM_assets",
-      "corr_to_combo": 0.349,
-      "combo_sharpe_alone": 1.252,
-      "sharpe_with_20pct": 1.233,
-      "marginal": -0.019,
-      "overlap_days": 1517
+      "corr_to_combo": 0.462,
+      "combo_sharpe_alone": 1.129,
+      "sharpe_with_20pct": 1.111,
+      "marginal": -0.018,
+      "overlap_days": 1503
     },
     {
       "stream": "SPY_overnight",
-      "corr_to_combo": 0.469,
-      "combo_sharpe_alone": 1.252,
-      "sharpe_with_20pct": 1.331,
-      "marginal": 0.079,
-      "overlap_days": 1517
+      "corr_to_combo": 0.446,
+      "combo_sharpe_alone": 1.129,
+      "sharpe_with_20pct": 1.214,
+      "marginal": 0.085,
+      "overlap_days": 1503
     },
     {
       "stream": "SPY_intraday",
-      "corr_to_combo": 0.645,
-      "combo_sharpe_alone": 1.252,
-      "sharpe_with_20pct": 1.121,
-      "marginal": -0.131,
-      "overlap_days": 1517
+      "corr_to_combo": 0.591,
+      "combo_sharpe_alone": 1.129,
+      "sharpe_with_20pct": 1.057,
+      "marginal": -0.072,
+      "overlap_days": 1503
     },
     {
       "stream": "QQQ_overnight",
-      "corr_to_combo": 0.472,
-      "combo_sharpe_alone": 1.252,
-      "sharpe_with_20pct": 1.331,
-      "marginal": 0.079,
-      "overlap_days": 1517
+      "corr_to_combo": 0.45,
+      "combo_sharpe_alone": 1.129,
+      "sharpe_with_20pct": 1.218,
+      "marginal": 0.089,
+      "overlap_days": 1503
     },
     {
       "stream": "QQQ_intraday",
-      "corr_to_combo": 0.604,
-      "combo_sharpe_alone": 1.252,
-      "sharpe_with_20pct": 1.062,
-      "marginal": -0.19,
-      "overlap_days": 1517
+      "corr_to_combo": 0.554,
+      "combo_sharpe_alone": 1.129,
+      "sharpe_with_20pct": 1.009,
+      "marginal": -0.12,
+      "overlap_days": 1503
     },
     {
       "stream": "BTC_hold",
-      "corr_to_combo": 0.322,
-      "combo_sharpe_alone": 1.208,
-      "sharpe_with_20pct": 0.902,
-      "marginal": -0.306,
+      "corr_to_combo": 0.296,
+      "combo_sharpe_alone": 1.062,
+      "sharpe_with_20pct": 0.853,
+      "marginal": -0.209,
       "overlap_days": 1393
     },
     {
       "stream": "BTC_trend100",
-      "corr_to_combo": 0.173,
-      "combo_sharpe_alone": 1.208,
-      "sharpe_with_20pct": 1.024,
-      "marginal": -0.184,
+      "corr_to_combo": 0.167,
+      "combo_sharpe_alone": 1.062,
+      "sharpe_with_20pct": 0.939,
+      "marginal": -0.123,
       "overlap_days": 1393
     },
     {
       "stream": "ETH_hold",
-      "corr_to_combo": 0.344,
-      "combo_sharpe_alone": 1.208,
-      "sharpe_with_20pct": 0.748,
-      "marginal": -0.46,
+      "corr_to_combo": 0.327,
+      "combo_sharpe_alone": 1.062,
+      "sharpe_with_20pct": 0.71,
+      "marginal": -0.352,
       "overlap_days": 1393
     },
     {
       "stream": "ETH_trend100",
       "corr_to_combo": 0.18,
-      "combo_sharpe_alone": 1.208,
-      "sharpe_with_20pct": 0.801,
-      "marginal": -0.407,
+      "combo_sharpe_alone": 1.062,
+      "sharpe_with_20pct": 0.741,
+      "marginal": -0.321,
       "overlap_days": 1393
     }
-  ]
+  ],
+  "limitations": [
+    "The existing combo excludes clone/legacy (retired) and models the base profile only; streams have wildly different start dates (1993-2026) and the marginal comparison uses whatever overlap each pair shares.",
+    "Overnight/intraday streams and crypto streams carry zero modeled transaction cost - marginal Sharpe for those rows is a costless-execution upper bound, not an implementable estimate.",
+    "Crypto history covers only 2021 onward, one regime."
+  ],
+  "reexamination_2026_08_03": "The combo previously used SPY + a CBOE PUT index + a bare SPY-trend signal + monthly-rebalanced MOM_LS at equal 25% weights - not the deployed portfolio, which is SPY(40%)+TSMOM(25%)+TREND(20%)+MOM_LS(15%+15%, weekly). The tell was TSMOM, an actually-deployed sleeve, scoring negative marginal value against a combo that didn't contain it. Fixed by reusing production_portfolio.build_streams() directly. Now TSMOM's marginal Sharpe (~-0.02) is expected and uninformative - it's already 25% of the combo, so adding more of the same factor is redundant exposure, not a rejection of TSMOM itself. SPY_overnight and QQQ_overnight still show the largest positive marginal Sharpe (+0.085/+0.089) against the corrected baseline, but this uses raw, cost-free overnight returns; reports/overnight_cost_study.json already found realistic break-even cost is only ~1.9-2.0bps/leg and rejected every tested production replacement in the held-out window. This result should not be read as new evidence for an overnight sleeve without re-running it through that cost model - it is included here for completeness, not as a fresh candidate."
 }

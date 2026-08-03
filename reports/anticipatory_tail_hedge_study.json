@@ -1,5 +1,7 @@
 {
   "conclusion": "Do not add the anticipatory hedge; it failed the preselected cross-window evidence gate.",
+  "decision": "insufficient_evidence",
+  "evidence_note_2026_08_03": "Relabeled from a flat rejection. Two independent problems, not one clean result: (1) only 6 exact-contract spreads completed against a self-declared minimum of 12 - too few to conclude anything from the exact-contract arm alone. (2) The long_history_synthetic arm supplies 5 of the 9 failure_reasons (design_2007_2016 and heldout_2017_plus rows) and its pricing model overpays for the hedge by a median 1.4311x versus the six comparable exact-contract debits observed (individual entries up to 4.11x) - see exact_contract.synthetic_entry_price_check. A hedge-cost model biased 43% high cannot produce an informative rejection of a hedge. Recalibrate the synthetic pricing against observed exact-contract debits before citing the long-history failure reasons again, and let more Alpaca option history accrue before treating the exact-contract arm as decisive.",
   "promotion_rule_passed": false,
   "failure_reasons": [
     "only 6 exact spreads completed; require 12",
@@ -27,52 +29,52 @@
           "from": "2024-02-01",
           "to": "2026-06-30",
           "years": 2.41,
-          "cagr": 0.4123,
-          "ann_return": 0.3852,
-          "vol": 0.2756,
-          "sharpe": 1.398,
-          "sortino": 1.919,
-          "max_dd": -0.2623,
-          "x_money": 2.297
+          "cagr": 0.4052,
+          "ann_return": 0.3802,
+          "vol": 0.2758,
+          "sharpe": 1.378,
+          "sortino": 1.886,
+          "max_dd": -0.2709,
+          "x_money": 2.27
         },
         {
           "portfolio": "always 90/85",
           "from": "2024-02-01",
           "to": "2026-06-30",
           "years": 2.41,
-          "cagr": 0.3686,
-          "ann_return": 0.3489,
-          "vol": 0.2577,
-          "sharpe": 1.354,
-          "sortino": 1.873,
-          "max_dd": -0.2163,
-          "x_money": 2.13
+          "cagr": 0.3616,
+          "ann_return": 0.3439,
+          "vol": 0.2582,
+          "sharpe": 1.332,
+          "sortino": 1.835,
+          "max_dd": -0.225,
+          "x_money": 2.104
         },
         {
           "portfolio": "reactive 90/85",
           "from": "2024-02-01",
           "to": "2026-06-30",
           "years": 2.41,
-          "cagr": 0.3957,
-          "ann_return": 0.3698,
-          "vol": 0.2625,
-          "sharpe": 1.409,
-          "sortino": 1.936,
-          "max_dd": -0.2202,
-          "x_money": 2.233
+          "cagr": 0.3885,
+          "ann_return": 0.3648,
+          "vol": 0.2628,
+          "sharpe": 1.388,
+          "sortino": 1.902,
+          "max_dd": -0.2288,
+          "x_money": 2.205
         },
         {
           "portfolio": "anticipatory 90/85",
           "from": "2024-02-01",
           "to": "2026-06-30",
           "years": 2.41,
-          "cagr": 0.3948,
-          "ann_return": 0.3716,
-          "vol": 0.2717,
-          "sharpe": 1.368,
-          "sortino": 1.889,
-          "max_dd": -0.2594,
-          "x_money": 2.229
+          "cagr": 0.3878,
+          "ann_return": 0.3666,
+          "vol": 0.2722,
+          "sharpe": 1.347,
+          "sortino": 1.851,
+          "max_dd": -0.268,
+          "x_money": 2.202
         }
       ],
       "design_2024": [
@@ -81,52 +83,52 @@
           "from": "2024-02-01",
           "to": "2024-12-31",
           "years": 0.91,
-          "cagr": 0.3747,
-          "ann_return": 0.3427,
-          "vol": 0.224,
-          "sharpe": 1.53,
-          "sortino": 2.205,
-          "max_dd": -0.1389,
-          "x_money": 1.338
+          "cagr": 0.3975,
+          "ann_return": 0.3593,
+          "vol": 0.225,
+          "sharpe": 1.597,
+          "sortino": 2.335,
+          "max_dd": -0.1393,
+          "x_money": 1.358
         },
         {
           "portfolio": "always 90/85",
           "from": "2024-02-01",
           "to": "2024-12-31",
           "years": 0.91,
-          "cagr": 0.338,
-          "ann_return": 0.315,
-          "vol": 0.221,
-          "sharpe": 1.425,
-          "sortino": 2.058,
-          "max_dd": -0.1389,
-          "x_money": 1.305
+          "cagr": 0.3606,
+          "ann_return": 0.3319,
+          "vol": 0.222,
+          "sharpe": 1.495,
+          "sortino": 2.19,
+          "max_dd": -0.1393,
+          "x_money": 1.325
         },
         {
           "portfolio": "reactive 90/85",
           "from": "2024-02-01",
           "to": "2024-12-31",
           "years": 0.91,
-          "cagr": 0.3747,
-          "ann_return": 0.3427,
-          "vol": 0.224,
-          "sharpe": 1.53,
-          "sortino": 2.205,
-          "max_dd": -0.1389,
-          "x_money": 1.338
+          "cagr": 0.3975,
+          "ann_return": 0.3593,
+          "vol": 0.225,
+          "sharpe": 1.597,
+          "sortino": 2.335,
+          "max_dd": -0.1393,
+          "x_money": 1.358
         },
         {
           "portfolio": "anticipatory 90/85",
           "from": "2024-02-01",
           "to": "2024-12-31",
           "years": 0.91,
-          "cagr": 0.3449,
-          "ann_return": 0.3205,
-          "vol": 0.2226,
-          "sharpe": 1.44,
-          "sortino": 2.075,
-          "max_dd": -0.1389,
-          "x_money": 1.311
+          "cagr": 0.3676,
+          "ann_return": 0.3374,
+          "vol": 0.2236,
+          "sharpe": 1.509,
+          "sortino": 2.203,
+          "max_dd": -0.1393,
+          "x_money": 1.331
         }
       ],
       "heldout_2025_plus": [
@@ -135,52 +137,52 @@
           "from": "2025-01-02",
           "to": "2026-06-30",
           "years": 1.49,
-          "cagr": 0.4377,
-          "ann_return": 0.4115,
+          "cagr": 0.4118,
+          "ann_return": 0.3932,
           "vol": 0.3034,
-          "sharpe": 1.356,
-          "sortino": 1.859,
-          "max_dd": -0.2623,
-          "x_money": 1.717
+          "sharpe": 1.296,
+          "sortino": 1.76,
+          "max_dd": -0.2707,
+          "x_money": 1.671
         },
         {
           "portfolio": "always 90/85",
           "from": "2025-01-02",
           "to": "2026-06-30",
           "years": 1.49,
-          "cagr": 0.3893,
-          "ann_return": 0.3698,
-          "vol": 0.2783,
-          "sharpe": 1.329,
-          "sortino": 1.828,
-          "max_dd": -0.2163,
-          "x_money": 1.632
+          "cagr": 0.3639,
+          "ann_return": 0.3513,
+          "vol": 0.2785,
+          "sharpe": 1.261,
+          "sortino": 1.715,
+          "max_dd": -0.2248,
+          "x_money": 1.588
         },
         {
           "portfolio": "reactive 90/85",
           "from": "2025-01-02",
           "to": "2026-06-30",
           "years": 1.49,
-          "cagr": 0.4104,
-          "ann_return": 0.3867,
-          "vol": 0.2841,
-          "sharpe": 1.361,
-          "sortino": 1.861,
-          "max_dd": -0.2202,
-          "x_money": 1.669
+          "cagr": 0.3847,
+          "ann_return": 0.3681,
+          "vol": 0.284,
+          "sharpe": 1.296,
+          "sortino": 1.756,
+          "max_dd": -0.2286,
+          "x_money": 1.624
         },
         {
           "portfolio": "anticipatory 90/85",
           "from": "2025-01-02",
           "to": "2026-06-30",
           "years": 1.49,
-          "cagr": 0.428,
-          "ann_return": 0.4032,
-          "vol": 0.2983,
-          "sharpe": 1.351,
-          "sortino": 1.863,
-          "max_dd": -0.2594,
-          "x_money": 1.7
+          "cagr": 0.402,
+          "ann_return": 0.3848,
+          "vol": 0.2986,
+          "sharpe": 1.289,
+          "sortino": 1.756,
+          "max_dd": -0.2678,
+          "x_money": 1.654
         }
       ]
     },
@@ -1796,13 +1798,13 @@
           "from": "2007-04-12",
           "to": "2026-05-29",
           "years": 19.13,
-          "cagr": 0.0922,
-          "ann_return": 0.1099,
-          "vol": 0.2075,
-          "sharpe": 0.53,
+          "cagr": 0.0923,
+          "ann_return": 0.1102,
+          "vol": 0.2082,
+          "sharpe": 0.529,
           "sortino": 0.698,
-          "max_dd": -0.503,
-          "x_money": 5.406
+          "max_dd": -0.5064,
+          "x_money": 5.415
         },
         {
           "portfolio": "anticipatory 90/85",
@@ -1810,12 +1812,12 @@
           "to": "2026-05-29",
           "years": 19.13,
           "cagr": 0.0632,
-          "ann_return": 0.0819,
-          "vol": 0.2026,
+          "ann_return": 0.0821,
+          "vol": 0.2033,
           "sharpe": 0.404,
           "sortino": 0.535,
-          "max_dd": -0.503,
-          "x_money": 3.228
+          "max_dd": -0.5064,
+          "x_money": 3.232
         }
       ],
       "design_2007_2016": [
@@ -1824,26 +1826,26 @@
           "from": "2007-04-12",
           "to": "2016-12-30",
           "years": 9.72,
-          "cagr": 0.0337,
-          "ann_return": 0.0524,
-          "vol": 0.1963,
-          "sharpe": 0.267,
-          "sortino": 0.362,
-          "max_dd": -0.503,
-          "x_money": 1.38
+          "cagr": 0.0335,
+          "ann_return": 0.0523,
+          "vol": 0.1967,
+          "sharpe": 0.266,
+          "sortino": 0.361,
+          "max_dd": -0.5064,
+          "x_money": 1.378
         },
         {
           "portfolio": "anticipatory 90/85",
           "from": "2007-04-12",
           "to": "2016-12-30",
           "years": 9.72,
-          "cagr": 0.0053,
-          "ann_return": 0.0241,
-          "vol": 0.1936,
+          "cagr": 0.0052,
+          "ann_return": 0.024,
+          "vol": 0.1941,
           "sharpe": 0.124,
-          "sortino": 0.168,
-          "max_dd": -0.503,
-          "x_money": 1.053
+          "sortino": 0.167,
+          "max_dd": -0.5064,
+          "x_money": 1.051
         }
       ],
       "heldout_2017_plus": [
@@ -1852,26 +1854,26 @@
           "from": "2017-01-03",
           "to": "2026-05-29",
           "years": 9.4,
-          "cagr": 0.1563,
-          "ann_return": 0.1696,
-          "vol": 0.2185,
-          "sharpe": 0.776,
+          "cagr": 0.1567,
+          "ann_return": 0.1701,
+          "vol": 0.2194,
+          "sharpe": 0.775,
           "sortino": 0.999,
-          "max_dd": -0.3156,
-          "x_money": 3.917
+          "max_dd": -0.3151,
+          "x_money": 3.929
         },
         {
           "portfolio": "anticipatory 90/85",
           "from": "2017-01-03",
           "to": "2026-05-29",
           "years": 9.4,
-          "cagr": 0.1266,
-          "ann_return": 0.1419,
-          "vol": 0.2114,
-          "sharpe": 0.671,
+          "cagr": 0.1269,
+          "ann_return": 0.1424,
+          "vol": 0.2124,
+          "sharpe": 0.67,
           "sortino": 0.872,
-          "max_dd": -0.2882,
-          "x_money": 3.065
+          "max_dd": -0.2877,
+          "x_money": 3.074
         }
       ]
     },
@@ -1881,26 +1883,26 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.085,
-        "ann_return": 0.1029,
-        "vol": 0.2056,
+        "cagr": 0.0851,
+        "ann_return": 0.1031,
+        "vol": 0.2063,
         "sharpe": 0.5,
         "sortino": 0.661,
-        "max_dd": -0.503,
-        "x_money": 4.76
+        "max_dd": -0.5064,
+        "x_money": 4.768
       },
       "2%_annual": {
         "portfolio": "2% annual budget",
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0777,
-        "ann_return": 0.0959,
-        "vol": 0.2041,
-        "sharpe": 0.47,
+        "cagr": 0.0778,
+        "ann_return": 0.0961,
+        "vol": 0.2048,
+        "sharpe": 0.469,
         "sortino": 0.621,
-        "max_dd": -0.503,
-        "x_money": 4.187
+        "max_dd": -0.5064,
+        "x_money": 4.193
       },
       "4%_annual": {
         "portfolio": "4% annual budget",
@@ -1908,12 +1910,12 @@
         "to": "2026-05-29",
         "years": 19.13,
         "cagr": 0.0632,
-        "ann_return": 0.0819,
-        "vol": 0.2026,
+        "ann_return": 0.0821,
+        "vol": 0.2033,
         "sharpe": 0.404,
         "sortino": 0.535,
-        "max_dd": -0.503,
-        "x_money": 3.228
+        "max_dd": -0.5064,
+        "x_money": 3.232
       },
       "6%_annual": {
         "portfolio": "6% annual budget",
@@ -1921,12 +1923,12 @@
         "to": "2026-05-29",
         "years": 19.13,
         "cagr": 0.049,
-        "ann_return": 0.0679,
-        "vol": 0.1997,
+        "ann_return": 0.0681,
+        "vol": 0.2004,
         "sharpe": 0.34,
         "sortino": 0.45,
-        "max_dd": -0.503,
-        "x_money": 2.495
+        "max_dd": -0.5064,
+        "x_money": 2.499
       }
     },
     "pricing_sensitivity": {
@@ -1935,13 +1937,13 @@
         "from": "2007-04-12",
         "to": "2026-05-29",
         "years": 19.13,
-        "cagr": 0.0627,
-        "ann_return": 0.082,
-        "vol": 0.2052,
-        "sharpe": 0.4,
+        "cagr": 0.0628,
+        "ann_return": 0.0822,
+        "vol": 0.2059,
+        "sharpe": 0.399,
         "sortino": 0.532,
-        "max_dd": -0.503,
-        "x_money": 3.2
+        "max_dd": -0.5064,
+        "x_money": 3.204
       },
       "preselected_skew": {
         "portfolio": "preselected_skew",
@@ -1949,12 +1951,12 @@
         "to": "2026-05-29",
         "years": 19.13,
         "cagr": 0.0632,
-        "ann_return": 0.0819,
-        "vol": 0.2026,
+        "ann_return": 0.0821,
+        "vol": 0.2033,
         "sharpe": 0.404,
         "sortino": 0.535,
-        "max_dd": -0.503,
-        "x_money": 3.228
+        "max_dd": -0.5064,
+        "x_money": 3.232
       },
       "severe_skew": {
         "portfolio": "severe_skew",
@@ -1962,12 +1964,12 @@
         "to": "2026-05-29",
         "years": 19.13,
         "cagr": 0.0637,
-        "ann_return": 0.0823,
-        "vol": 0.2024,
+        "ann_return": 0.0826,
+        "vol": 0.2031,
         "sharpe": 0.407,
         "sortino": 0.538,
-        "max_dd": -0.503,
-        "x_money": 3.256
+        "max_dd": -0.5064,
+        "x_money": 3.261
       }
     },
     "stress_windows": {
@@ -1977,35 +1979,35 @@
           "from": "2007-10-09",
           "to": "2009-03-09",
           "sessions": 356,
-          "total_return": -0.3411,
-          "max_drawdown": -0.3941,
-          "worst_day": -0.064
+          "total_return": -0.3383,
+          "max_drawdown": -0.3942,
+          "worst_day": -0.0638
         },
         {
           "window": "momentum crash rebound",
           "from": "2009-03-10",
           "to": "2009-06-30",
           "sessions": 79,
-          "total_return": -0.1446,
-          "max_drawdown": -0.1925,
-          "worst_day": -0.025
+          "total_return": -0.1499,
+          "max_drawdown": -0.197,
+          "worst_day": -0.0254
         },
         {
           "window": "Eurozone / US downgrade",
           "from": "2011-05-02",
           "to": "2011-10-03",
           "sessions": 108,
-          "total_return": -0.1822,
-          "max_drawdown": -0.1954,
-          "worst_day": -0.0634
+          "total_return": -0.1819,
+          "max_drawdown": -0.1956,
+          "worst_day": -0.0635
         },
         {
           "window": "China / energy selloff",
           "from": "2015-07-01",
           "to": "2016-02-11",
           "sessions": 156,
-          "total_return": -0.0539,
-          "max_drawdown": -0.1452,
+          "total_return": -0.0526,
+          "max_drawdown": -0.1451,
           "worst_day": -0.0384
         },
         {
@@ -2013,27 +2015,27 @@
           "from": "2018-01-26",
           "to": "2018-12-24",
           "sessions": 230,
-          "total_return": -0.1992,
-          "max_drawdown": -0.2336,
-          "worst_day": -0.055
+          "total_return": -0.1986,
+          "max_drawdown": -0.2337,
+          "worst_day": -0.0551
         },
         {
           "window": "COVID crash",
           "from": "2020-02-19",
           "to": "2020-03-23",
           "sessions": 24,
-          "total_return": -0.3125,
-          "max_drawdown": -0.3156,
-          "worst_day": -0.0986
+          "total_return": -0.312,
+          "max_drawdown": -0.3151,
+          "worst_day": -0.0989
         },
         {
           "window": "inflation bear",
           "from": "2022-01-03",
           "to": "2022-10-12",
           "sessions": 196,
-          "total_return": -0.1801,
-          "max_drawdown": -0.1982,
-          "worst_day": -0.0384
+          "total_return": -0.179,
+          "max_drawdown": -0.1972,
+          "worst_day": -0.0389
         }
       ],
       "anticipatory 90/85": [
@@ -2042,35 +2044,35 @@
           "from": "2007-10-09",
           "to": "2009-03-09",
           "sessions": 356,
-          "total_return": -0.3411,
-          "max_drawdown": -0.3941,
-          "worst_day": -0.064
+          "total_return": -0.3383,
+          "max_drawdown": -0.3942,
+          "worst_day": -0.0638
         },
         {
           "window": "momentum crash rebound",
           "from": "2009-03-10",
           "to": "2009-06-30",
           "sessions": 79,
-          "total_return": -0.1446,
-          "max_drawdown": -0.1925,
-          "worst_day": -0.025
+          "total_return": -0.1499,
+          "max_drawdown": -0.197,
+          "worst_day": -0.0254
         },
         {
           "window": "Eurozone / US downgrade",
           "from": "2011-05-02",
           "to": "2011-10-03",
           "sessions": 108,
-          "total_return": -0.1822,
-          "max_drawdown": -0.1954,
-          "worst_day": -0.0634
+          "total_return": -0.1819,
+          "max_drawdown": -0.1956,
+          "worst_day": -0.0635
         },
         {
           "window": "China / energy selloff",
           "from": "2015-07-01",
           "to": "2016-02-11",
           "sessions": 156,
-          "total_return": -0.0539,
-          "max_drawdown": -0.1452,
+          "total_return": -0.0526,
+          "max_drawdown": -0.1451,
           "worst_day": -0.0384
         },
         {
@@ -2078,27 +2080,27 @@
           "from": "2018-01-26",
           "to": "2018-12-24",
           "sessions": 230,
-          "total_return": -0.1921,
-          "max_drawdown": -0.2336,
-          "worst_day": -0.0522
+          "total_return": -0.1915,
+          "max_drawdown": -0.2337,
+          "worst_day": -0.0523
         },
         {
           "window": "COVID crash",
           "from": "2020-02-19",
           "to": "2020-03-23",
           "sessions": 24,
-          "total_return": -0.2851,
-          "max_drawdown": -0.2882,
-          "worst_day": -0.0986
+          "total_return": -0.2846,
+          "max_drawdown": -0.2877,
+          "worst_day": -0.0989
         },
         {
           "window": "inflation bear",
           "from": "2022-01-03",
           "to": "2022-10-12",
           "sessions": 196,
-          "total_return": -0.1801,
-          "max_drawdown": -0.1982,
-          "worst_day": -0.0384
+          "total_return": -0.179,
+          "max_drawdown": -0.1972,
+          "worst_day": -0.0389
         }
       ]
     },
@@ -2351,11 +2353,11 @@
         "realized_vol_20d": 0.1275620390844569,
         "vix": 28.27,
         "entry_debit_per_unit": 0.3956,
-        "units": 164.9102,
-        "maximum_loss_dollars": 131.21,
-        "annual_budget_used": 131.21,
+        "units": 164.3716,
+        "maximum_loss_dollars": 130.78,
+        "annual_budget_used": 130.78,
         "exit_date": "2009-11-02",
-        "exit_friction_dollars": 32.98
+        "exit_friction_dollars": 32.87
       },
       {
         "roll_date": "2009-11-02",
@@ -2381,11 +2383,11 @@
         "realized_vol_20d": 0.10094830091514911,
         "vix": 20.04,
         "entry_debit_per_unit": 0.2203,
-        "units": 236.5467,
-        "maximum_loss_dollars": 146.73,
-        "annual_budget_used": 146.73,
+        "units": 235.8242,
+        "maximum_loss_dollars": 146.28,
+        "annual_budget_used": 146.28,
         "exit_date": "2010-02-01",
-        "exit_friction_dollars": 47.31
+        "exit_friction_dollars": 47.16
       },
       {
         "roll_date": "2010-02-01",
@@ -2411,11 +2413,11 @@
         "realized_vol_20d": 0.07567558559949575,
         "vix": 17.47,
         "entry_debit_per_unit": 0.1631,
-        "units": 246.2185,
-        "maximum_loss_dollars": 138.65,
-        "annual_budget_used": 285.38,
+        "units": 245.4372,
+        "maximum_loss_dollars": 138.21,
+        "annual_budget_used": 284.49,
         "exit_date": "2010-05-03",
-        "exit_friction_dollars": 49.24
+        "exit_friction_dollars": 49.09
       },
       {
         "roll_date": "2010-05-03",
@@ -2491,11 +2493,11 @@
         "realized_vol_20d": 0.04353833321537012,
         "vix": 17.61,
         "entry_debit_per_unit": 0.1825,
-        "units": 271.2211,
-        "maximum_loss_dollars": 157.97,
-        "annual_budget_used": 157.97,
+        "units": 270.4918,
+        "maximum_loss_dollars": 157.55,
+        "annual_budget_used": 157.55,
         "exit_date": "2011-02-01",
-        "exit_friction_dollars": 54.24
+        "exit_friction_dollars": 54.1
       },
       {
         "roll_date": "2011-02-01",
@@ -2505,11 +2507,11 @@
         "realized_vol_20d": 0.1021167717464617,
         "vix": 17.63,
         "entry_debit_per_unit": 0.1883,
-        "units": 261.9927,
-        "maximum_loss_dollars": 154.13,
-        "annual_budget_used": 312.11,
+        "units": 261.289,
+        "maximum_loss_dollars": 153.72,
+        "annual_budget_used": 311.27,
         "exit_date": "2011-03-01",
-        "exit_friction_dollars": 52.4
+        "exit_friction_dollars": 52.26
       },
       {
         "roll_date": "2011-03-01",
@@ -2610,11 +2612,11 @@
         "realized_vol_20d": 0.08733377232566067,
         "vix": 18.55,
         "entry_debit_per_unit": 0.2221,
-        "units": 245.4678,
-        "maximum_loss_dollars": 152.71,
-        "annual_budget_used": 152.71,
+        "units": 244.8422,
+        "maximum_loss_dollars": 152.32,
+        "annual_budget_used": 152.32,
         "exit_date": "2012-03-01",
-        "exit_friction_dollars": 49.09
+        "exit_friction_dollars": 48.97
       },
       {
         "roll_date": "2012-03-01",
@@ -2624,11 +2626,11 @@
         "realized_vol_20d": 0.08351385443981613,
         "vix": 17.26,
         "entry_debit_per_unit": 0.1914,
-        "units": 251.5215,
-        "maximum_loss_dollars": 148.75,
-        "annual_budget_used": 301.46,
+        "units": 251.3564,
+        "maximum_loss_dollars": 148.65,
+        "annual_budget_used": 300.97,
         "exit_date": "2012-04-02",
-        "exit_friction_dollars": 50.3
+        "exit_friction_dollars": 50.27
       },
       {
         "roll_date": "2012-04-02",
@@ -2717,11 +2719,11 @@
         "realized_vol_20d": 0.1157415684164496,
         "vix": 14.68,
         "entry_debit_per_unit": 0.1298,
-        "units": 322.5055,
-        "maximum_loss_dollars": 170.87,
-        "annual_budget_used": 170.87,
+        "units": 321.9609,
+        "maximum_loss_dollars": 170.58,
+        "annual_budget_used": 170.58,
         "exit_date": "2013-02-01",
-        "exit_friction_dollars": 64.5
+        "exit_friction_dollars": 64.39
       },
       {
         "roll_date": "2013-02-01",
@@ -2731,11 +2733,11 @@
         "realized_vol_20d": 0.055051440274664645,
         "vix": 12.9,
         "entry_debit_per_unit": 0.0879,
-        "units": 327.6513,
-        "maximum_loss_dollars": 159.88,
-        "annual_budget_used": 330.74,
+        "units": 327.0839,
+        "maximum_loss_dollars": 159.6,
+        "annual_budget_used": 330.18,
         "exit_date": "2013-03-01",
-        "exit_friction_dollars": 65.53
+        "exit_friction_dollars": 65.42
       },
       {
         "roll_date": "2013-03-01",
@@ -2834,11 +2836,11 @@
         "realized_vol_20d": 0.09875955613507378,
         "vix": 14.23,
         "entry_debit_per_unit": 0.1504,
-        "units": 383.926,
-        "maximum_loss_dollars": 211.3,
-        "annual_budget_used": 211.3,
+        "units": 383.4876,
+        "maximum_loss_dollars": 211.06,
+        "annual_budget_used": 211.06,
         "exit_date": "2014-02-03",
-        "exit_friction_dollars": 76.79
+        "exit_friction_dollars": 76.7
       },
       {
         "roll_date": "2014-02-03",
@@ -2848,11 +2850,11 @@
         "realized_vol_20d": 0.12592725513551,
         "vix": 21.44,
         "entry_debit_per_unit": 0.4284,
-        "units": 239.0258,
-        "maximum_loss_dollars": 198.02,
-        "annual_budget_used": 409.32,
+        "units": 238.7612,
+        "maximum_loss_dollars": 197.8,
+        "annual_budget_used": 408.86,
         "exit_date": "2014-03-03",
-        "exit_friction_dollars": 47.81
+        "exit_friction_dollars": 47.75
       },
       {
         "roll_date": "2014-03-03",
@@ -2862,11 +2864,11 @@
         "realized_vol_20d": 0.12450087767216167,
         "vix": 16.0,
         "entry_debit_per_unit": 0.217,
-        "units": 31.2355,
-        "maximum_loss_dollars": 19.27,
-        "annual_budget_used": 428.59,
+        "units": 31.1932,
+        "maximum_loss_dollars": 19.25,
+        "annual_budget_used": 428.11,
         "exit_date": "2014-04-01",
-        "exit_friction_dollars": 6.25
+        "exit_friction_dollars": 6.24
       },
       {
         "roll_date": "2014-04-01",
@@ -2972,11 +2974,11 @@
         "realized_vol_20d": 0.1067050371983343,
         "vix": 13.04,
         "entry_debit_per_unit": 0.1331,
-        "units": 455.1702,
-        "maximum_loss_dollars": 242.64,
-        "annual_budget_used": 242.64,
+        "units": 454.7114,
+        "maximum_loss_dollars": 242.4,
+        "annual_budget_used": 242.4,
         "exit_date": "2015-04-01",
-        "exit_friction_dollars": 91.03
+        "exit_friction_dollars": 90.94
       },
       {
         "roll_date": "2015-04-01",
@@ -2986,11 +2988,11 @@
         "realized_vol_20d": 0.14581452517528012,
         "vix": 15.11,
         "entry_debit_per_unit": 0.2087,
-        "units": 371.4843,
-        "maximum_loss_dollars": 226.11,
-        "annual_budget_used": 468.75,
+        "units": 371.1458,
+        "maximum_loss_dollars": 225.91,
+        "annual_budget_used": 468.3,
         "exit_date": "2015-05-01",
-        "exit_friction_dollars": 74.3
+        "exit_friction_dollars": 74.23
       },
       {
         "roll_date": "2015-05-01",
@@ -3094,11 +3096,11 @@
         "realized_vol_20d": 0.08999039171832694,
         "vix": 13.1,
         "entry_debit_per_unit": 0.1354,
-        "units": 420.5001,
-        "maximum_loss_dollars": 225.13,
-        "annual_budget_used": 225.13,
+        "units": 420.4138,
+        "maximum_loss_dollars": 225.09,
+        "annual_budget_used": 225.09,
         "exit_date": "2016-05-02",
-        "exit_friction_dollars": 84.1
+        "exit_friction_dollars": 84.08
       },
       {
         "roll_date": "2016-05-02",
@@ -3108,11 +3110,11 @@
         "realized_vol_20d": 0.10205320062063836,
         "vix": 14.68,
         "entry_debit_per_unit": 0.1973,
-        "units": 359.3227,
-        "maximum_loss_dollars": 214.61,
-        "annual_budget_used": 439.74,
+        "units": 359.038,
+        "maximum_loss_dollars": 214.44,
+        "annual_budget_used": 439.52,
         "exit_date": "2016-06-01",
-        "exit_friction_dollars": 71.86
+        "exit_friction_dollars": 71.81
       },
       {
         "roll_date": "2016-06-01",
@@ -3122,11 +3124,11 @@
         "realized_vol_20d": 0.10981235128118497,
         "vix": 14.2,
         "entry_debit_per_unit": 0.1796,
-        "units": 43.4324,
-        "maximum_loss_dollars": 25.17,
-        "annual_budget_used": 464.91,
+        "units": 44.3726,
+        "maximum_loss_dollars": 25.72,
+        "annual_budget_used": 465.24,
         "exit_date": "2016-07-01",
-        "exit_friction_dollars": 8.69
+        "exit_friction_dollars": 8.87
       },
       {
         "roll_date": "2016-07-01",
@@ -3189,11 +3191,11 @@
         "realized_vol_20d": 0.08030429008067008,
         "vix": 12.85,
         "entry_debit_per_unit": 0.1402,
-        "units": 391.8544,
-        "maximum_loss_dollars": 211.66,
-        "annual_budget_used": 211.66,
+        "units": 391.1872,
+        "maximum_loss_dollars": 211.3,
+        "annual_budget_used": 211.3,
         "exit_date": "2017-02-01",
-        "exit_friction_dollars": 78.37
+        "exit_friction_dollars": 78.24
       },
       {
         "roll_date": "2017-02-01",
@@ -3203,11 +3205,11 @@
         "realized_vol_20d": 0.06626865503459475,
         "vix": 11.81,
         "entry_debit_per_unit": 0.1046,
-        "units": 415.3112,
-        "maximum_loss_dollars": 209.57,
-        "annual_budget_used": 421.24,
+        "units": 414.6572,
+        "maximum_loss_dollars": 209.24,
+        "annual_budget_used": 420.55,
         "exit_date": "2017-03-01",
-        "exit_friction_dollars": 83.06
+        "exit_friction_dollars": 82.93
       },
       {
         "roll_date": "2017-03-01",
@@ -3307,11 +3309,11 @@
         "realized_vol_20d": 0.055025854118851025,
         "vix": 9.77,
         "entry_debit_per_unit": 0.0591,
-        "units": 565.4741,
-        "maximum_loss_dollars": 259.62,
-        "annual_budget_used": 259.62,
+        "units": 564.9114,
+        "maximum_loss_dollars": 259.36,
+        "annual_budget_used": 259.36,
         "exit_date": "2018-02-01",
-        "exit_friction_dollars": 113.09
+        "exit_friction_dollars": 112.98
       },
       {
         "roll_date": "2018-02-01",
@@ -3321,11 +3323,11 @@
         "realized_vol_20d": 0.08723709882958709,
         "vix": 13.47,
         "entry_debit_per_unit": 0.2097,
-        "units": 421.8432,
-        "maximum_loss_dollars": 257.2,
-        "annual_budget_used": 516.82,
+        "units": 421.4792,
+        "maximum_loss_dollars": 256.98,
+        "annual_budget_used": 516.34,
         "exit_date": "2018-03-01",
-        "exit_friction_dollars": 84.37
+        "exit_friction_dollars": 84.3
       },
       {
         "roll_date": "2018-03-01",
@@ -3436,11 +3438,11 @@
         "realized_vol_20d": 0.08294781292471852,
         "vix": 13.57,
         "entry_debit_per_unit": 0.2181,
-        "units": 400.5694,
-        "maximum_loss_dollars": 247.61,
-        "annual_budget_used": 247.61,
+        "units": 400.2952,
+        "maximum_loss_dollars": 247.44,
+        "annual_budget_used": 247.44,
         "exit_date": "2019-04-01",
-        "exit_friction_dollars": 80.11
+        "exit_friction_dollars": 80.06
       },
       {
         "roll_date": "2019-04-01",
@@ -3450,11 +3452,11 @@
         "realized_vol_20d": 0.11907550246851538,
         "vix": 13.4,
         "entry_debit_per_unit": 0.2141,
-        "units": 369.3946,
-        "maximum_loss_dollars": 226.85,
-        "annual_budget_used": 474.46,
+        "units": 369.7934,
+        "maximum_loss_dollars": 227.1,
+        "annual_budget_used": 474.54,
         "exit_date": "2019-05-01",
-        "exit_friction_dollars": 73.88
+        "exit_friction_dollars": 73.96
       },
       {
         "roll_date": "2019-05-01",
@@ -3534,11 +3536,11 @@
         "realized_vol_20d": 0.06753493835689409,
         "vix": 12.47,
         "entry_debit_per_unit": 0.1926,
-        "units": 503.3967,
-        "maximum_loss_dollars": 298.3,
-        "annual_budget_used": 298.3,
+        "units": 503.2798,
+        "maximum_loss_dollars": 298.23,
+        "annual_budget_used": 298.23,
         "exit_date": "2020-02-03",
-        "exit_friction_dollars": 100.68
+        "exit_friction_dollars": 100.66
       },
       {
         "roll_date": "2020-02-03",
@@ -3548,11 +3550,11 @@
         "realized_vol_20d": 0.1198944614280286,
         "vix": 17.97,
         "entry_debit_per_unit": 0.588,
-        "units": 291.5612,
-        "maximum_loss_dollars": 288.07,
-        "annual_budget_used": 586.37,
+        "units": 291.4443,
+        "maximum_loss_dollars": 287.96,
+        "annual_budget_used": 586.19,
         "exit_date": "2020-03-02",
-        "exit_friction_dollars": 58.31
+        "exit_friction_dollars": 58.29
       },
       {
         "roll_date": "2020-03-02",
@@ -3644,11 +3646,11 @@
         "realized_vol_20d": 0.08385739000098956,
         "vix": 26.97,
         "entry_debit_per_unit": 1.6357,
-        "units": 156.3299,
-        "maximum_loss_dollars": 318.24,
-        "annual_budget_used": 318.24,
+        "units": 156.0842,
+        "maximum_loss_dollars": 317.74,
+        "annual_budget_used": 317.74,
         "exit_date": "2021-02-01",
-        "exit_friction_dollars": 31.27
+        "exit_friction_dollars": 31.22
       },
       {
         "roll_date": "2021-02-01",
@@ -3674,11 +3676,11 @@
         "realized_vol_20d": 0.14124162422512232,
         "vix": 17.33,
         "entry_debit_per_unit": 0.6752,
-        "units": 287.6958,
-        "maximum_loss_dollars": 309.34,
-        "annual_budget_used": 627.58,
+        "units": 286.8357,
+        "maximum_loss_dollars": 308.42,
+        "annual_budget_used": 626.16,
         "exit_date": "2021-05-03",
-        "exit_friction_dollars": 57.54
+        "exit_friction_dollars": 57.37
       },
       {
         "roll_date": "2021-05-03",
@@ -3688,11 +3690,11 @@
         "realized_vol_20d": 0.10311317488049473,
         "vix": 18.31,
         "entry_debit_per_unit": 0.814,
-        "units": 16.2117,
-        "maximum_loss_dollars": 19.68,
-        "annual_budget_used": 647.26,
+        "units": 16.5511,
+        "maximum_loss_dollars": 20.09,
+        "annual_budget_used": 646.25,
         "exit_date": "2021-06-01",
-        "exit_friction_dollars": 3.24
+        "exit_friction_dollars": 3.31
       },
       {
         "roll_date": "2021-06-01",
@@ -3893,11 +3895,11 @@
         "realized_vol_20d": 0.12634968523175974,
         "vix": 16.08,
         "entry_debit_per_unit": 0.5863,
-        "units": 315.6298,
-        "maximum_loss_dollars": 311.32,
-        "annual_budget_used": 311.32,
+        "units": 314.972,
+        "maximum_loss_dollars": 310.67,
+        "annual_budget_used": 310.67,
         "exit_date": "2023-06-01",
-        "exit_friction_dollars": 63.13
+        "exit_friction_dollars": 62.99
       },
       {
         "roll_date": "2023-06-01",
@@ -3907,11 +3909,11 @@
         "realized_vol_20d": 0.12728606320155564,
         "vix": 15.65,
         "entry_debit_per_unit": 0.5502,
-        "units": 319.8592,
-        "maximum_loss_dollars": 303.93,
-        "annual_budget_used": 615.25,
+        "units": 319.1311,
+        "maximum_loss_dollars": 303.24,
+        "annual_budget_used": 613.91,
         "exit_date": "2023-07-03",
-        "exit_friction_dollars": 63.97
+        "exit_friction_dollars": 63.83
       },
       {
         "roll_date": "2023-07-03",
@@ -3921,11 +3923,11 @@
         "realized_vol_20d": 0.1050534715018115,
         "vix": 13.57,
         "entry_debit_per_unit": 0.372,
-        "units": 38.0778,
-        "maximum_loss_dollars": 29.4,
-        "annual_budget_used": 644.64,
+        "units": 39.0444,
+        "maximum_loss_dollars": 30.14,
+        "annual_budget_used": 644.05,
         "exit_date": "2023-08-01",
-        "exit_friction_dollars": 7.62
+        "exit_friction_dollars": 7.81
       },
       {
         "roll_date": "2023-08-01",
@@ -3979,11 +3981,11 @@
         "realized_vol_20d": 0.09479097463784443,
         "vix": 13.2,
         "entry_debit_per_unit": 0.3638,
-        "units": 426.218,
-        "maximum_loss_dollars": 325.56,
-        "annual_budget_used": 325.56,
+        "units": 425.0133,
+        "maximum_loss_dollars": 324.64,
+        "annual_budget_used": 324.64,
         "exit_date": "2024-02-01",
-        "exit_friction_dollars": 85.24
+        "exit_friction_dollars": 85.0
       },
       {
         "roll_date": "2024-02-01",
@@ -3993,11 +3995,11 @@
         "realized_vol_20d": 0.11210390558545791,
         "vix": 13.88,
         "entry_debit_per_unit": 0.445,
-        "units": 402.27,
-        "maximum_loss_dollars": 339.94,
-        "annual_budget_used": 665.5,
+        "units": 401.3078,
+        "maximum_loss_dollars": 339.12,
+        "annual_budget_used": 663.76,
         "exit_date": "2024-03-01",
-        "exit_friction_dollars": 80.45
+        "exit_friction_dollars": 80.26
       },
       {
         "roll_date": "2024-03-01",
@@ -4096,11 +4098,11 @@
         "realized_vol_20d": 0.1464001680247589,
         "vix": 17.93,
         "entry_debit_per_unit": 1.1381,
-        "units": 294.6609,
-        "maximum_loss_dollars": 453.23,
-        "annual_budget_used": 453.23,
+        "units": 294.4394,
+        "maximum_loss_dollars": 452.89,
+        "annual_budget_used": 452.89,
         "exit_date": "2025-02-03",
-        "exit_friction_dollars": 58.93
+        "exit_friction_dollars": 58.89
       },
       {
         "roll_date": "2025-02-03",
@@ -4110,11 +4112,11 @@
         "realized_vol_20d": 0.13943865144116993,
         "vix": 18.62,
         "entry_debit_per_unit": 1.2816,
-        "units": 268.3401,
-        "maximum_loss_dollars": 451.25,
-        "annual_budget_used": 904.48,
+        "units": 268.112,
+        "maximum_loss_dollars": 450.87,
+        "annual_budget_used": 903.76,
         "exit_date": "2025-03-03",
-        "exit_friction_dollars": 53.67
+        "exit_friction_dollars": 53.62
       },
       {
         "roll_date": "2025-03-03",
@@ -4211,11 +4213,11 @@
         "realized_vol_20d": 0.08927229365076364,
         "vix": 14.51,
         "entry_debit_per_unit": 0.7339,
-        "units": 470.8894,
-        "maximum_loss_dollars": 533.96,
-        "annual_budget_used": 533.96,
+        "units": 470.6964,
+        "maximum_loss_dollars": 533.74,
+        "annual_budget_used": 533.74,
         "exit_date": "2026-02-02",
-        "exit_friction_dollars": 94.18
+        "exit_friction_dollars": 94.14
       },
       {
         "roll_date": "2026-02-02",
@@ -4225,11 +4227,11 @@
         "realized_vol_20d": 0.10263193148374111,
         "vix": 16.34,
         "entry_debit_per_unit": 1.0646,
-        "units": 358.3772,
-        "maximum_loss_dollars": 524.86,
-        "annual_budget_used": 1058.83,
+        "units": 358.1514,
+        "maximum_loss_dollars": 524.53,
+        "annual_budget_used": 1058.28,
         "exit_date": "2026-03-02",
-        "exit_friction_dollars": 71.68
+        "exit_friction_dollars": 71.63
       },
       {
         "roll_date": "2026-03-02",

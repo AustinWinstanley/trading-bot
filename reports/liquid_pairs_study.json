@@ -20,7 +20,9 @@
     },
     "promotion_rule": "Higher base CAGR and Sharpe with no worse max drawdown in both early and held-out windows."
   },
-  "decision": "reject",
+  "decision": "untestable_at_10k",
+  "decision_note_2026_08_03": "86 of 1503 days have a short leg that rounds to zero whole shares (SPY/IVV priced in the hundreds against a ~$500 per-leg allocation at this account size) while the long leg fills normally - on those days this isn't a market-neutral pairs trade, it's one-legged directional exposure the strategy never intended. The prior 'reject' verdict (a 0.017 Sharpe difference on a sleeve averaging 2.47% gross and 0.23% vol) was measuring that distortion as much as the hypothesis. performance_fractional_diagnostic shows what a symmetric-fractional version would look like, but Alpaca cannot actually short ETFs fractionally, so that variant is not something this account could deploy - it is included only to show whether the whole-share floor is masking a real signal, not as a promotable alternative. The original gate's reject/promote verdict is preserved below for continuity, but decision reflects that the tested strategy was not the pre-registered one on a meaningful fraction of days.",
+  "original_gate_result": "reject",
   "gates": {
     "early_2020_2022": {
       "cagr_improves": true,
@@ -37,40 +39,40 @@
     "early_2020_2022": [
       {
         "portfolio": "base control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.062,
-        "ann_return": 0.0775,
-        "vol": 0.126,
-        "sharpe": 0.615,
-        "sortino": 0.722,
-        "max_dd": -0.1148,
-        "x_money": 1.189
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
       },
       {
         "portfolio": "base plus liquid pairs",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0628,
-        "ann_return": 0.0784,
-        "vol": 0.1262,
-        "sharpe": 0.621,
-        "sortino": 0.731,
-        "max_dd": -0.1148,
-        "x_money": 1.191
+        "years": 2.42,
+        "cagr": 0.0791,
+        "ann_return": 0.0821,
+        "vol": 0.1117,
+        "sharpe": 0.735,
+        "sortino": 1.021,
+        "max_dd": -0.1253,
+        "x_money": 1.203
       },
       {
         "portfolio": "pairs standalone",
-        "from": "2020-02-06",
+        "from": "2020-07-27",
         "to": "2022-12-30",
-        "years": 2.9,
-        "cagr": 0.0008,
+        "years": 2.43,
+        "cagr": 0.001,
         "ann_return": 0.0009,
-        "vol": 0.0008,
-        "sharpe": 1.095,
-        "sortino": 1.205,
+        "vol": 0.0009,
+        "sharpe": 1.108,
+        "sortino": 1.233,
         "max_dd": -0.0007,
         "x_money": 1.002
       }
@@ -81,26 +83,26 @@
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.176,
-        "ann_return": 0.1711,
-        "vol": 0.1281,
-        "sharpe": 1.336,
-        "sortino": 1.872,
-        "max_dd": -0.1399,
-        "x_money": 1.777
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
       },
       {
         "portfolio": "base plus liquid pairs",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.1752,
-        "ann_return": 0.1706,
-        "vol": 0.1293,
-        "sharpe": 1.319,
-        "sortino": 1.838,
-        "max_dd": -0.1438,
-        "x_money": 1.773
+        "cagr": 0.168,
+        "ann_return": 0.1644,
+        "vol": 0.129,
+        "sharpe": 1.275,
+        "sortino": 1.767,
+        "max_dd": -0.1502,
+        "x_money": 1.735
       },
       {
         "portfolio": "pairs standalone",
@@ -119,35 +121,35 @@
     "full": [
       {
         "portfolio": "base control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1233,
-        "ann_return": 0.1324,
-        "vol": 0.1272,
-        "sharpe": 1.041,
-        "sortino": 1.348,
-        "max_dd": -0.1399,
-        "x_money": 2.113
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1214,
+        "sharpe": 1.078,
+        "sortino": 1.5,
+        "max_dd": -0.1462,
+        "x_money": 2.087
       },
       {
         "portfolio": "base plus liquid pairs",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1232,
-        "ann_return": 0.1325,
-        "vol": 0.128,
-        "sharpe": 1.035,
-        "sortino": 1.338,
-        "max_dd": -0.1438,
-        "x_money": 2.113
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1222,
+        "sharpe": 1.071,
+        "sortino": 1.486,
+        "max_dd": -0.1502,
+        "x_money": 2.087
       },
       {
         "portfolio": "pairs standalone",
-        "from": "2020-02-06",
+        "from": "2020-07-27",
         "to": "2026-07-22",
-        "years": 6.46,
+        "years": 5.98,
         "cagr": 0.0001,
         "ann_return": 0.0001,
         "vol": 0.0023,
@@ -155,6 +157,92 @@
         "sortino": 0.018,
         "max_dd": -0.0065,
         "x_money": 1.0
+      }
+    ]
+  },
+  "performance_fractional_diagnostic": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base plus liquid pairs (fractional shorts, undeployable)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.078,
+        "ann_return": 0.0811,
+        "vol": 0.1115,
+        "sharpe": 0.727,
+        "sortino": 1.009,
+        "max_dd": -0.1255,
+        "x_money": 1.2
+      },
+      {
+        "portfolio": "pairs standalone (fractional shorts, undeployable)",
+        "from": "2020-07-27",
+        "to": "2022-12-30",
+        "years": 2.43,
+        "cagr": -0.0001,
+        "ann_return": -0.0001,
+        "vol": 0.0003,
+        "sharpe": -0.282,
+        "sortino": -0.275,
+        "max_dd": -0.0006,
+        "x_money": 1.0
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base plus liquid pairs (fractional shorts, undeployable)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.168,
+        "ann_return": 0.1642,
+        "vol": 0.1278,
+        "sharpe": 1.285,
+        "sortino": 1.791,
+        "max_dd": -0.1463,
+        "x_money": 1.735
+      },
+      {
+        "portfolio": "pairs standalone (fractional shorts, undeployable)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": -0.0008,
+        "ann_return": -0.0008,
+        "vol": 0.0002,
+        "sharpe": -3.776,
+        "sortino": -4.31,
+        "max_dd": -0.0028,
+        "x_money": 0.997
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base plus liquid pairs (fractional shorts, undeployable)",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1304,
+        "ann_return": 0.1303,
+        "vol": 0.1214,
+        "sharpe": 1.074,
+        "sortino": 1.494,
+        "max_dd": -0.1463,
+        "x_money": 2.081
+      },
+      {
+        "portfolio": "pairs standalone (fractional shorts, undeployable)",
+        "from": "2020-07-27",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": -0.0005,
+        "ann_return": -0.0005,
+        "vol": 0.0003,
+        "sharpe": -1.841,
+        "sortino": -2.024,
+        "max_dd": -0.0033,
+        "x_money": 0.997
       }
     ]
   },
@@ -171,9 +259,27 @@
     },
     "portfolio": {
       "one_way_turnover": 23.47,
-      "average_gross": 0.0247,
-      "average_short_gross": 0.0102,
+      "average_gross": 0.0249,
+      "average_short_gross": 0.0103,
       "zero_short_pair_days": 86
+    }
+  },
+  "diagnostics_fractional": {
+    "SPY/IVV": {
+      "active_days": 180,
+      "entries": 65,
+      "max_abs_z": 5.274
+    },
+    "GLD/IAU": {
+      "active_days": 260,
+      "entries": 72,
+      "max_abs_z": 6.557
+    },
+    "portfolio": {
+      "one_way_turnover": 27.7,
+      "average_gross": 0.0293,
+      "average_short_gross": 0.0146,
+      "zero_short_pair_days": 0
     }
   },
   "limitations": [

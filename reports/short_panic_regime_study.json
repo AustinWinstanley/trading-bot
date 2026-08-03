@@ -7,10 +7,10 @@
   "gates": [
     {
       "profile": "base",
-      "passed": true,
+      "passed": false,
       "windows": {
         "early_2020_2022": {
-          "sharpe_not_lower": true,
+          "sharpe_not_lower": false,
           "cagr_not_lower": true,
           "max_drawdown_not_worse": true
         },
@@ -42,55 +42,55 @@
     "early_2020_2022": [
       {
         "portfolio": "base \u2014 control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.062,
-        "ann_return": 0.0775,
-        "vol": 0.126,
-        "sharpe": 0.615,
-        "sortino": 0.722,
-        "max_dd": -0.1148,
-        "x_money": 1.189
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
       },
       {
         "portfolio": "base \u2014 preselected panic-rebound short gate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0629,
-        "ann_return": 0.0787,
-        "vol": 0.1271,
-        "sharpe": 0.619,
-        "sortino": 0.736,
-        "max_dd": -0.1148,
-        "x_money": 1.192
+        "years": 2.42,
+        "cagr": 0.0782,
+        "ann_return": 0.0814,
+        "vol": 0.1126,
+        "sharpe": 0.723,
+        "sortino": 1.015,
+        "max_dd": -0.1253,
+        "x_money": 1.2
       },
       {
         "portfolio": "2x \u2014 control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0923,
-        "ann_return": 0.1336,
-        "vol": 0.2493,
-        "sharpe": 0.536,
-        "sortino": 0.629,
-        "max_dd": -0.2084,
-        "x_money": 1.289
+        "years": 2.42,
+        "cagr": 0.1222,
+        "ann_return": 0.1391,
+        "vol": 0.2198,
+        "sharpe": 0.633,
+        "sortino": 0.885,
+        "max_dd": -0.2334,
+        "x_money": 1.322
       },
       {
         "portfolio": "2x \u2014 preselected panic-rebound short gate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0918,
-        "ann_return": 0.1336,
-        "vol": 0.2513,
-        "sharpe": 0.532,
-        "sortino": 0.631,
-        "max_dd": -0.2084,
-        "x_money": 1.287
+        "years": 2.42,
+        "cagr": 0.1208,
+        "ann_return": 0.1384,
+        "vol": 0.2221,
+        "sharpe": 0.623,
+        "sortino": 0.88,
+        "max_dd": -0.2334,
+        "x_money": 1.318
       }
     ],
     "heldout_2023_plus": [
@@ -99,106 +99,106 @@
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.176,
-        "ann_return": 0.1711,
-        "vol": 0.1281,
-        "sharpe": 1.336,
-        "sortino": 1.872,
-        "max_dd": -0.1399,
-        "x_money": 1.777
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
       },
       {
         "portfolio": "base \u2014 preselected panic-rebound short gate",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.176,
-        "ann_return": 0.1711,
-        "vol": 0.1281,
-        "sharpe": 1.336,
-        "sortino": 1.872,
-        "max_dd": -0.1399,
-        "x_money": 1.777
+        "cagr": 0.1689,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.292,
+        "sortino": 1.8,
+        "max_dd": -0.1462,
+        "x_money": 1.74
       },
       {
         "portfolio": "2x \u2014 control",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.2754,
-        "ann_return": 0.276,
+        "cagr": 0.2644,
+        "ann_return": 0.2673,
         "vol": 0.251,
-        "sharpe": 1.1,
-        "sortino": 1.539,
-        "max_dd": -0.2623,
-        "x_money": 2.371
+        "sharpe": 1.065,
+        "sortino": 1.479,
+        "max_dd": -0.2709,
+        "x_money": 2.299
       },
       {
         "portfolio": "2x \u2014 preselected panic-rebound short gate",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.2749,
-        "ann_return": 0.2756,
+        "cagr": 0.264,
+        "ann_return": 0.267,
         "vol": 0.251,
-        "sharpe": 1.098,
-        "sortino": 1.537,
-        "max_dd": -0.2626,
-        "x_money": 2.368
+        "sharpe": 1.064,
+        "sortino": 1.478,
+        "max_dd": -0.2714,
+        "x_money": 2.297
       }
     ],
     "full": [
       {
         "portfolio": "base \u2014 control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1233,
-        "ann_return": 0.1324,
-        "vol": 0.1272,
-        "sharpe": 1.041,
-        "sortino": 1.348,
-        "max_dd": -0.1399,
-        "x_money": 2.113
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1214,
+        "sharpe": 1.078,
+        "sortino": 1.5,
+        "max_dd": -0.1462,
+        "x_money": 2.087
       },
       {
         "portfolio": "base \u2014 preselected panic-rebound short gate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1237,
-        "ann_return": 0.1329,
-        "vol": 0.1277,
-        "sharpe": 1.041,
-        "sortino": 1.354,
-        "max_dd": -0.1399,
-        "x_money": 2.119
+        "years": 5.98,
+        "cagr": 0.131,
+        "ann_return": 0.1309,
+        "vol": 0.1218,
+        "sharpe": 1.075,
+        "sortino": 1.503,
+        "max_dd": -0.1462,
+        "x_money": 2.088
       },
       {
         "portfolio": "2x \u2014 control",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1895,
-        "ann_return": 0.2172,
-        "vol": 0.2502,
-        "sharpe": 0.868,
-        "sortino": 1.12,
-        "max_dd": -0.2623,
-        "x_money": 3.056
+        "years": 5.98,
+        "cagr": 0.2042,
+        "ann_return": 0.215,
+        "vol": 0.2387,
+        "sharpe": 0.901,
+        "sortino": 1.254,
+        "max_dd": -0.2709,
+        "x_money": 3.04
       },
       {
         "portfolio": "2x \u2014 preselected panic-rebound short gate",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1891,
-        "ann_return": 0.2169,
-        "vol": 0.251,
-        "sharpe": 0.864,
-        "sortino": 1.121,
-        "max_dd": -0.2626,
-        "x_money": 3.048
+        "years": 5.98,
+        "cagr": 0.2034,
+        "ann_return": 0.2145,
+        "vol": 0.2396,
+        "sharpe": 0.895,
+        "sortino": 1.252,
+        "max_dd": -0.2714,
+        "x_money": 3.028
       }
     ]
   },
@@ -207,102 +207,102 @@
       {
         "profile": "base",
         "variant": "control",
-        "short_ann_return_before_borrow": 0.027,
-        "short_turnover": 9.36,
+        "short_ann_return_before_borrow": 0.0294,
+        "short_turnover": 9.96,
         "panic_days": 30,
-        "average_short_gross": 0.0526
+        "average_short_gross": 0.0534
       },
       {
         "profile": "base",
         "variant": "preselected panic-rebound short gate",
-        "short_ann_return_before_borrow": 0.0281,
-        "short_turnover": 13.52,
+        "short_ann_return_before_borrow": 0.0294,
+        "short_turnover": 14.12,
         "panic_days": 30,
-        "average_short_gross": 0.0473
+        "average_short_gross": 0.0476
       },
       {
         "profile": "2x",
         "variant": "control",
-        "short_ann_return_before_borrow": 0.0836,
-        "short_turnover": 11.08,
+        "short_ann_return_before_borrow": 0.0864,
+        "short_turnover": 11.46,
         "panic_days": 30,
-        "average_short_gross": 0.1378
+        "average_short_gross": 0.1368
       },
       {
         "profile": "2x",
         "variant": "preselected panic-rebound short gate",
-        "short_ann_return_before_borrow": 0.0832,
-        "short_turnover": 16.35,
+        "short_ann_return_before_borrow": 0.0853,
+        "short_turnover": 16.91,
         "panic_days": 30,
-        "average_short_gross": 0.1247
+        "average_short_gross": 0.1238
       }
     ],
     "heldout_2023_plus": [
       {
         "profile": "base",
         "variant": "control",
-        "short_ann_return_before_borrow": -0.0246,
-        "short_turnover": 27.32,
+        "short_ann_return_before_borrow": -0.0266,
+        "short_turnover": 27.28,
         "panic_days": 0,
-        "average_short_gross": 0.0907
+        "average_short_gross": 0.0899
       },
       {
         "profile": "base",
         "variant": "preselected panic-rebound short gate",
-        "short_ann_return_before_borrow": -0.0246,
-        "short_turnover": 27.32,
+        "short_ann_return_before_borrow": -0.0265,
+        "short_turnover": 27.23,
         "panic_days": 0,
-        "average_short_gross": 0.0906
+        "average_short_gross": 0.0899
       },
       {
         "profile": "2x",
         "variant": "control",
-        "short_ann_return_before_borrow": -0.0633,
-        "short_turnover": 35.47,
+        "short_ann_return_before_borrow": -0.0636,
+        "short_turnover": 35.28,
         "panic_days": 0,
-        "average_short_gross": 0.2527
+        "average_short_gross": 0.2539
       },
       {
         "profile": "2x",
         "variant": "preselected panic-rebound short gate",
-        "short_ann_return_before_borrow": -0.0636,
-        "short_turnover": 35.49,
+        "short_ann_return_before_borrow": -0.0638,
+        "short_turnover": 35.24,
         "panic_days": 0,
-        "average_short_gross": 0.2527
+        "average_short_gross": 0.2539
       }
     ],
     "full": [
       {
         "profile": "base",
         "variant": "control",
-        "short_ann_return_before_borrow": -0.0032,
-        "short_turnover": 36.68,
+        "short_ann_return_before_borrow": -0.0037,
+        "short_turnover": 37.24,
         "panic_days": 30,
-        "average_short_gross": 0.0749
+        "average_short_gross": 0.075
       },
       {
         "profile": "base",
         "variant": "preselected panic-rebound short gate",
-        "short_ann_return_before_borrow": -0.0028,
-        "short_turnover": 40.84,
+        "short_ann_return_before_borrow": -0.0037,
+        "short_turnover": 41.35,
         "panic_days": 30,
-        "average_short_gross": 0.0727
+        "average_short_gross": 0.0726
       },
       {
         "profile": "2x",
         "variant": "control",
-        "short_ann_return_before_borrow": -0.0025,
-        "short_turnover": 46.55,
+        "short_ann_return_before_borrow": -0.0023,
+        "short_turnover": 46.74,
         "panic_days": 30,
-        "average_short_gross": 0.2052
+        "average_short_gross": 0.2061
       },
       {
         "profile": "2x",
         "variant": "preselected panic-rebound short gate",
         "short_ann_return_before_borrow": -0.0029,
-        "short_turnover": 51.84,
+        "short_turnover": 52.15,
         "panic_days": 30,
-        "average_short_gross": 0.1997
+        "average_short_gross": 0.2008
       }
     ]
   },
@@ -315,5 +315,11 @@
   "research_basis": {
     "paper": "Momentum Crashes",
     "url": "https://www.nber.org/papers/w20439"
+  },
+  "reexamination_2026_08_03": {
+    "context": "Re-run after fixing the cross-sectional panel's sparse pre-2020-07-27 warm-up rows and the trend/SPY gap-return convention (see AGENTS.md). The prior run's rejection was internally inconsistent: it cited '2x never activated after 2023' as a reason while the 2x heldout_2023_plus cell itself showed the candidate scoring worse than control.",
+    "resolved": "short_leg_attribution confirms panic_days=0 in every heldout_2023_plus cell for both profiles - the gate genuinely never activates there, so the sub-0.001-Sharpe, sub-0.001-CAGR differences recorded in that window are iteration noise from the 3-pass dynamic-equity solve, not an effect of the gate. They should not be read as evidence against the candidate.",
+    "new_finding": "On the corrected panel, base now also fails (previously passed): early_2020_2022 has panic_days=30, a real activation, and even then the candidate's max_dd is identical to control's - the gate produced no measurable drawdown protection the one time it is genuinely tested, while costing base-profile Sharpe 0.728->0.723. That is a cleaner rejection than before: not a data artifact, and not a leverage-only effect, but the candidate failing at the one thing it exists to do.",
+    "relevance_to_2026_07_23_loss": "This gate triggers on SPY-level drawdown/volatility/rebound - a market-wide crash-rebound pattern. The 2026-07-23 loss was a single-factor concentration event (AI-datacenter hardware names down 14-32% in a week SPY rose 0.4%); SPY never approached a 15% drawdown, so this gate would not have activated for it regardless of promotion. That incident is addressed by the (separately rejected) correlation cap, not by this candidate - the two should not be conflated."
   }
 }

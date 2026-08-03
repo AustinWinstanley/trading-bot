@@ -11,7 +11,7 @@
       "passed": false,
       "windows": {
         "early_2020_2022": {
-          "sharpe_improves": false,
+          "sharpe_improves": true,
           "turnover_reduction_at_least_30pct": true,
           "cagr_retains_at_least_90pct": true,
           "max_drawdown_not_over_10pct_worse": true
@@ -26,16 +26,16 @@
     },
     {
       "profile": "2x",
-      "passed": false,
+      "passed": true,
       "windows": {
         "early_2020_2022": {
-          "sharpe_improves": false,
+          "sharpe_improves": true,
           "turnover_reduction_at_least_30pct": true,
           "cagr_retains_at_least_90pct": true,
-          "max_drawdown_not_over_10pct_worse": false
+          "max_drawdown_not_over_10pct_worse": true
         },
         "heldout_2023_plus": {
-          "sharpe_improves": false,
+          "sharpe_improves": true,
           "turnover_reduction_at_least_30pct": true,
           "cagr_retains_at_least_90pct": true,
           "max_drawdown_not_over_10pct_worse": true
@@ -47,81 +47,81 @@
     "early_2020_2022": [
       {
         "portfolio": "base \u2014 weekly rebuild 20",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.062,
-        "ann_return": 0.0775,
-        "vol": 0.126,
-        "sharpe": 0.615,
-        "sortino": 0.722,
-        "max_dd": -0.1148,
-        "x_money": 1.189
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
       },
       {
         "portfolio": "base \u2014 preselected 20/40 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0599,
-        "ann_return": 0.0753,
-        "vol": 0.1264,
-        "sharpe": 0.596,
-        "sortino": 0.701,
-        "max_dd": -0.125,
-        "x_money": 1.182
+        "years": 2.42,
+        "cagr": 0.083,
+        "ann_return": 0.0857,
+        "vol": 0.1115,
+        "sharpe": 0.768,
+        "sortino": 1.062,
+        "max_dd": -0.119,
+        "x_money": 1.213
       },
       {
         "portfolio": "base \u2014 sensitivity 20/60 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.05,
-        "ann_return": 0.0645,
-        "vol": 0.1266,
-        "sharpe": 0.509,
-        "sortino": 0.593,
-        "max_dd": -0.1469,
-        "x_money": 1.151
+        "years": 2.42,
+        "cagr": 0.0727,
+        "ann_return": 0.0762,
+        "vol": 0.1121,
+        "sharpe": 0.68,
+        "sortino": 0.931,
+        "max_dd": -0.135,
+        "x_money": 1.185
       },
       {
         "portfolio": "2x \u2014 weekly rebuild 20",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0923,
-        "ann_return": 0.1336,
-        "vol": 0.2493,
-        "sharpe": 0.536,
-        "sortino": 0.629,
-        "max_dd": -0.2084,
-        "x_money": 1.289
+        "years": 2.42,
+        "cagr": 0.1222,
+        "ann_return": 0.1391,
+        "vol": 0.2198,
+        "sharpe": 0.633,
+        "sortino": 0.885,
+        "max_dd": -0.2334,
+        "x_money": 1.322
       },
       {
         "portfolio": "2x \u2014 preselected 20/40 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0837,
-        "ann_return": 0.1245,
-        "vol": 0.2493,
-        "sharpe": 0.499,
-        "sortino": 0.586,
-        "max_dd": -0.2311,
-        "x_money": 1.26
+        "years": 2.42,
+        "cagr": 0.1286,
+        "ann_return": 0.1448,
+        "vol": 0.22,
+        "sharpe": 0.658,
+        "sortino": 0.915,
+        "max_dd": -0.2291,
+        "x_money": 1.341
       },
       {
         "portfolio": "2x \u2014 sensitivity 20/60 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2022-12-30",
-        "years": 2.88,
-        "cagr": 0.0603,
-        "ann_return": 0.0993,
-        "vol": 0.2497,
-        "sharpe": 0.398,
-        "sortino": 0.465,
-        "max_dd": -0.2708,
-        "x_money": 1.183
+        "years": 2.42,
+        "cagr": 0.1068,
+        "ann_return": 0.1255,
+        "vol": 0.2207,
+        "sharpe": 0.569,
+        "sortino": 0.785,
+        "max_dd": -0.2515,
+        "x_money": 1.279
       }
     ],
     "heldout_2023_plus": [
@@ -130,158 +130,158 @@
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.176,
-        "ann_return": 0.1711,
-        "vol": 0.1281,
-        "sharpe": 1.336,
-        "sortino": 1.872,
-        "max_dd": -0.1399,
-        "x_money": 1.777
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
       },
       {
         "portfolio": "base \u2014 preselected 20/40 buffer",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.1684,
-        "ann_return": 0.1645,
-        "vol": 0.1274,
-        "sharpe": 1.292,
-        "sortino": 1.83,
-        "max_dd": -0.135,
-        "x_money": 1.737
+        "cagr": 0.1668,
+        "ann_return": 0.1631,
+        "vol": 0.1271,
+        "sharpe": 1.283,
+        "sortino": 1.816,
+        "max_dd": -0.1401,
+        "x_money": 1.729
       },
       {
         "portfolio": "base \u2014 sensitivity 20/60 buffer",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.1684,
-        "ann_return": 0.1647,
-        "vol": 0.1286,
-        "sharpe": 1.281,
-        "sortino": 1.817,
-        "max_dd": -0.136,
-        "x_money": 1.737
+        "cagr": 0.1694,
+        "ann_return": 0.1653,
+        "vol": 0.1272,
+        "sharpe": 1.299,
+        "sortino": 1.845,
+        "max_dd": -0.1398,
+        "x_money": 1.742
       },
       {
         "portfolio": "2x \u2014 weekly rebuild 20",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.2754,
-        "ann_return": 0.276,
+        "cagr": 0.2644,
+        "ann_return": 0.2673,
         "vol": 0.251,
-        "sharpe": 1.1,
-        "sortino": 1.539,
-        "max_dd": -0.2623,
-        "x_money": 2.371
+        "sharpe": 1.065,
+        "sortino": 1.479,
+        "max_dd": -0.2709,
+        "x_money": 2.299
       },
       {
         "portfolio": "2x \u2014 preselected 20/40 buffer",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.2625,
-        "ann_return": 0.2654,
-        "vol": 0.2495,
-        "sharpe": 1.064,
-        "sortino": 1.505,
-        "max_dd": -0.2494,
-        "x_money": 2.287
+        "cagr": 0.2631,
+        "ann_return": 0.2658,
+        "vol": 0.2493,
+        "sharpe": 1.066,
+        "sortino": 1.511,
+        "max_dd": -0.2585,
+        "x_money": 2.291
       },
       {
         "portfolio": "2x \u2014 sensitivity 20/60 buffer",
         "from": "2023-01-03",
         "to": "2026-07-22",
         "years": 3.55,
-        "cagr": 0.2716,
-        "ann_return": 0.273,
-        "vol": 0.2512,
-        "sharpe": 1.087,
-        "sortino": 1.548,
-        "max_dd": -0.247,
-        "x_money": 2.346
+        "cagr": 0.2693,
+        "ann_return": 0.2709,
+        "vol": 0.2499,
+        "sharpe": 1.084,
+        "sortino": 1.538,
+        "max_dd": -0.2588,
+        "x_money": 2.331
       }
     ],
     "full": [
       {
         "portfolio": "base \u2014 weekly rebuild 20",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1233,
-        "ann_return": 0.1324,
-        "vol": 0.1272,
-        "sharpe": 1.041,
-        "sortino": 1.348,
-        "max_dd": -0.1399,
-        "x_money": 2.113
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1214,
+        "sharpe": 1.078,
+        "sortino": 1.5,
+        "max_dd": -0.1462,
+        "x_money": 2.087
       },
       {
         "portfolio": "base \u2014 preselected 20/40 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1183,
-        "ann_return": 0.1277,
-        "vol": 0.127,
-        "sharpe": 1.006,
-        "sortino": 1.31,
-        "max_dd": -0.135,
-        "x_money": 2.054
+        "years": 5.98,
+        "cagr": 0.1318,
+        "ann_return": 0.1315,
+        "vol": 0.121,
+        "sharpe": 1.087,
+        "sortino": 1.527,
+        "max_dd": -0.1401,
+        "x_money": 2.097
       },
       {
         "portfolio": "base \u2014 sensitivity 20/60 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1136,
-        "ann_return": 0.1233,
-        "vol": 0.1278,
-        "sharpe": 0.965,
-        "sortino": 1.254,
-        "max_dd": -0.1469,
-        "x_money": 1.999
+        "years": 5.98,
+        "cagr": 0.1289,
+        "ann_return": 0.129,
+        "vol": 0.1213,
+        "sharpe": 1.064,
+        "sortino": 1.491,
+        "max_dd": -0.1398,
+        "x_money": 2.065
       },
       {
         "portfolio": "2x \u2014 weekly rebuild 20",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1895,
-        "ann_return": 0.2172,
-        "vol": 0.2502,
-        "sharpe": 0.868,
-        "sortino": 1.12,
-        "max_dd": -0.2623,
-        "x_money": 3.056
+        "years": 5.98,
+        "cagr": 0.2042,
+        "ann_return": 0.215,
+        "vol": 0.2387,
+        "sharpe": 0.901,
+        "sortino": 1.254,
+        "max_dd": -0.2709,
+        "x_money": 3.04
       },
       {
         "portfolio": "2x \u2014 preselected 20/40 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1787,
-        "ann_return": 0.2071,
-        "vol": 0.2494,
-        "sharpe": 0.831,
-        "sortino": 1.08,
-        "max_dd": -0.2529,
-        "x_money": 2.881
+        "years": 5.98,
+        "cagr": 0.2063,
+        "ann_return": 0.2165,
+        "vol": 0.2377,
+        "sharpe": 0.911,
+        "sortino": 1.282,
+        "max_dd": -0.2585,
+        "x_money": 3.071
       },
       {
         "portfolio": "2x \u2014 sensitivity 20/60 buffer",
-        "from": "2020-02-13",
+        "from": "2020-07-28",
         "to": "2026-07-22",
-        "years": 6.44,
-        "cagr": 0.1719,
-        "ann_return": 0.2012,
-        "vol": 0.2506,
-        "sharpe": 0.803,
-        "sortino": 1.045,
-        "max_dd": -0.2833,
-        "x_money": 2.776
+        "years": 5.98,
+        "cagr": 0.2003,
+        "ann_return": 0.2116,
+        "vol": 0.2384,
+        "sharpe": 0.888,
+        "sortino": 1.247,
+        "max_dd": -0.2681,
+        "x_money": 2.981
       }
     ]
   },
@@ -292,198 +292,198 @@
         "variant": "weekly rebuild 20",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.0079,
-          "ann_return": -0.0082,
-          "vol": 0.0449,
-          "sharpe": -0.182,
-          "sortino": -0.21,
-          "max_dd": -0.0734,
-          "x_money": 0.977
+          "years": 2.43,
+          "cagr": -0.0136,
+          "ann_return": -0.0126,
+          "vol": 0.0441,
+          "sharpe": -0.286,
+          "sortino": -0.316,
+          "max_dd": -0.0823,
+          "x_money": 0.967
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.0223,
-          "ann_return": 0.027,
-          "vol": 0.0515,
-          "sharpe": 0.525,
-          "sortino": 0.496,
-          "max_dd": -0.052,
-          "x_money": 1.066
+          "years": 2.43,
+          "cagr": 0.0285,
+          "ann_return": 0.0294,
+          "vol": 0.0534,
+          "sharpe": 0.55,
+          "sortino": 0.522,
+          "max_dd": -0.0453,
+          "x_money": 1.071
         },
-        "long_turnover": 13.65,
-        "short_turnover": 9.36,
-        "average_short_gross": 0.0526
+        "long_turnover": 13.85,
+        "short_turnover": 9.96,
+        "average_short_gross": 0.0534
       },
       {
         "profile": "base",
         "variant": "preselected 20/40 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.0057,
-          "ann_return": -0.0057,
-          "vol": 0.044,
-          "sharpe": -0.13,
-          "sortino": -0.15,
-          "max_dd": -0.0683,
-          "x_money": 0.983
+          "years": 2.43,
+          "cagr": -0.0041,
+          "ann_return": -0.0031,
+          "vol": 0.0433,
+          "sharpe": -0.073,
+          "sortino": -0.08,
+          "max_dd": -0.0664,
+          "x_money": 0.99
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.0183,
-          "ann_return": 0.0224,
-          "vol": 0.0506,
-          "sharpe": 0.442,
-          "sortino": 0.42,
-          "max_dd": -0.052,
-          "x_money": 1.054
+          "years": 2.43,
+          "cagr": 0.0234,
+          "ann_return": 0.0244,
+          "vol": 0.0525,
+          "sharpe": 0.465,
+          "sortino": 0.439,
+          "max_dd": -0.0454,
+          "x_money": 1.058
         },
-        "long_turnover": 6.3,
-        "short_turnover": 6.18,
-        "average_short_gross": 0.0508
+        "long_turnover": 6.65,
+        "short_turnover": 6.81,
+        "average_short_gross": 0.0534
       },
       {
         "profile": "base",
         "variant": "sensitivity 20/60 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.0133,
-          "ann_return": -0.0145,
-          "vol": 0.0445,
-          "sharpe": -0.327,
-          "sortino": -0.371,
-          "max_dd": -0.0844,
-          "x_money": 0.962
+          "years": 2.43,
+          "cagr": -0.0102,
+          "ann_return": -0.0093,
+          "vol": 0.0437,
+          "sharpe": -0.212,
+          "sortino": -0.236,
+          "max_dd": -0.0734,
+          "x_money": 0.975
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.0165,
-          "ann_return": 0.0203,
-          "vol": 0.0499,
-          "sharpe": 0.406,
-          "sortino": 0.384,
-          "max_dd": -0.0525,
+          "years": 2.43,
+          "cagr": 0.0201,
+          "ann_return": 0.0211,
+          "vol": 0.0508,
+          "sharpe": 0.415,
+          "sortino": 0.398,
+          "max_dd": -0.0474,
           "x_money": 1.049
         },
-        "long_turnover": 5.35,
-        "short_turnover": 5.91,
-        "average_short_gross": 0.0506
+        "long_turnover": 5.55,
+        "short_turnover": 6.29,
+        "average_short_gross": 0.0525
       },
       {
         "profile": "2x",
         "variant": "weekly rebuild 20",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.0174,
-          "ann_return": -0.0163,
-          "vol": 0.0898,
-          "sharpe": -0.182,
-          "sortino": -0.21,
-          "max_dd": -0.1441,
-          "x_money": 0.951
+          "years": 2.43,
+          "cagr": -0.0289,
+          "ann_return": -0.0253,
+          "vol": 0.0882,
+          "sharpe": -0.286,
+          "sortino": -0.316,
+          "max_dd": -0.1603,
+          "x_money": 0.931
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.0675,
-          "ann_return": 0.0836,
-          "vol": 0.1238,
-          "sharpe": 0.675,
-          "sortino": 0.662,
-          "max_dd": -0.1154,
-          "x_money": 1.208
+          "years": 2.43,
+          "cagr": 0.0821,
+          "ann_return": 0.0864,
+          "vol": 0.1255,
+          "sharpe": 0.689,
+          "sortino": 0.681,
+          "max_dd": -0.1036,
+          "x_money": 1.211
         },
-        "long_turnover": 13.65,
-        "short_turnover": 11.08,
-        "average_short_gross": 0.1378
+        "long_turnover": 13.85,
+        "short_turnover": 11.46,
+        "average_short_gross": 0.1368
       },
       {
         "profile": "2x",
         "variant": "preselected 20/40 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.0131,
-          "ann_return": -0.0115,
-          "vol": 0.0881,
-          "sharpe": -0.13,
-          "sortino": -0.15,
-          "max_dd": -0.1345,
-          "x_money": 0.963
+          "years": 2.43,
+          "cagr": -0.01,
+          "ann_return": -0.0063,
+          "vol": 0.0866,
+          "sharpe": -0.073,
+          "sortino": -0.08,
+          "max_dd": -0.1301,
+          "x_money": 0.976
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.055,
-          "ann_return": 0.0695,
-          "vol": 0.1212,
-          "sharpe": 0.574,
-          "sortino": 0.561,
-          "max_dd": -0.1161,
-          "x_money": 1.168
+          "years": 2.43,
+          "cagr": 0.0679,
+          "ann_return": 0.0732,
+          "vol": 0.1241,
+          "sharpe": 0.59,
+          "sortino": 0.574,
+          "max_dd": -0.1062,
+          "x_money": 1.173
         },
-        "long_turnover": 6.3,
-        "short_turnover": 6.47,
-        "average_short_gross": 0.1364
+        "long_turnover": 6.65,
+        "short_turnover": 6.82,
+        "average_short_gross": 0.1375
       },
       {
         "profile": "2x",
         "variant": "sensitivity 20/60 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": -0.028,
-          "ann_return": -0.0291,
-          "vol": 0.089,
-          "sharpe": -0.327,
-          "sortino": -0.371,
-          "max_dd": -0.1642,
-          "x_money": 0.921
+          "years": 2.43,
+          "cagr": -0.0222,
+          "ann_return": -0.0185,
+          "vol": 0.0874,
+          "sharpe": -0.212,
+          "sortino": -0.236,
+          "max_dd": -0.144,
+          "x_money": 0.947
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2022-12-30",
-          "years": 2.9,
-          "cagr": 0.0483,
-          "ann_return": 0.062,
-          "vol": 0.1201,
-          "sharpe": 0.516,
-          "sortino": 0.502,
-          "max_dd": -0.1201,
-          "x_money": 1.146
+          "years": 2.43,
+          "cagr": 0.0609,
+          "ann_return": 0.0662,
+          "vol": 0.1211,
+          "sharpe": 0.547,
+          "sortino": 0.533,
+          "max_dd": -0.1061,
+          "x_money": 1.154
         },
-        "long_turnover": 5.35,
-        "short_turnover": 6.11,
-        "average_short_gross": 0.1361
+        "long_turnover": 5.55,
+        "short_turnover": 6.3,
+        "average_short_gross": 0.1364
       }
     ],
     "heldout_2023_plus": [
@@ -495,30 +495,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.0721,
-          "ann_return": 0.0723,
-          "vol": 0.0682,
-          "sharpe": 1.059,
-          "sortino": 1.455,
-          "max_dd": -0.0606,
-          "x_money": 1.28
+          "cagr": 0.0677,
+          "ann_return": 0.0681,
+          "vol": 0.0679,
+          "sharpe": 1.003,
+          "sortino": 1.366,
+          "max_dd": -0.0659,
+          "x_money": 1.262
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0247,
-          "ann_return": -0.0246,
-          "vol": 0.0323,
-          "sharpe": -0.761,
-          "sortino": -1.008,
-          "max_dd": -0.0989,
-          "x_money": 0.915
+          "cagr": -0.0266,
+          "ann_return": -0.0266,
+          "vol": 0.0319,
+          "sharpe": -0.834,
+          "sortino": -1.098,
+          "max_dd": -0.102,
+          "x_money": 0.909
         },
-        "long_turnover": 32.45,
-        "short_turnover": 27.32,
-        "average_short_gross": 0.0907
+        "long_turnover": 32.15,
+        "short_turnover": 27.28,
+        "average_short_gross": 0.0899
       },
       {
         "profile": "base",
@@ -528,30 +528,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.0625,
-          "ann_return": 0.0631,
-          "vol": 0.0662,
-          "sharpe": 0.952,
-          "sortino": 1.321,
-          "max_dd": -0.0607,
-          "x_money": 1.24
+          "cagr": 0.0683,
+          "ann_return": 0.0686,
+          "vol": 0.0666,
+          "sharpe": 1.03,
+          "sortino": 1.436,
+          "max_dd": -0.063,
+          "x_money": 1.264
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0221,
-          "ann_return": -0.022,
-          "vol": 0.0308,
-          "sharpe": -0.715,
-          "sortino": -0.951,
-          "max_dd": -0.0903,
-          "x_money": 0.924
+          "cagr": -0.0289,
+          "ann_return": -0.0289,
+          "vol": 0.0315,
+          "sharpe": -0.919,
+          "sortino": -1.209,
+          "max_dd": -0.1104,
+          "x_money": 0.901
         },
-        "long_turnover": 13.95,
-        "short_turnover": 16.1,
-        "average_short_gross": 0.0878
+        "long_turnover": 13.25,
+        "short_turnover": 16.51,
+        "average_short_gross": 0.0894
       },
       {
         "profile": "base",
@@ -561,30 +561,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.0665,
-          "ann_return": 0.067,
-          "vol": 0.0675,
-          "sharpe": 0.993,
-          "sortino": 1.389,
-          "max_dd": -0.0584,
-          "x_money": 1.257
+          "cagr": 0.071,
+          "ann_return": 0.0711,
+          "vol": 0.0664,
+          "sharpe": 1.072,
+          "sortino": 1.496,
+          "max_dd": -0.0632,
+          "x_money": 1.276
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0258,
-          "ann_return": -0.0258,
-          "vol": 0.03,
-          "sharpe": -0.86,
-          "sortino": -1.14,
-          "max_dd": -0.1032,
-          "x_money": 0.911
+          "cagr": -0.0292,
+          "ann_return": -0.0293,
+          "vol": 0.0307,
+          "sharpe": -0.954,
+          "sortino": -1.244,
+          "max_dd": -0.1112,
+          "x_money": 0.9
         },
-        "long_turnover": 11.4,
-        "short_turnover": 13.84,
-        "average_short_gross": 0.0873
+        "long_turnover": 11.05,
+        "short_turnover": 13.42,
+        "average_short_gross": 0.087
       },
       {
         "profile": "2x",
@@ -594,30 +594,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.1441,
-          "ann_return": 0.1446,
-          "vol": 0.1365,
-          "sharpe": 1.059,
-          "sortino": 1.455,
-          "max_dd": -0.1195,
-          "x_money": 1.612
+          "cagr": 0.1347,
+          "ann_return": 0.1362,
+          "vol": 0.1357,
+          "sharpe": 1.003,
+          "sortino": 1.366,
+          "max_dd": -0.1294,
+          "x_money": 1.566
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0642,
-          "ann_return": -0.0633,
-          "vol": 0.082,
-          "sharpe": -0.771,
-          "sortino": -1.06,
-          "max_dd": -0.2541,
+          "cagr": -0.0644,
+          "ann_return": -0.0636,
+          "vol": 0.0816,
+          "sharpe": -0.779,
+          "sortino": -1.08,
+          "max_dd": -0.2472,
           "x_money": 0.79
         },
-        "long_turnover": 32.45,
-        "short_turnover": 35.47,
-        "average_short_gross": 0.2527
+        "long_turnover": 32.15,
+        "short_turnover": 35.28,
+        "average_short_gross": 0.2539
       },
       {
         "profile": "2x",
@@ -627,30 +627,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.1239,
-          "ann_return": 0.1261,
-          "vol": 0.1324,
-          "sharpe": 0.952,
-          "sortino": 1.321,
-          "max_dd": -0.1194,
-          "x_money": 1.514
+          "cagr": 0.1362,
+          "ann_return": 0.1372,
+          "vol": 0.1332,
+          "sharpe": 1.03,
+          "sortino": 1.436,
+          "max_dd": -0.1237,
+          "x_money": 1.573
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0568,
-          "ann_return": -0.0555,
-          "vol": 0.0802,
-          "sharpe": -0.692,
-          "sortino": -0.952,
-          "max_dd": -0.2331,
-          "x_money": 0.813
+          "cagr": -0.0667,
+          "ann_return": -0.066,
+          "vol": 0.0817,
+          "sharpe": -0.807,
+          "sortino": -1.115,
+          "max_dd": -0.253,
+          "x_money": 0.783
         },
-        "long_turnover": 13.95,
-        "short_turnover": 20.22,
-        "average_short_gross": 0.2506
+        "long_turnover": 13.25,
+        "short_turnover": 20.2,
+        "average_short_gross": 0.2549
       },
       {
         "profile": "2x",
@@ -660,30 +660,30 @@
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": 0.1324,
-          "ann_return": 0.134,
-          "vol": 0.135,
-          "sharpe": 0.993,
-          "sortino": 1.389,
-          "max_dd": -0.1151,
-          "x_money": 1.554
+          "cagr": 0.1421,
+          "ann_return": 0.1423,
+          "vol": 0.1327,
+          "sharpe": 1.072,
+          "sortino": 1.496,
+          "max_dd": -0.1241,
+          "x_money": 1.602
         },
         "short_before_borrow": {
           "portfolio": "short",
           "from": "2023-01-03",
           "to": "2026-07-22",
           "years": 3.55,
-          "cagr": -0.0569,
-          "ann_return": -0.0558,
-          "vol": 0.078,
-          "sharpe": -0.715,
-          "sortino": -0.985,
-          "max_dd": -0.2241,
-          "x_money": 0.812
+          "cagr": -0.0666,
+          "ann_return": -0.0662,
+          "vol": 0.0788,
+          "sharpe": -0.839,
+          "sortino": -1.157,
+          "max_dd": -0.2466,
+          "x_money": 0.783
         },
-        "long_turnover": 11.4,
-        "short_turnover": 17.19,
-        "average_short_gross": 0.2486
+        "long_turnover": 11.05,
+        "short_turnover": 16.44,
+        "average_short_gross": 0.2506
       }
     ],
     "full": [
@@ -692,205 +692,663 @@
         "variant": "weekly rebuild 20",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.0353,
-          "ann_return": 0.039,
-          "vol": 0.0597,
-          "sharpe": 0.653,
-          "sortino": 0.836,
-          "max_dd": -0.0734,
-          "x_money": 1.251
+          "years": 5.98,
+          "cagr": 0.0338,
+          "ann_return": 0.0351,
+          "vol": 0.0594,
+          "sharpe": 0.592,
+          "sortino": 0.746,
+          "max_dd": -0.0823,
+          "x_money": 1.22
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.0038,
-          "ann_return": -0.0032,
-          "vol": 0.0413,
-          "sharpe": -0.078,
-          "sortino": -0.088,
-          "max_dd": -0.1138,
-          "x_money": 0.976
+          "years": 5.98,
+          "cagr": -0.0046,
+          "ann_return": -0.0037,
+          "vol": 0.042,
+          "sharpe": -0.088,
+          "sortino": -0.099,
+          "max_dd": -0.1163,
+          "x_money": 0.973
         },
-        "long_turnover": 46.1,
-        "short_turnover": 36.68,
-        "average_short_gross": 0.0749
+        "long_turnover": 46.0,
+        "short_turnover": 37.24,
+        "average_short_gross": 0.075
       },
       {
         "profile": "base",
         "variant": "preselected 20/40 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.0312,
-          "ann_return": 0.0346,
-          "vol": 0.0581,
-          "sharpe": 0.596,
-          "sortino": 0.769,
-          "max_dd": -0.0683,
-          "x_money": 1.219
+          "years": 5.98,
+          "cagr": 0.0382,
+          "ann_return": 0.0393,
+          "vol": 0.0583,
+          "sharpe": 0.675,
+          "sortino": 0.866,
+          "max_dd": -0.0664,
+          "x_money": 1.252
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.0042,
-          "ann_return": -0.0037,
-          "vol": 0.0402,
-          "sharpe": -0.091,
-          "sortino": -0.102,
-          "max_dd": -0.1045,
-          "x_money": 0.973
+          "years": 5.98,
+          "cagr": -0.0079,
+          "ann_return": -0.0071,
+          "vol": 0.0414,
+          "sharpe": -0.172,
+          "sortino": -0.192,
+          "max_dd": -0.1265,
+          "x_money": 0.953
         },
-        "long_turnover": 20.25,
-        "short_turnover": 22.27,
-        "average_short_gross": 0.0725
+        "long_turnover": 19.9,
+        "short_turnover": 23.32,
+        "average_short_gross": 0.0747
       },
       {
         "profile": "base",
         "variant": "sensitivity 20/60 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.0299,
-          "ann_return": 0.0333,
-          "vol": 0.0591,
-          "sharpe": 0.563,
-          "sortino": 0.73,
-          "max_dd": -0.0844,
-          "x_money": 1.209
+          "years": 5.98,
+          "cagr": 0.0372,
+          "ann_return": 0.0383,
+          "vol": 0.0582,
+          "sharpe": 0.658,
+          "sortino": 0.847,
+          "max_dd": -0.0734,
+          "x_money": 1.244
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.007,
-          "ann_return": -0.0068,
-          "vol": 0.0395,
-          "sharpe": -0.171,
-          "sortino": -0.191,
-          "max_dd": -0.1152,
-          "x_money": 0.956
+          "years": 5.98,
+          "cagr": -0.0095,
+          "ann_return": -0.0087,
+          "vol": 0.0402,
+          "sharpe": -0.218,
+          "sortino": -0.244,
+          "max_dd": -0.1227,
+          "x_money": 0.945
         },
-        "long_turnover": 16.75,
-        "short_turnover": 19.75,
-        "average_short_gross": 0.0721
+        "long_turnover": 16.6,
+        "short_turnover": 19.7,
+        "average_short_gross": 0.0729
       },
       {
         "profile": "2x",
         "variant": "weekly rebuild 20",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.0684,
-          "ann_return": 0.078,
-          "vol": 0.1195,
-          "sharpe": 0.653,
-          "sortino": 0.836,
-          "max_dd": -0.1441,
-          "x_money": 1.532
+          "years": 5.98,
+          "cagr": 0.0651,
+          "ann_return": 0.0703,
+          "vol": 0.1187,
+          "sharpe": 0.592,
+          "sortino": 0.746,
+          "max_dd": -0.1603,
+          "x_money": 1.458
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.0071,
-          "ann_return": -0.0025,
-          "vol": 0.1015,
-          "sharpe": -0.025,
-          "sortino": -0.029,
-          "max_dd": -0.28,
-          "x_money": 0.955
+          "years": 5.98,
+          "cagr": -0.0075,
+          "ann_return": -0.0023,
+          "vol": 0.1019,
+          "sharpe": -0.023,
+          "sortino": -0.027,
+          "max_dd": -0.2714,
+          "x_money": 0.956
         },
-        "long_turnover": 46.1,
-        "short_turnover": 46.55,
-        "average_short_gross": 0.2052
+        "long_turnover": 46.0,
+        "short_turnover": 46.74,
+        "average_short_gross": 0.2061
       },
       {
         "profile": "2x",
         "variant": "preselected 20/40 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.06,
-          "ann_return": 0.0692,
-          "vol": 0.1162,
-          "sharpe": 0.596,
-          "sortino": 0.769,
-          "max_dd": -0.1345,
-          "x_money": 1.457
+          "years": 5.98,
+          "cagr": 0.0742,
+          "ann_return": 0.0786,
+          "vol": 0.1165,
+          "sharpe": 0.675,
+          "sortino": 0.866,
+          "max_dd": -0.1301,
+          "x_money": 1.535
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.0081,
-          "ann_return": -0.0038,
-          "vol": 0.0993,
-          "sharpe": -0.038,
-          "sortino": -0.044,
-          "max_dd": -0.262,
-          "x_money": 0.949
+          "years": 5.98,
+          "cagr": -0.0142,
+          "ann_return": -0.0092,
+          "vol": 0.1012,
+          "sharpe": -0.091,
+          "sortino": -0.105,
+          "max_dd": -0.2791,
+          "x_money": 0.918
         },
-        "long_turnover": 20.25,
-        "short_turnover": 26.69,
-        "average_short_gross": 0.2034
+        "long_turnover": 19.9,
+        "short_turnover": 27.02,
+        "average_short_gross": 0.207
       },
       {
         "profile": "2x",
         "variant": "sensitivity 20/60 buffer",
         "long": {
           "portfolio": "long",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": 0.0571,
-          "ann_return": 0.0666,
-          "vol": 0.1182,
-          "sharpe": 0.563,
-          "sortino": 0.73,
-          "max_dd": -0.1642,
-          "x_money": 1.432
+          "years": 5.98,
+          "cagr": 0.0721,
+          "ann_return": 0.0766,
+          "vol": 0.1164,
+          "sharpe": 0.658,
+          "sortino": 0.847,
+          "max_dd": -0.144,
+          "x_money": 1.517
         },
         "short_before_borrow": {
           "portfolio": "short",
-          "from": "2020-02-06",
+          "from": "2020-07-27",
           "to": "2026-07-22",
-          "years": 6.46,
-          "cagr": -0.011,
-          "ann_return": -0.007,
-          "vol": 0.0977,
-          "sharpe": -0.072,
-          "sortino": -0.084,
-          "max_dd": -0.2517,
-          "x_money": 0.931
+          "years": 5.98,
+          "cagr": -0.0168,
+          "ann_return": -0.0121,
+          "vol": 0.0983,
+          "sharpe": -0.123,
+          "sortino": -0.144,
+          "max_dd": -0.27,
+          "x_money": 0.904
         },
-        "long_turnover": 16.75,
-        "short_turnover": 23.3,
-        "average_short_gross": 0.202
+        "long_turnover": 16.6,
+        "short_turnover": 22.74,
+        "average_short_gross": 0.204
       }
     ]
+  },
+  "cost_sensitivity_2026_08_03": {
+    "note": "The pre-registered gate above is unchanged and was tested only at 15 bps. This sweep re-runs just the control (20) vs candidate (20/40 buffer) pair at 15/20/25/30 bps, using backtest.promotion's cost_reducer gate with max_sharpe_cost=0.0 (candidate must not lose any Sharpe at all, on top of the >=30% turnover cut) \u2014 a stricter bar than the original's plain 'higher Sharpe', chosen because it directly answers whether higher assumed costs ever flip the comparison in the candidate's favor, not just how far it falls short at 15 bps.",
+    "results": {
+      "base": {
+        "15bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.728,
+              "candidate_sharpe": 0.768,
+              "control_cagr": 0.0781,
+              "candidate_cagr": 0.083,
+              "control_max_dd": -0.1253,
+              "candidate_max_dd": -0.119,
+              "d_sharpe": 0.04,
+              "d_cagr": 0.0049,
+              "d_max_dd": 0.0063,
+              "control_turnover": 23.80919647216797,
+              "candidate_turnover": 13.459218978881836,
+              "turnover_reduction_pct": 0.4347,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.04,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": false,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": false,
+              "cagr_not_lower": false,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.291,
+              "candidate_sharpe": 1.283,
+              "control_cagr": 0.1688,
+              "candidate_cagr": 0.1668,
+              "control_max_dd": -0.1462,
+              "candidate_max_dd": -0.1401,
+              "d_sharpe": -0.008,
+              "d_cagr": -0.002,
+              "d_max_dd": 0.0061,
+              "control_turnover": 59.42841339111328,
+              "candidate_turnover": 29.7598934173584,
+              "turnover_reduction_pct": 0.4992,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": 0.008,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "20bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.71,
+              "candidate_sharpe": 0.758,
+              "control_cagr": 0.0759,
+              "candidate_cagr": 0.0817,
+              "control_max_dd": -0.1271,
+              "candidate_max_dd": -0.12,
+              "d_sharpe": 0.048,
+              "d_cagr": 0.0058,
+              "d_max_dd": 0.0071,
+              "control_turnover": 23.708717346191406,
+              "candidate_turnover": 13.512298583984375,
+              "turnover_reduction_pct": 0.4301,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.048,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.264,
+              "candidate_sharpe": 1.277,
+              "control_cagr": 0.1649,
+              "candidate_cagr": 0.1659,
+              "control_max_dd": -0.1462,
+              "candidate_max_dd": -0.1402,
+              "d_sharpe": 0.013,
+              "d_cagr": 0.001,
+              "d_max_dd": 0.006,
+              "control_turnover": 59.174903869628906,
+              "candidate_turnover": 29.698196411132812,
+              "turnover_reduction_pct": 0.4981,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.013,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "25bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.696,
+              "candidate_sharpe": 0.753,
+              "control_cagr": 0.0743,
+              "candidate_cagr": 0.0812,
+              "control_max_dd": -0.1291,
+              "candidate_max_dd": -0.1213,
+              "d_sharpe": 0.057,
+              "d_cagr": 0.0069,
+              "d_max_dd": 0.0078,
+              "control_turnover": 23.693466186523438,
+              "candidate_turnover": 13.483024597167969,
+              "turnover_reduction_pct": 0.4309,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.057,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.239,
+              "candidate_sharpe": 1.27,
+              "control_cagr": 0.1613,
+              "candidate_cagr": 0.1648,
+              "control_max_dd": -0.1464,
+              "candidate_max_dd": -0.1403,
+              "d_sharpe": 0.031,
+              "d_cagr": 0.0035,
+              "d_max_dd": 0.0061,
+              "control_turnover": 59.02737808227539,
+              "candidate_turnover": 29.642559051513672,
+              "turnover_reduction_pct": 0.4978,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.031,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "30bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.684,
+              "candidate_sharpe": 0.746,
+              "control_cagr": 0.0728,
+              "candidate_cagr": 0.0804,
+              "control_max_dd": -0.1308,
+              "candidate_max_dd": -0.1224,
+              "d_sharpe": 0.062,
+              "d_cagr": 0.0076,
+              "d_max_dd": 0.0084,
+              "control_turnover": 23.708255767822266,
+              "candidate_turnover": 13.48560619354248,
+              "turnover_reduction_pct": 0.4312,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.062,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.226,
+              "candidate_sharpe": 1.263,
+              "control_cagr": 0.1594,
+              "candidate_cagr": 0.1639,
+              "control_max_dd": -0.146,
+              "candidate_max_dd": -0.1405,
+              "d_sharpe": 0.037,
+              "d_cagr": 0.0045,
+              "d_max_dd": 0.0055,
+              "control_turnover": 58.877201080322266,
+              "candidate_turnover": 29.564407348632812,
+              "turnover_reduction_pct": 0.4979,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.037,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        }
+      },
+      "2x": {
+        "15bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.633,
+              "candidate_sharpe": 0.658,
+              "control_cagr": 0.1222,
+              "candidate_cagr": 0.1286,
+              "control_max_dd": -0.2334,
+              "candidate_max_dd": -0.2291,
+              "d_sharpe": 0.025,
+              "d_cagr": 0.0064,
+              "d_max_dd": 0.0043,
+              "control_turnover": 25.30880355834961,
+              "candidate_turnover": 13.472023010253906,
+              "turnover_reduction_pct": 0.4677,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.025,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": false,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": false,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.065,
+              "candidate_sharpe": 1.066,
+              "control_cagr": 0.2644,
+              "candidate_cagr": 0.2631,
+              "control_max_dd": -0.2709,
+              "candidate_max_dd": -0.2585,
+              "d_sharpe": 0.001,
+              "d_cagr": -0.0013,
+              "d_max_dd": 0.0124,
+              "control_turnover": 67.42878723144531,
+              "candidate_turnover": 33.45135498046875,
+              "turnover_reduction_pct": 0.5039,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.001,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "20bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.613,
+              "candidate_sharpe": 0.651,
+              "control_cagr": 0.1174,
+              "candidate_cagr": 0.1269,
+              "control_max_dd": -0.2373,
+              "candidate_max_dd": -0.2306,
+              "d_sharpe": 0.038,
+              "d_cagr": 0.0095,
+              "d_max_dd": 0.0067,
+              "control_turnover": 25.30314826965332,
+              "candidate_turnover": 13.460840225219727,
+              "turnover_reduction_pct": 0.468,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.038,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.045,
+              "candidate_sharpe": 1.055,
+              "control_cagr": 0.2582,
+              "candidate_cagr": 0.2595,
+              "control_max_dd": -0.2717,
+              "candidate_max_dd": -0.2583,
+              "d_sharpe": 0.01,
+              "d_cagr": 0.0013,
+              "d_max_dd": 0.0134,
+              "control_turnover": 67.39204406738281,
+              "candidate_turnover": 33.38433074951172,
+              "turnover_reduction_pct": 0.5046,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.01,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "25bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.599,
+              "candidate_sharpe": 0.646,
+              "control_cagr": 0.1141,
+              "candidate_cagr": 0.1257,
+              "control_max_dd": -0.2408,
+              "candidate_max_dd": -0.232,
+              "d_sharpe": 0.047,
+              "d_cagr": 0.0116,
+              "d_max_dd": 0.0088,
+              "control_turnover": 25.271953582763672,
+              "candidate_turnover": 13.44961929321289,
+              "turnover_reduction_pct": 0.4678,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.047,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 1.015,
+              "candidate_sharpe": 1.047,
+              "control_cagr": 0.2491,
+              "candidate_cagr": 0.2569,
+              "control_max_dd": -0.2724,
+              "candidate_max_dd": -0.2582,
+              "d_sharpe": 0.032,
+              "d_cagr": 0.0078,
+              "d_max_dd": 0.0142,
+              "control_turnover": 67.55793762207031,
+              "candidate_turnover": 33.28704071044922,
+              "turnover_reduction_pct": 0.5073,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.032,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        },
+        "30bps": {
+          "early_2020_2022": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.584,
+              "candidate_sharpe": 0.643,
+              "control_cagr": 0.1104,
+              "candidate_cagr": 0.125,
+              "control_max_dd": -0.2438,
+              "candidate_max_dd": -0.2327,
+              "d_sharpe": 0.059,
+              "d_cagr": 0.0146,
+              "d_max_dd": 0.0111,
+              "control_turnover": 25.247573852539062,
+              "candidate_turnover": 13.417360305786133,
+              "turnover_reduction_pct": 0.4686,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.059,
+              "max_sharpe_cost": 0.0
+            }
+          },
+          "heldout_2023_plus": {
+            "objective_class": "cost_reducer",
+            "passed": true,
+            "checks": {
+              "turnover_reduced_enough": true,
+              "sharpe_cost_within_budget": true,
+              "cagr_not_lower": true,
+              "max_dd_not_worse": true
+            },
+            "inputs": {
+              "control_sharpe": 0.99,
+              "candidate_sharpe": 1.039,
+              "control_cagr": 0.2412,
+              "candidate_cagr": 0.2547,
+              "control_max_dd": -0.2746,
+              "candidate_max_dd": -0.2584,
+              "d_sharpe": 0.049,
+              "d_cagr": 0.0135,
+              "d_max_dd": 0.0162,
+              "control_turnover": 67.55690002441406,
+              "candidate_turnover": 33.092506408691406,
+              "turnover_reduction_pct": 0.5102,
+              "min_turnover_reduction_pct": 0.3,
+              "sharpe_cost": -0.049,
+              "max_sharpe_cost": 0.0
+            }
+          }
+        }
+      }
+    }
   },
   "limitations": [
     "The operating-company universe contains current listings and is survivorship-biased.",
     "Historical easy-to-borrow and locate availability is unavailable.",
     "Costs use a fixed 15 bps per unit of one-way turnover plus the portfolio borrow assumption.",
-    "Whole-share short capacity is modeled from a dynamic $10,000 starting account."
+    "Whole-share short capacity is modeled from a dynamic $10,000 starting account.",
+    "The eligible-universe skip threshold (len(ranked) < 2*hold_n) scales with hold_n, so control (needs 40 eligible) and the 20/40 candidate (needs 80) can skip different early rebalance dates \u2014 unmeasured here, but the ~3,400+ eligible names per day on the corrected panel make this unlikely to bind materially."
   ]
 }

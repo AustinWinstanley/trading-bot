@@ -259,6 +259,47 @@ def main() -> None:
             "paper": "Momentum Crashes",
             "url": "https://www.nber.org/papers/w20439",
         },
+        "reexamination_2026_08_03": {
+            "context": (
+                "Re-run after fixing the cross-sectional panel's sparse "
+                "pre-2020-07-27 warm-up rows and the trend/SPY gap-return "
+                "convention (see AGENTS.md). The prior run's rejection was "
+                "internally inconsistent: it cited '2x never activated after "
+                "2023' as a reason while the 2x heldout_2023_plus cell itself "
+                "showed the candidate scoring worse than control."
+            ),
+            "resolved": (
+                "short_leg_attribution confirms panic_days=0 in every "
+                "heldout_2023_plus cell for both profiles - the gate "
+                "genuinely never activates there, so the sub-0.001-Sharpe, "
+                "sub-0.001-CAGR differences recorded in that window are "
+                "iteration noise from the 3-pass dynamic-equity solve, not "
+                "an effect of the gate. They should not be read as evidence "
+                "against the candidate."
+            ),
+            "new_finding": (
+                "On the corrected panel, base now also fails (previously "
+                "passed): early_2020_2022 has panic_days=30, a real "
+                "activation, and even then the candidate's max_dd is "
+                "identical to control's - the gate produced no measurable "
+                "drawdown protection the one time it is genuinely tested, "
+                "while costing base-profile Sharpe 0.728->0.723. That is a "
+                "cleaner rejection than before: not a data artifact, and not "
+                "a leverage-only effect, but the candidate failing at the "
+                "one thing it exists to do."
+            ),
+            "relevance_to_2026_07_23_loss": (
+                "This gate triggers on SPY-level drawdown/volatility/rebound "
+                "- a market-wide crash-rebound pattern. The 2026-07-23 loss "
+                "was a single-factor concentration event (AI-datacenter "
+                "hardware names down 14-32% in a week SPY rose 0.4%); SPY "
+                "never approached a 15% drawdown, so this gate would not "
+                "have activated for it regardless of promotion. That "
+                "incident is addressed by the (separately rejected) "
+                "correlation cap, not by this candidate - the two should not "
+                "be conflated."
+            ),
+        },
     }
     out = Path("reports/short_panic_regime_study.json")
     out.write_text(json.dumps(payload, indent=2))
