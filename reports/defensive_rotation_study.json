@@ -1,0 +1,635 @@
+{
+  "conclusion": "Keep the trend sleeve's risk-off allocation in cash.",
+  "preselected_candidate": "12m dual momentum",
+  "promotion_rule_passed": false,
+  "failure_reasons": [
+    "design_2007_2016: Sharpe did not improve",
+    "design_2007_2016: maximum drawdown did not improve",
+    "heldout_2017_plus: maximum drawdown did not improve"
+  ],
+  "cost_bps_per_unit_turnover": 8.0,
+  "results": {
+    "recent": {
+      "full": [
+        {
+          "portfolio": "cash",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1246,
+          "ann_return": 0.1333,
+          "vol": 0.1241,
+          "sharpe": 1.074,
+          "sortino": 1.386,
+          "max_dd": -0.1327,
+          "x_money": 2.129
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1214,
+          "ann_return": 0.1303,
+          "vol": 0.1242,
+          "sharpe": 1.049,
+          "sortino": 1.355,
+          "max_dd": -0.1326,
+          "x_money": 2.091
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1137,
+          "ann_return": 0.123,
+          "vol": 0.1248,
+          "sharpe": 0.985,
+          "sortino": 1.277,
+          "max_dd": -0.1363,
+          "x_money": 2.0
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.127,
+          "ann_return": 0.1359,
+          "vol": 0.1266,
+          "sharpe": 1.074,
+          "sortino": 1.384,
+          "max_dd": -0.1278,
+          "x_money": 2.159
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1204,
+          "ann_return": 0.1295,
+          "vol": 0.1253,
+          "sharpe": 1.033,
+          "sortino": 1.334,
+          "max_dd": -0.1321,
+          "x_money": 2.079
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2020-02-13",
+          "to": "2026-07-22",
+          "years": 6.44,
+          "cagr": 0.1232,
+          "ann_return": 0.1322,
+          "vol": 0.1258,
+          "sharpe": 1.051,
+          "sortino": 1.349,
+          "max_dd": -0.1278,
+          "x_money": 2.112
+        }
+      ],
+      "early_2020_2022": [
+        {
+          "portfolio": "cash",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0804,
+          "ann_return": 0.0972,
+          "vol": 0.124,
+          "sharpe": 0.784,
+          "sortino": 0.917,
+          "max_dd": -0.0968,
+          "x_money": 1.249
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.072,
+          "ann_return": 0.0882,
+          "vol": 0.1246,
+          "sharpe": 0.708,
+          "sortino": 0.829,
+          "max_dd": -0.0968,
+          "x_money": 1.221
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0568,
+          "ann_return": 0.0718,
+          "vol": 0.1251,
+          "sharpe": 0.574,
+          "sortino": 0.675,
+          "max_dd": -0.1041,
+          "x_money": 1.172
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0697,
+          "ann_return": 0.0861,
+          "vol": 0.1276,
+          "sharpe": 0.675,
+          "sortino": 0.79,
+          "max_dd": -0.1158,
+          "x_money": 1.214
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0633,
+          "ann_return": 0.079,
+          "vol": 0.1257,
+          "sharpe": 0.628,
+          "sortino": 0.733,
+          "max_dd": -0.1094,
+          "x_money": 1.193
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2020-02-13",
+          "to": "2022-12-30",
+          "years": 2.88,
+          "cagr": 0.0635,
+          "ann_return": 0.0792,
+          "vol": 0.1256,
+          "sharpe": 0.63,
+          "sortino": 0.73,
+          "max_dd": -0.1199,
+          "x_money": 1.194
+        }
+      ],
+      "heldout_2023_plus": [
+        {
+          "portfolio": "cash",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1621,
+          "ann_return": 0.1587,
+          "vol": 0.1241,
+          "sharpe": 1.278,
+          "sortino": 1.792,
+          "max_dd": -0.1327,
+          "x_money": 1.704
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1636,
+          "ann_return": 0.1599,
+          "vol": 0.124,
+          "sharpe": 1.29,
+          "sortino": 1.811,
+          "max_dd": -0.1326,
+          "x_money": 1.712
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1625,
+          "ann_return": 0.159,
+          "vol": 0.1247,
+          "sharpe": 1.276,
+          "sortino": 1.798,
+          "max_dd": -0.1363,
+          "x_money": 1.706
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1762,
+          "ann_return": 0.171,
+          "vol": 0.1259,
+          "sharpe": 1.358,
+          "sortino": 1.902,
+          "max_dd": -0.1278,
+          "x_money": 1.779
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1694,
+          "ann_return": 0.165,
+          "vol": 0.125,
+          "sharpe": 1.32,
+          "sortino": 1.858,
+          "max_dd": -0.1321,
+          "x_money": 1.742
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1745,
+          "ann_return": 0.1695,
+          "vol": 0.126,
+          "sharpe": 1.346,
+          "sortino": 1.886,
+          "max_dd": -0.1278,
+          "x_money": 1.769
+        }
+      ]
+    },
+    "long_history": {
+      "full": [
+        {
+          "portfolio": "cash",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.077,
+          "ann_return": 0.0795,
+          "vol": 0.1025,
+          "sharpe": 0.776,
+          "sortino": 1.019,
+          "max_dd": -0.2625,
+          "x_money": 4.131
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0782,
+          "ann_return": 0.0806,
+          "vol": 0.1017,
+          "sharpe": 0.793,
+          "sortino": 1.044,
+          "max_dd": -0.2543,
+          "x_money": 4.222
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0768,
+          "ann_return": 0.0792,
+          "vol": 0.1014,
+          "sharpe": 0.781,
+          "sortino": 1.029,
+          "max_dd": -0.2588,
+          "x_money": 4.118
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0827,
+          "ann_return": 0.0853,
+          "vol": 0.1066,
+          "sharpe": 0.799,
+          "sortino": 1.045,
+          "max_dd": -0.2651,
+          "x_money": 4.57
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0798,
+          "ann_return": 0.0823,
+          "vol": 0.1032,
+          "sharpe": 0.797,
+          "sortino": 1.048,
+          "max_dd": -0.2594,
+          "x_money": 4.346
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2007-04-12",
+          "to": "2026-05-29",
+          "years": 19.13,
+          "cagr": 0.0742,
+          "ann_return": 0.0771,
+          "vol": 0.1041,
+          "sharpe": 0.741,
+          "sortino": 0.971,
+          "max_dd": -0.3166,
+          "x_money": 3.932
+        }
+      ],
+      "design_2007_2016": [
+        {
+          "portfolio": "cash",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0476,
+          "ann_return": 0.0513,
+          "vol": 0.0974,
+          "sharpe": 0.527,
+          "sortino": 0.712,
+          "max_dd": -0.2625,
+          "x_money": 1.572
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0507,
+          "ann_return": 0.054,
+          "vol": 0.0961,
+          "sharpe": 0.562,
+          "sortino": 0.762,
+          "max_dd": -0.2543,
+          "x_money": 1.616
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0517,
+          "ann_return": 0.0549,
+          "vol": 0.0955,
+          "sharpe": 0.575,
+          "sortino": 0.783,
+          "max_dd": -0.2588,
+          "x_money": 1.632
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0546,
+          "ann_return": 0.0585,
+          "vol": 0.1027,
+          "sharpe": 0.569,
+          "sortino": 0.765,
+          "max_dd": -0.2651,
+          "x_money": 1.677
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0533,
+          "ann_return": 0.0567,
+          "vol": 0.0979,
+          "sharpe": 0.579,
+          "sortino": 0.786,
+          "max_dd": -0.2594,
+          "x_money": 1.656
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2007-04-12",
+          "to": "2016-12-30",
+          "years": 9.72,
+          "cagr": 0.0412,
+          "ann_return": 0.0454,
+          "vol": 0.1003,
+          "sharpe": 0.453,
+          "sortino": 0.609,
+          "max_dd": -0.3166,
+          "x_money": 1.48
+        }
+      ],
+      "heldout_2017_plus": [
+        {
+          "portfolio": "cash",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1083,
+          "ann_return": 0.1088,
+          "vol": 0.1075,
+          "sharpe": 1.012,
+          "sortino": 1.297,
+          "max_dd": -0.1677,
+          "x_money": 2.628
+        },
+        {
+          "portfolio": "IEF",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1075,
+          "ann_return": 0.1081,
+          "vol": 0.1071,
+          "sharpe": 1.009,
+          "sortino": 1.299,
+          "max_dd": -0.1654,
+          "x_money": 2.612
+        },
+        {
+          "portfolio": "TLT",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1035,
+          "ann_return": 0.1044,
+          "vol": 0.1072,
+          "sharpe": 0.974,
+          "sortino": 1.25,
+          "max_dd": -0.1695,
+          "x_money": 2.523
+        },
+        {
+          "portfolio": "GLD",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1126,
+          "ann_return": 0.113,
+          "vol": 0.1106,
+          "sharpe": 1.022,
+          "sortino": 1.302,
+          "max_dd": -0.1914,
+          "x_money": 2.725
+        },
+        {
+          "portfolio": "50/50 GLD-TLT",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1081,
+          "ann_return": 0.1087,
+          "vol": 0.1084,
+          "sharpe": 1.003,
+          "sortino": 1.283,
+          "max_dd": -0.1771,
+          "x_money": 2.624
+        },
+        {
+          "portfolio": "12m dual momentum",
+          "from": "2017-01-03",
+          "to": "2026-05-29",
+          "years": 9.4,
+          "cagr": 0.1095,
+          "ann_return": 0.11,
+          "vol": 0.1079,
+          "sharpe": 1.02,
+          "sortino": 1.303,
+          "max_dd": -0.1695,
+          "x_money": 2.656
+        }
+      ]
+    }
+  },
+  "long_history_stress": {
+    "cash": [
+      {
+        "window": "GFC",
+        "from": "2007-10-09",
+        "to": "2009-03-09",
+        "sessions": 356,
+        "total_return": -0.1575,
+        "max_drawdown": -0.2023,
+        "worst_day": -0.0323
+      },
+      {
+        "window": "momentum crash rebound",
+        "from": "2009-03-10",
+        "to": "2009-06-30",
+        "sessions": 79,
+        "total_return": -0.0554,
+        "max_drawdown": -0.0851,
+        "worst_day": -0.0116
+      },
+      {
+        "window": "Eurozone / US downgrade",
+        "from": "2011-05-02",
+        "to": "2011-10-03",
+        "sessions": 108,
+        "total_return": -0.0827,
+        "max_drawdown": -0.0991,
+        "worst_day": -0.0314
+      },
+      {
+        "window": "China / energy selloff",
+        "from": "2015-07-01",
+        "to": "2016-02-11",
+        "sessions": 156,
+        "total_return": -0.0129,
+        "max_drawdown": -0.0637,
+        "worst_day": -0.0191
+      },
+      {
+        "window": "2018 volatility and Q4",
+        "from": "2018-01-26",
+        "to": "2018-12-24",
+        "sessions": 230,
+        "total_return": -0.0809,
+        "max_drawdown": -0.1185,
+        "worst_day": -0.0272
+      },
+      {
+        "window": "COVID crash",
+        "from": "2020-02-19",
+        "to": "2020-03-23",
+        "sessions": 24,
+        "total_return": -0.1657,
+        "max_drawdown": -0.1677,
+        "worst_day": -0.0488
+      },
+      {
+        "window": "inflation bear",
+        "from": "2022-01-03",
+        "to": "2022-10-12",
+        "sessions": 196,
+        "total_return": -0.0763,
+        "max_drawdown": -0.0873,
+        "worst_day": -0.0183
+      }
+    ],
+    "12m dual momentum": [
+      {
+        "window": "GFC",
+        "from": "2007-10-09",
+        "to": "2009-03-09",
+        "sessions": 356,
+        "total_return": -0.1878,
+        "max_drawdown": -0.2392,
+        "worst_day": -0.0303
+      },
+      {
+        "window": "momentum crash rebound",
+        "from": "2009-03-10",
+        "to": "2009-06-30",
+        "sessions": 79,
+        "total_return": -0.0796,
+        "max_drawdown": -0.1126,
+        "worst_day": -0.0119
+      },
+      {
+        "window": "Eurozone / US downgrade",
+        "from": "2011-05-02",
+        "to": "2011-10-03",
+        "sessions": 108,
+        "total_return": -0.0816,
+        "max_drawdown": -0.0928,
+        "worst_day": -0.0261
+      },
+      {
+        "window": "China / energy selloff",
+        "from": "2015-07-01",
+        "to": "2016-02-11",
+        "sessions": 156,
+        "total_return": -0.0065,
+        "max_drawdown": -0.063,
+        "worst_day": -0.0192
+      },
+      {
+        "window": "2018 volatility and Q4",
+        "from": "2018-01-26",
+        "to": "2018-12-24",
+        "sessions": 230,
+        "total_return": -0.0804,
+        "max_drawdown": -0.118,
+        "worst_day": -0.0272
+      },
+      {
+        "window": "COVID crash",
+        "from": "2020-02-19",
+        "to": "2020-03-23",
+        "sessions": 24,
+        "total_return": -0.1549,
+        "max_drawdown": -0.1695,
+        "worst_day": -0.0413
+      },
+      {
+        "window": "inflation bear",
+        "from": "2022-01-03",
+        "to": "2022-10-12",
+        "sessions": 196,
+        "total_return": -0.1002,
+        "max_drawdown": -0.111,
+        "worst_day": -0.0224
+      }
+    ]
+  },
+  "limitations": [
+    "ETF total-return histories begin at different dates.",
+    "A relative-momentum winner can change abruptly and incur slippage.",
+    "Treasury/equity correlation can turn positive during inflation shocks.",
+    "The long-history stock momentum sleeve remains an academic proxy."
+  ]
+}

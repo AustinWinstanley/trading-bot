@@ -9,6 +9,10 @@ data cannot provide at this account's budget:
               2000-02, 2008, 2020 and 2022
   BXM  2002+  CBOE S&P 500 BuyWrite (covered call) Index
 
+Additional benchmark symbols are loaded on demand by the options strategy
+study. They include protective puts, collars, defined-risk spreads, and
+alternative option-writing constructions.
+
 Alpaca's option-chain history starts around Feb 2024. Testing a short-volatility
 strategy on 2.5 years containing no volatility event would be worse than not
 testing it: short vol produces smooth returns right up until it doesn't, so a
@@ -28,7 +32,14 @@ BASE = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{name}_History.c
 CACHE_DIR = REPO_ROOT / "state" / "cboe"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"
 
-SERIES = {"VIX": "CLOSE", "PUT": "PUT", "BXM": "BXM", "VVIX": "VVIX"}
+SERIES = {
+    name: name
+    for name in (
+        "PUT", "BXM", "VVIX", "PPUT", "CLL", "CLLZ", "CNDR", "BFLY",
+        "BXMH", "BXMD", "PUTY", "WPUT",
+    )
+}
+SERIES["VIX"] = "CLOSE"
 
 
 def fetch(name: str, *, refresh: bool = False) -> pd.DataFrame:

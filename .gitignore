@@ -18,8 +18,11 @@ state/edgar/*.parquet
 state/history/
 state/history_deep/
 state/xsec/
+state/xsec_delisted/
 state/universe_*.json
 state/cboe/
 state/fundamentals/
 state/thirteenf/*.zip
 state/earnings_llm/
+state/french/
+state/options/

@@ -24,6 +24,7 @@ Output: standalone stats per stream, then correlation against the existing
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -34,8 +35,9 @@ import requests
 from engine.cboe import series
 from engine.data import load_env
 from engine.tiingo import load_parquet
+from backtest.production_portfolio import require_history
 from backtest.xsec_data import load as xload
-from backtest.xsec_momentum import build_portfolio
+from backtest.xsec_momentum import build_portfolio, operating_stock_symbols
 
 TD = 252
 
@@ -79,6 +81,7 @@ def tsmom_stream() -> pd.Series:
     deep = load_parquet(["GLD", "TLT", "SHY", "IEF"], Path("state/history_deep"))
     for k, v in deep.items():
         frames.setdefault(k, v)
+    require_history(list(universe), frames, label="TSMOM frontier")
 
     closes = pd.DataFrame({k: norm(v["close"]) for k, v in frames.items() if len(v)})
     rets = closes.pct_change()
@@ -91,7 +94,8 @@ def tsmom_stream() -> pd.Series:
     w = w.div(w.sum(axis=1).replace(0, np.nan), axis=0).fillna(0.0).shift(1)
     port = (w * rets).sum(axis=1)
     turnover = w.diff().abs().sum(axis=1)
-    return (port - turnover * 8 / 10_000).dropna()
+    enough_history = closes.shift(252).notna().sum(axis=1) >= 8
+    return (port - turnover * 8 / 10_000).where(enough_history).dropna()
 
 
 # --------------------------------------------------------------------------
@@ -116,6 +120,20 @@ def overnight_streams() -> dict[str, pd.Series]:
 # --------------------------------------------------------------------------
 
 
+def completed_crypto_prices(
+    bars: list[dict],
+    *,
+    today: dt.date | None = None,
+) -> pd.Series:
+    """Build a close series without the still-forming current UTC day."""
+    cutoff = today or dt.datetime.now(dt.timezone.utc).date()
+    prices = pd.Series({
+        pd.Timestamp(bar["t"]).normalize(): float(bar["c"])
+        for bar in bars
+    }).sort_index()
+    return prices[prices.index.date < cutoff]
+
+
 def crypto_streams() -> dict[str, pd.Series]:
     load_env()
     import os
@@ -130,7 +148,7 @@ def crypto_streams() -> dict[str, pd.Series]:
     r.raise_for_status()
     out = {}
     for sym, bars in (r.json().get("bars") or {}).items():
-        px = pd.Series({pd.Timestamp(b["t"]).normalize(): float(b["c"]) for b in bars}).sort_index()
+        px = completed_crypto_prices(bars)
         ret = px.pct_change()
         name = sym.split("/")[0]
         out[f"{name}_hold"] = ret.dropna()
@@ -153,7 +171,9 @@ def existing_combo() -> pd.Series:
     trend = spy.pct_change().fillna(0).where(on, 0.0)
     close, volume = xload()
     cls = json.loads(Path("state/universe_classified.json").read_text())
-    stocks = [s for s in cls["stocks"] if s in close.columns]
+    stocks = operating_stock_symbols(
+        cls["stocks"], close.columns, exclude={"SPY"}
+    )
     mls, _ = build_portfolio(close[stocks + ["SPY"]], volume[stocks + ["SPY"]],
                              lookback=252, skip=21, top_n=20, rebalance=21,
                              cost_bps=15, short_bottom=True)

@@ -1,0 +1,202 @@
+{
+  "conclusion": "Keep both profiles in paper, and do not promote 2x to real capital on current evidence. The long-history proxy adds little CAGR at 2x while nearly doubling drawdown. The academic momentum proxy extends regime coverage but is not validation of the deployed top/bottom-20 sleeve.",
+  "source": {
+    "provider": "Kenneth R. French Data Library",
+    "dataset": "Daily Momentum Factor (Mom)",
+    "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/det_mom_factor_daily.html",
+    "construction": "Value-weighted high-minus-low prior 2-12 month return portfolios across NYSE, AMEX, and Nasdaq."
+  },
+  "limitations": [
+    "French Mom is broad and value-weighted; production is equal-weight top/bottom 20.",
+    "Volatility is matched on 2020-2026 overlap; mean return is not fitted.",
+    "Historical whole-share capacity is represented by average observed capacity.",
+    "Historical borrowability, live slippage tails, and outages remain unavailable.",
+    "The TSMOM universe begins with eight available assets and grows to fifteen."
+  ],
+  "history": {
+    "from": "2007-04-12",
+    "to": "2026-05-29",
+    "tsmom_min_assets": 8,
+    "tsmom_max_assets": 15
+  },
+  "calibration": {
+    "base": {
+      "volatility_scale": 0.2926,
+      "overlap_correlation": 0.5502,
+      "overlap_from": "2020-02-06",
+      "overlap_to": "2026-05-29",
+      "actual_momentum_ann_vol": 0.057,
+      "scaled_proxy_ann_vol": 0.057,
+      "average_short_gross": 0.0914
+    },
+    "2x": {
+      "volatility_scale": 0.6248,
+      "overlap_correlation": 0.5994,
+      "overlap_from": "2020-02-06",
+      "overlap_to": "2026-05-29",
+      "actual_momentum_ann_vol": 0.1217,
+      "scaled_proxy_ann_vol": 0.1217,
+      "average_short_gross": 0.2504
+    }
+  },
+  "full_period": [
+    {
+      "portfolio": "base long-history proxy",
+      "from": "2007-04-12",
+      "to": "2026-05-29",
+      "years": 19.13,
+      "cagr": 0.078,
+      "ann_return": 0.0804,
+      "vol": 0.1025,
+      "sharpe": 0.785,
+      "sortino": 1.031,
+      "max_dd": -0.2625,
+      "x_money": 4.205
+    },
+    {
+      "portfolio": "2x long-history proxy",
+      "from": "2007-04-12",
+      "to": "2026-05-29",
+      "years": 19.13,
+      "cagr": 0.0922,
+      "ann_return": 0.1099,
+      "vol": 0.2075,
+      "sharpe": 0.53,
+      "sortino": 0.698,
+      "max_dd": -0.503,
+      "x_money": 5.406
+    }
+  ],
+  "stress_windows": {
+    "base": [
+      {
+        "window": "GFC",
+        "from": "2007-10-09",
+        "to": "2009-03-09",
+        "sessions": 356,
+        "total_return": -0.156,
+        "max_drawdown": -0.2023,
+        "worst_day": -0.0323
+      },
+      {
+        "window": "momentum crash rebound",
+        "from": "2009-03-10",
+        "to": "2009-06-30",
+        "sessions": 79,
+        "total_return": -0.0553,
+        "max_drawdown": -0.0851,
+        "worst_day": -0.0116
+      },
+      {
+        "window": "Eurozone / US downgrade",
+        "from": "2011-05-02",
+        "to": "2011-10-03",
+        "sessions": 108,
+        "total_return": -0.0825,
+        "max_drawdown": -0.0989,
+        "worst_day": -0.0314
+      },
+      {
+        "window": "China / energy selloff",
+        "from": "2015-07-01",
+        "to": "2016-02-11",
+        "sessions": 156,
+        "total_return": -0.0115,
+        "max_drawdown": -0.0629,
+        "worst_day": -0.0191
+      },
+      {
+        "window": "2018 volatility and Q4",
+        "from": "2018-01-26",
+        "to": "2018-12-24",
+        "sessions": 230,
+        "total_return": -0.0796,
+        "max_drawdown": -0.1172,
+        "worst_day": -0.0272
+      },
+      {
+        "window": "COVID crash",
+        "from": "2020-02-19",
+        "to": "2020-03-23",
+        "sessions": 24,
+        "total_return": -0.165,
+        "max_drawdown": -0.167,
+        "worst_day": -0.0488
+      },
+      {
+        "window": "inflation bear",
+        "from": "2022-01-03",
+        "to": "2022-10-12",
+        "sessions": 196,
+        "total_return": -0.0747,
+        "max_drawdown": -0.0857,
+        "worst_day": -0.0183
+      }
+    ],
+    "2x": [
+      {
+        "window": "GFC",
+        "from": "2007-10-09",
+        "to": "2009-03-09",
+        "sessions": 356,
+        "total_return": -0.3411,
+        "max_drawdown": -0.3941,
+        "worst_day": -0.064
+      },
+      {
+        "window": "momentum crash rebound",
+        "from": "2009-03-10",
+        "to": "2009-06-30",
+        "sessions": 79,
+        "total_return": -0.1446,
+        "max_drawdown": -0.1925,
+        "worst_day": -0.025
+      },
+      {
+        "window": "Eurozone / US downgrade",
+        "from": "2011-05-02",
+        "to": "2011-10-03",
+        "sessions": 108,
+        "total_return": -0.1822,
+        "max_drawdown": -0.1954,
+        "worst_day": -0.0634
+      },
+      {
+        "window": "China / energy selloff",
+        "from": "2015-07-01",
+        "to": "2016-02-11",
+        "sessions": 156,
+        "total_return": -0.0539,
+        "max_drawdown": -0.1452,
+        "worst_day": -0.0384
+      },
+      {
+        "window": "2018 volatility and Q4",
+        "from": "2018-01-26",
+        "to": "2018-12-24",
+        "sessions": 230,
+        "total_return": -0.1992,
+        "max_drawdown": -0.2336,
+        "worst_day": -0.055
+      },
+      {
+        "window": "COVID crash",
+        "from": "2020-02-19",
+        "to": "2020-03-23",
+        "sessions": 24,
+        "total_return": -0.3125,
+        "max_drawdown": -0.3156,
+        "worst_day": -0.0986
+      },
+      {
+        "window": "inflation bear",
+        "from": "2022-01-03",
+        "to": "2022-10-12",
+        "sessions": 196,
+        "total_return": -0.1801,
+        "max_drawdown": -0.1982,
+        "worst_day": -0.0384
+      }
+    ]
+  }
+}
