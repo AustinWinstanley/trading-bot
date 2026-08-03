@@ -99,28 +99,8 @@ def build_mom_ls_targets() -> list[str]:
     notes.append(f"eligible after filters: {len(ranked):,}")
 
     longs = list(ranked.head(top_n).index)
-
-    # Alpaca will not short fractionally, so a slot can only fill if one whole
-    # share fits inside it. Ranking without this filter picked names priced
-    # above the slot, the risk gate rejected every one of them at submission,
-    # and the "market-neutral" sleeve ran structurally net long. Filter here,
-    # where we can still walk further down the momentum ranks for a
-    # replacement, instead of discovering it at the gate.
-    max_short_px = short_slot_notional(top_n)
-    if max_short_px:
-        affordable = px[px <= max_short_px]
-        skipped = [s for s in ranked.index[::-1][:top_n] if s not in affordable.index]
-        ranked_short = ranked[ranked.index.isin(affordable.index)]
-        notes.append(f"short slot ${max_short_px:,.2f}; {len(ranked) - len(ranked_short):,} "
-                     f"of {len(ranked):,} ranked names too expensive to short whole-share")
-        if skipped:
-            notes.append(f"skipped by price at the short end: {', '.join(skipped[:10])}")
-    else:
-        ranked_short = ranked
-        notes.append("CRITICAL: no equity snapshot; short slot size unknown, price filter skipped")
-
     shorts = []
-    for sym in ranked_short.index[::-1]:            # worst momentum first
+    for sym in ranked.index[::-1]:                 # worst momentum first
         if len(shorts) >= top_n:
             break
         try:
@@ -129,13 +109,28 @@ def build_mom_ls_targets() -> list[str]:
                 shorts.append(sym)
         except Exception:
             continue
-    if len(shorts) < top_n:
-        notes.append(f"CRITICAL: only {len(shorts)} of {top_n} short slots filled — "
-                     f"sleeve will run net long")
+
+    # Alpaca will not short fractionally, so a slot only fills if one whole
+    # share fits inside it. Selection stays price-blind on purpose — the
+    # capacity study found price-aware ranking no better on returns and left
+    # the bottom-20 construction alone pending live data. But a name picked
+    # above the slot is a short the gate will reject, so say so now rather
+    # than letting the sleeve drift net long unannounced. Diagnostic only:
+    # nothing here changes which names are chosen.
+    max_short_px = short_slot_notional(top_n)
+    if max_short_px:
+        unfillable = [s for s in shorts if s in px.index and px[s] > max_short_px]
+        if unfillable:
+            notes.append(
+                f"CRITICAL: {len(unfillable)} of {len(shorts)} shorts price above the "
+                f"${max_short_px:,.2f} slot and cannot fill whole-share — sleeve will "
+                f"run net long: {', '.join(unfillable[:10])}")
+    else:
+        notes.append("CRITICAL: no equity snapshot; short whole-share capacity unchecked")
 
     out = {"as_of": end.isoformat(), "long": longs, "short": shorts,
            "params": {"top_n": top_n, "min_price": min_px, "min_dollar_volume": min_dv,
-                      "max_short_price": max_short_px}}
+                      "short_slot_notional": max_short_px}}
     path = REPO_ROOT / p["mom_ls_targets_file"]
     path.write_text(_json.dumps(out, indent=2))
     notes.append(f"mom_ls targets written: {len(longs)} long / {len(shorts)} short (easy-to-borrow)")
