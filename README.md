@@ -39,7 +39,8 @@ The 2× profile scales targets to at most 200% long, 30% short, and 230% gross.
 It uses separate credentials, state, journal, and reports.
 
 MOM_LS stands down when its weekly target file is absent or stale. Cash is an
-intentional residual position.
+intentional residual position. MOM_LS alone runs without per-position stops or
+a loss re-entry cooldown — see [Sleeves without stops](#sleeves-without-stops).
 
 ## Current research estimate
 
@@ -56,6 +57,15 @@ These are estimates, not forecasts. The individual-stock universe contains
 currently listed companies and is survivorship-biased. Positive MOM_LS results
 are therefore an optimistic upper bound. The sample is also short and dominated
 by the post-2020 market.
+
+**These numbers only describe what is deployed if production does not add
+untested behaviour on top.** `backtest/production_portfolio.py` models MOM_LS as
+a pure weekly rebalance — no stop-loss, no re-entry block. Production ran both
+from launch until 2026-08-03, so the deployed strategy was measurably not the
+one estimated here. `backtest/risk_overlay_study.py` quantified the gap and the
+controls were removed from that sleeve. Before adding any risk control to a
+sleeve, check whether the backtest models it; if not, the table above stops
+describing reality.
 
 A Tiingo-metadata/Alpaca-bars sensitivity test added 1,481 delisted listings.
 The observed-last-price case and a deliberately severe case that assigns every
@@ -156,7 +166,13 @@ deployment.
 
 The former 13F clone sleeve was removed after a timezone-mixed forward-fill
 bug was found. Correct point-in-time results reduced its estimated conviction
-variant from 27.3% to 5.98% CAGR.
+variant from 27.3% to 5.98% CAGR. Because nothing live reads 13F data any
+more, the Sunday job no longer refreshes the holdings or CUSIP map unless
+`paper_portfolio.sleeves.clone` is greater than zero — it was rebuilding the
+map from ~36 SEC downloads weekly, leaving `state/thirteenf/cusip_map.parquet`
+permanently dirty and able to raise a `CRITICAL` about a sleeve that is not
+trading. `backtest/clone_study.py` and `backtest/production_portfolio.py` read
+the committed snapshot; pass `refresh=True` if a study needs current data.
 
 A cost-aware overnight-equity study also rejected replacing the SPY core.
 Close-to-open SPY broke even at only 1.91 bp per execution in the post-2013
@@ -288,6 +304,20 @@ their observed trade-bar debits, but a cheaper flat-VIX sensitivity still
 failed. Lower-notional ETF alternatives lacked sufficiently complete listed
 chains in the feasibility snapshot. No bullish options feature was added.
 
+### Research record
+
+Every study writes one JSON to `reports/` carrying a `decision` field, and
+campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`:
+
+| Campaign | Outcome |
+| --- | --- |
+| [2026-07-23](reports/strategy_campaign_2026-07-23.md) | No candidate passed; the best next investment is point-in-time data, not more parameter sweeps. |
+| [2026-08-03](reports/strategy_campaign_2026-08-03.md) | Removed the never-backtested stop and re-entry block from MOM_LS; rejected a correlation cap. |
+
+Those decisions are binding. Check for an existing `decision` before proposing
+a change — several plausible ideas are already tested and rejected, with
+reasons. `AGENTS.md` covers the conventions and the traps.
+
 ## Setup
 
 ```bash
@@ -359,12 +389,27 @@ the profile completes its first live run.
 Individual wrapper jobs remain available:
 
 ```bash
-scripts/paper.sh daily
-scripts/paper.sh daily2x
-scripts/paper.sh weekly
+scripts/paper.sh daily 09:47      # second argument is the intended ET slot
+scripts/paper.sh daily2x 09:51
+scripts/paper.sh weekly           # omit the slot to run unconditionally
 scripts/paper.sh health
 scripts/paper.sh health2x
 ```
+
+### The ET slot guard
+
+The server clock is UTC and Debian cron has no `CRON_TZ`, so every ET slot
+needs **two** crontab lines — one correct under EDT (UTC−4), one under EST
+(UTC−5). Both fire year round. The optional second argument is the ET time the
+job is meant to run at; a firing more than 5 minutes away from it exits as a
+no-op, so exactly one of each pair does work whatever the offset.
+
+Before this guard both lines of every pair ran, so each job executed **four**
+times a weekday, and the out-of-season copy did not merely duplicate the run —
+it traded an hour late. **Do not delete either line of a pair**, and give any
+new market-hours job a slot argument. Jobs with no market-clock sensitivity
+(the Sunday refresh) stay single-line and unguarded, because a slot guard would
+skip them outright for half the year.
 
 The wrapper uses `flock` to prevent overlapping jobs and `timeout` to bound
 stalled runs. Health jobs fail on stale snapshots, inactive accounts, stale
@@ -387,6 +432,14 @@ Weekly reports show fill rate, adverse slippage, gate shrinkage, whole-share and
 borrow rejections, latest sleeve exposure, and sleeve-level unrealized P&L for
 both paper accounts. Dry runs wrap schema migrations in the same rolled-back
 transaction as journal changes.
+
+From the runs of 2026-08-04, daily reports **append** one `## run <timestamp>`
+block per run under a single `# Paper <date>` heading. They previously
+truncated, so the file on disk was always the last run of the day — reliably
+the quiet one, every order having been placed hours earlier. Eight sessions of
+real trading were journalled as `approved 0 | submitted 0`. Files dated
+2026-08-03 or earlier therefore show one run out of several. When judging
+whether the bot traded, trust `state/paper.db` over any report.
 
 The 2× profile records a shadow 12% volatility-target recommendation from its
 own daily paper-equity history. It requires 32 observations in a 63-session
@@ -423,10 +476,31 @@ Risk controls include:
 - single-name, long, short, gross, and leveraged-ETF exposure caps;
 - daily, monthly, and peak-drawdown circuit breakers;
 - broker-held OTO stops for whole-share entries, with simple DAY fractional
-  entries protected by the local monitoring fallback;
+  entries protected by the local monitoring fallback — *except* sleeves listed
+  in `risk.stop_exempt_sleeves`, which carry no stop at all (see below);
 - no averaging down;
-- loss re-entry cooldown;
+- loss re-entry cooldown, except for `risk.reentry_block_exempt_sleeves`;
 - liquidity, price, IPO-age, borrowability, and slippage filters;
 - opening/closing entry windows.
+
+### Sleeves without stops
+
+`MOM_LS` is in both exemption lists, so its positions carry **no stop-loss and
+no re-entry cooldown**. This is deliberate and evidence-backed
+(`reports/risk_overlay_study.json`): the sleeve rebalances weekly, and stopping
+it out cost 0.69–1.44pp of CAGR and Sharpe in both windows and both profiles
+while raising turnover 36%. The re-entry block did nothing on its own — only a
+stop-out leaves a name still ranked and therefore barred from a signal that
+still likes it.
+
+The gate invariant is unchanged in strength: an exempt sleeve must carry
+*exactly* zero stop. A partial or malformed stop still fails the run loudly
+rather than reaching the broker. `submit_entry` sends a plain limit when there
+is no stop, because a zero stop inside an OTO is inert for a long and triggers
+instantly for a short. The health check learns which positions are unstopped by
+design from the journal's most recent opening order per symbol, so it does not
+alarm on them — but it still flags every *other* unprotected position.
+
+Emptying both lists restores stops and cooldowns everywhere.
 
 This is experimental software, not investment advice.
