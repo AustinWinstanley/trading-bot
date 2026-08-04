@@ -36,20 +36,39 @@ if [ -n "$SLOT" ]; then
   fi
 fi
 
+# LOCK is resolved from $JOB before the flock block opens below, since bash
+# fixes the 200> target for the whole compound command up front. stops/
+# stops2x deliberately share daily's/daily2x's lock — they must never run
+# concurrently with a full rebalance against the same SQLite journal, and a
+# stops check that loses the race just waits for the next cron minute; the
+# full run checks stops itself in the same cycle, so nothing is missed.
+case "$JOB" in
+  daily)    LOCK=daily;    TIMEOUT=1500 ;;
+  daily2x)  LOCK=daily2x;  TIMEOUT=1500 ;;
+  stops)    LOCK=daily;    TIMEOUT=120  ;;
+  stops2x)  LOCK=daily2x;  TIMEOUT=120  ;;
+  weekly)   LOCK=weekly;   TIMEOUT=3000 ;;
+  health)   LOCK=health;   TIMEOUT=120  ;;
+  health2x) LOCK=health2x; TIMEOUT=120  ;;
+  *) LOCK=$JOB; TIMEOUT=120 ;;   # unknown job still needs a lock name; caught below
+esac
+
 {
   echo "=== $(date -u '+%F %T UTC') job=$JOB slot=${SLOT:-any} ==="
   flock -n 200 || { echo "CRITICAL: previous run still holds the lock"; exit 1; }
   cd "$BOT"
   case "$JOB" in
-    daily)    timeout 1500 .venv/bin/python -m scripts.run_daily ;;
-    daily2x)  timeout 1500 .venv/bin/python -m scripts.run_daily --profile 2x ;;
-    weekly)   timeout 3000 .venv/bin/python -m scripts.weekly ;;
-    health)   timeout 120 .venv/bin/python -m scripts.healthcheck ;;
-    health2x) timeout 120 .venv/bin/python -m scripts.healthcheck --profile 2x ;;
+    daily)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily ;;
+    daily2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x ;;
+    stops)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only ;;
+    stops2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only --profile 2x ;;
+    weekly)   timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly ;;
+    health)   timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck ;;
+    health2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck --profile 2x ;;
     *) echo "unknown job $JOB"; exit 2 ;;
   esac
   rc=$?
   [ $rc -ne 0 ] && echo "CRITICAL: job=$JOB exited rc=$rc"
   echo "=== end rc=$rc ==="
   exit $rc
-} 200>"$BOT/state/paper-$JOB.lock" >>"$LOG" 2>&1
+} 200>"$BOT/state/paper-$LOCK.lock" >>"$LOG" 2>&1
