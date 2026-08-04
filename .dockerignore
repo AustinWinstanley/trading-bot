@@ -1,0 +1,26 @@
+# Controls what reaches the Docker daemon as build context — defense in
+# depth against .env ever reaching the daemon at all, and meaningfully
+# faster builds (state/ alone carries tens of MB of research data).
+#
+# Does NOT exclude engine/ — dashboard/Dockerfile's explicit
+# `COPY engine/__init__.py engine/attribution.py engine/config.py` needs
+# those files present in the build context. This file controls what's SENT
+# to the daemon; the Dockerfile's selective COPY controls what actually
+# lands IN the image. The two are complementary, not redundant.
+
+.git/
+.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.env
+.env.example
+state/
+reports/
+exports/
+backtest/
+logs/
+tests/
+deploy/
+.claude/

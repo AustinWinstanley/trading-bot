@@ -200,15 +200,24 @@ fi
 CRON_IS_PAUSED=0
 UPGRADE_SUCCEEDED=1
 
-echo "==> Restarting the monitoring dashboard"
-if systemctl --user list-unit-files trading-bot-dashboard.service &>/dev/null; then
-  if systemctl --user restart trading-bot-dashboard.service; then
-    echo "Dashboard restarted."
+echo "==> Restarting the monitoring dashboard (Docker)"
+DASHBOARD_COMPOSE_FILE="$REPO_ROOT/deploy/docker-compose.yml"
+if [[ -f "$DASHBOARD_COMPOSE_FILE" ]]; then
+  DASHBOARD_COMPOSE_CMD=()
+  if docker compose version &>/dev/null; then
+    DASHBOARD_COMPOSE_CMD=(docker compose)
+  elif command -v docker-compose &>/dev/null; then
+    DASHBOARD_COMPOSE_CMD=(docker-compose)
+  fi
+  if [[ "${#DASHBOARD_COMPOSE_CMD[@]}" -eq 0 ]]; then
+    echo "WARNING: neither 'docker compose' (v2) nor 'docker-compose' (v1) is available; skipping dashboard restart." >&2
+  elif "${DASHBOARD_COMPOSE_CMD[@]}" -f "$DASHBOARD_COMPOSE_FILE" up -d --build; then
+    echo "Dashboard container restarted."
   else
-    echo "WARNING: dashboard restart failed; check 'systemctl --user status trading-bot-dashboard.service'." >&2
+    echo "WARNING: dashboard restart failed; check '${DASHBOARD_COMPOSE_CMD[*]} -f $DASHBOARD_COMPOSE_FILE ps' and '${DASHBOARD_COMPOSE_CMD[*]} -f $DASHBOARD_COMPOSE_FILE logs'." >&2
   fi
 else
-  echo "Dashboard service unit not installed; skipping restart."
+  echo "Dashboard compose file not found; skipping restart."
 fi
 
 echo

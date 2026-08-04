@@ -1,0 +1,24 @@
+services:
+  dashboard:
+    build:
+      context: ..
+      dockerfile: dashboard/Dockerfile
+    image: trading-bot-dashboard:latest
+    container_name: trading-bot-dashboard
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8787:8787"     # host loopback ONLY — never "8787:8787"
+    volumes:
+      - ../config.yaml:/app/config.yaml:ro
+      - ../config_2x.yaml:/app/config_2x.yaml:ro
+      - ../state:/app/state:ro
+      # Deliberately nothing else mounted — .env is structurally
+      # unreachable from inside the container, not just unread by
+      # convention.
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/base/summary', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
