@@ -281,6 +281,10 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--force", action="store_true", help="run even when market is closed (for testing)")
     ap.add_argument("--profile", choices=list(PROFILES), default="base")
+    ap.add_argument(
+        "--stops-only", action="store_true",
+        help="skip target computation and rebalance drift; only check software stops",
+    )
     args = ap.parse_args()
 
     cfg_file, env_sfx = set_profile(args.profile)
@@ -356,7 +360,15 @@ def main() -> None:
     # ---- targets ---------------------------------------------------------
     # Halt mode must not depend on research-data availability. It exists to
     # cancel orders and flatten risk even if target construction is broken.
-    if cfg.mode == "halt":
+    # --stops-only shares the empty-targets placeholder for the same reason
+    # halt mode does (skip the expensive bar fetch in build_targets), but —
+    # unlike halt mode — nothing downstream may treat these empty targets as
+    # "flatten everything": halt mode's flattening comes from the gate's own
+    # cfg.mode=="halt" check (engine/risk.py) via result.flatten_all, not
+    # from the drift loop below reading a zero target. --stops-only runs
+    # under the normal mode, so section 4b (rebalance drift) is explicitly
+    # skipped rather than fed these placeholder targets — see there.
+    if cfg.mode == "halt" or args.stops_only:
         targets = {}
         diag = {
             "sleeve_counts": {}, "total_weight": 0.0, "cash_weight": 1.0,
@@ -366,6 +378,8 @@ def main() -> None:
         targets, diag = build_targets(cfg, t)
         targets, diag = apply_target_scale(targets, diag, overlay)
     diag["volatility_overlay"] = overlay
+    if args.stops_only:
+        diag["stops_only"] = True
     print(f"targets: {diag['sleeve_counts']}  total={diag['total_weight']}  cash={diag['cash_weight']}")
 
     # ---- proposals -------------------------------------------------------
@@ -404,46 +418,63 @@ def main() -> None:
                               ),
                               "rationale": f"software stop: {pos.current_price} <= {stop}"})
 
-    # 4b. rebalance drift
-    all_syms = sorted(set(targets) | set(positions))
-    for sym in all_syms:
-        if sym in pending_symbols:
-            continue
-        if any(pr["symbol"] == sym for pr in proposals):
-            continue
-        tgt_notional = targets.get(sym, 0.0) * equity        # negative = short target
-        cur_notional = positions[sym].market_value if sym in positions else 0.0
-        diff = tgt_notional - cur_notional
-        threshold = max(band * abs(tgt_notional), min_notional) if tgt_notional != 0 else min_notional
-        if abs(diff) < threshold:
-            continue
-        px = t.latest_price(sym)
-        if px is None or px <= 0:
-            continue
-        reference_prices[sym] = px
+    # 4b. rebalance drift — skipped entirely in --stops-only mode. targets is
+    # a placeholder ({}) there, and letting it reach this loop would read as
+    # "every held position's target is zero" and propose liquidating the
+    # whole book — see the note above where targets is set.
+    if not args.stops_only:
+        all_syms = sorted(set(targets) | set(positions))
+        for sym in all_syms:
+            if sym in pending_symbols:
+                continue
+            if any(pr["symbol"] == sym for pr in proposals):
+                continue
+            tgt_notional = targets.get(sym, 0.0) * equity        # negative = short target
+            cur_notional = positions[sym].market_value if sym in positions else 0.0
+            diff = tgt_notional - cur_notional
+            threshold = max(band * abs(tgt_notional), min_notional) if tgt_notional != 0 else min_notional
+            if abs(diff) < threshold:
+                continue
+            px = t.latest_price(sym)
+            if px is None or px <= 0:
+                continue
+            reference_prices[sym] = px
 
-        # Map the sign geometry to a side. Crossing zero (long target while
-        # short, or vice versa) is handled by closing first; the opening leg
-        # happens on a later run once flat. Never both in one order.
-        if diff > 0:
-            side = "cover" if cur_notional < 0 else "buy"
-            if side == "cover":
-                diff = min(diff, -cur_notional)              # close at most the short
-        else:
-            side = "sell" if cur_notional > 0 else "short"
-            if side == "sell":
-                diff = max(diff, -cur_notional)              # sell at most what we hold
-        if abs(diff) < min_notional:
-            continue
-        limit = marketable_limit(
-            px, side, cfg.execution.max_limit_slippage_pct
-        )
-        proposals.append({"symbol": sym, "side": side,
-                          "sleeve": diag["origin"].get(sym, "rebalance"),
-                          "notional": abs(diff), "limit_price": limit,
-                          "rationale": f"target ${tgt_notional:,.0f} vs held ${cur_notional:,.0f}"})
+            # Map the sign geometry to a side. Crossing zero (long target while
+            # short, or vice versa) is handled by closing first; the opening leg
+            # happens on a later run once flat. Never both in one order.
+            if diff > 0:
+                side = "cover" if cur_notional < 0 else "buy"
+                if side == "cover":
+                    diff = min(diff, -cur_notional)              # close at most the short
+            else:
+                side = "sell" if cur_notional > 0 else "short"
+                if side == "sell":
+                    diff = max(diff, -cur_notional)              # sell at most what we hold
+            if abs(diff) < min_notional:
+                continue
+            limit = marketable_limit(
+                px, side, cfg.execution.max_limit_slippage_pct
+            )
+            proposals.append({"symbol": sym, "side": side,
+                              "sleeve": diag["origin"].get(sym, "rebalance"),
+                              "notional": abs(diff), "limit_price": limit,
+                              "rationale": f"target ${tgt_notional:,.0f} vs held ${cur_notional:,.0f}"})
 
     print(f"proposals: {len(proposals)}")
+
+    if args.stops_only and not proposals:
+        # True no-op for the SNAPSHOT: no stop triggered, so no misleading
+        # placeholder-target row. But reconcile_journal_orders/
+        # sync_broker_stops above may have made real, legitimate writes
+        # (mirroring a broker-side fill or a pruned stale stop row) that
+        # share this same connection and are not yet committed — nothing
+        # else in this function will commit them if we return now, so they
+        # would silently roll back otherwise. Commit just that housekeeping.
+        if not args.dry_run:
+            conn.commit()
+        print("done: stops-only, nothing triggered")
+        return
 
     # ---- gate ------------------------------------------------------------
     symbol_data = {}
@@ -663,66 +694,80 @@ def main() -> None:
                  (ts, equity, cash,
                   json.dumps({s: {"qty": p.qty, "px": p.current_price} for s, p in positions.items()}),
                   json.dumps(diag)))
-    attribution = build_exposure_attribution(
-        equity=equity,
-        targets=targets,
-        sleeve_targets=diag.get("sleeve_targets", {}),
-        positions=positions,
-    )
-    target_exp = attribution["target"]
-    actual_exp = attribution["actual"]
-    conn.execute(
-        "INSERT INTO attribution_snapshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (
-            ts,
-            equity,
-            target_exp["long"],
-            target_exp["short"],
-            target_exp["gross"],
-            actual_exp["long"],
-            actual_exp["short"],
-            actual_exp["gross"],
-            json.dumps(attribution["target_by_sleeve"]),
-            json.dumps(attribution["actual_by_sleeve"]),
-            json.dumps(attribution["targets"]),
-            json.dumps(attribution["actual_weights"]),
-            json.dumps(attribution["largest_symbol_gaps"]),
-        ),
-    )
-    conn.execute(
-        "INSERT INTO leverage_recommendations VALUES (?,?,?,?,?,?,?,?,?,?)",
-        (
-            ts,
-            args.profile,
-            overlay["mode"],
-            overlay["observations"],
-            overlay["target_vol"],
-            overlay["realized_vol"],
-            overlay["recommended_scale"],
-            overlay["recommended_leverage"],
-            int(overlay["ready"]),
-            overlay["reason"],
-        ),
-    )
+    # attribution_snapshots and leverage_recommendations both describe
+    # rebalance-cycle target state (diag["sleeve_targets"], the overlay's
+    # recommendation), neither of which --stops-only computes — targets is
+    # the {} placeholder here. Writing them anyway would silently claim the
+    # book's target exposure is zero, which is the same class of misleading
+    # journal row already fixed once for this repo (the truncated-report /
+    # 4x-daily-run confusion documented in AGENTS.md).
+    if not args.stops_only:
+        attribution = build_exposure_attribution(
+            equity=equity,
+            targets=targets,
+            sleeve_targets=diag.get("sleeve_targets", {}),
+            positions=positions,
+        )
+        target_exp = attribution["target"]
+        actual_exp = attribution["actual"]
+        conn.execute(
+            "INSERT INTO attribution_snapshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                ts,
+                equity,
+                target_exp["long"],
+                target_exp["short"],
+                target_exp["gross"],
+                actual_exp["long"],
+                actual_exp["short"],
+                actual_exp["gross"],
+                json.dumps(attribution["target_by_sleeve"]),
+                json.dumps(attribution["actual_by_sleeve"]),
+                json.dumps(attribution["targets"]),
+                json.dumps(attribution["actual_weights"]),
+                json.dumps(attribution["largest_symbol_gaps"]),
+            ),
+        )
+        conn.execute(
+            "INSERT INTO leverage_recommendations VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                ts,
+                args.profile,
+                overlay["mode"],
+                overlay["observations"],
+                overlay["target_vol"],
+                overlay["realized_vol"],
+                overlay["recommended_scale"],
+                overlay["recommended_leverage"],
+                int(overlay["ready"]),
+                overlay["reason"],
+            ),
+        )
     conn.commit()
     save_risk_state(st)
 
     lines = [
-        f"## run {ts}",
+        f"## run {ts}" + (" (stops-only)" if args.stops_only else ""),
         f"- equity ${equity:,.2f} | cash ${cash:,.2f} | positions {len(positions)}",
-        f"- sleeves {diag['sleeve_counts']} | invested {diag['total_weight']:.0%} | cash target {diag['cash_weight']:.0%}",
         f"- proposals {len(proposals)} | approved {len(result.approved)} | rejected {len(result.rejected)} | submitted {submitted}",
         f"- submission failures {len(submission_failures)}",
         f"- broker orders open {len(open_orders)} | journal reconciled {sum(reconciled.values())}",
-        f"- target exposure long {target_exp['long']:.1%} | short {target_exp['short']:.1%} | "
-        f"gross {target_exp['gross']:.1%}",
-        f"- actual exposure long {actual_exp['long']:.1%} | short {actual_exp['short']:.1%} | "
-        f"gross {actual_exp['gross']:.1%}",
-        f"- volatility overlay {overlay['mode']} | observations "
-        f"{overlay['observations']}/{overlay['min_observations']} | "
-        f"recommended {overlay['recommended_leverage']:.2f}× | "
-        f"traded {overlay['applied_leverage']:.2f}×",
     ]
+    if not args.stops_only:
+        lines.insert(
+            2,
+            f"- sleeves {diag['sleeve_counts']} | invested {diag['total_weight']:.0%} | cash target {diag['cash_weight']:.0%}",
+        )
+        lines += [
+            f"- target exposure long {target_exp['long']:.1%} | short {target_exp['short']:.1%} | "
+            f"gross {target_exp['gross']:.1%}",
+            f"- actual exposure long {actual_exp['long']:.1%} | short {actual_exp['short']:.1%} | "
+            f"gross {actual_exp['gross']:.1%}",
+            f"- volatility overlay {overlay['mode']} | observations "
+            f"{overlay['observations']}/{overlay['min_observations']} | "
+            f"recommended {overlay['recommended_leverage']:.2f}× | "
+            f"traded {overlay['applied_leverage']:.2f}×",
+        ]
     if result.halt_reason:
         lines.append(f"- **HALT: {result.halt_reason}**")
     for n in result.notes:
