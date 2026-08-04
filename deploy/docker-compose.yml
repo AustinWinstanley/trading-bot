@@ -7,7 +7,14 @@ services:
     container_name: trading-bot-dashboard
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8787:8787"     # host loopback ONLY — never "8787:8787"
+      # Published on all host interfaces (LAN-reachable), not loopback-only.
+      # The app has zero login/auth by design — anyone who can reach the
+      # server's IP on this network sees live paper-account data
+      # (positions, equity, trade history) with no gate at all. Chosen
+      # deliberately over Tailscale/SSH-tunnel for same-network access
+      # without a login. If this ever needs to be internet-facing instead
+      # of LAN-only, add auth first — don't just widen this further.
+      - "0.0.0.0:8787:8787"
     volumes:
       - ../config.yaml:/app/config.yaml:ro
       - ../config_2x.yaml:/app/config_2x.yaml:ro
