@@ -200,6 +200,17 @@ fi
 CRON_IS_PAUSED=0
 UPGRADE_SUCCEEDED=1
 
+echo "==> Restarting the monitoring dashboard"
+if systemctl --user list-unit-files trading-bot-dashboard.service &>/dev/null; then
+  if systemctl --user restart trading-bot-dashboard.service; then
+    echo "Dashboard restarted."
+  else
+    echo "WARNING: dashboard restart failed; check 'systemctl --user status trading-bot-dashboard.service'." >&2
+  fi
+else
+  echo "Dashboard service unit not installed; skipping restart."
+fi
+
 echo
 echo "UPGRADE VERIFIED."
 echo "Original crontab restored. Trading-bot cron jobs are active."

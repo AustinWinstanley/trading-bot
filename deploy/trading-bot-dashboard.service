@@ -1,0 +1,46 @@
+# User-level systemd unit for the read-only monitoring dashboard.
+#
+# Deliberately NOT a system unit (/etc/systemd/system/) — upgrade.sh runs
+# unprivileged with no sudo anywhere in it, and must stay that way. A system
+# unit would force either interactive sudo (breaking unattended upgrades) or
+# a standing passwordless-sudo grant, which is worse than the alternative.
+#
+# One-time install (run these yourself on the server — this file only
+# documents what to install, nothing runs it automatically):
+#
+#   loginctl enable-linger austin
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/trading-bot-dashboard.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now trading-bot-dashboard.service
+#   systemctl --user status trading-bot-dashboard.service
+#
+#   tailscale serve --bg 8787     # syntax varies by installed version —
+#   tailscale serve status        # check `tailscale serve --help` first
+#
+# After this is installed, scripts/upgrade.sh restarts it automatically on
+# every successful deploy (see the "Restarting the monitoring dashboard"
+# step near the end of that script) — no further manual action needed.
+
+[Unit]
+Description=Trading-bot read-only monitoring dashboard
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/austin/trading-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/austin/trading-bot/.venv/bin/gunicorn \
+    --worker-class gthread --workers 2 --threads 4 \
+    --bind 127.0.0.1:8787 \
+    --access-logfile /home/austin/trading-bot/logs/dashboard-access.log \
+    --error-logfile /home/austin/trading-bot/logs/dashboard-error.log \
+    dashboard.wsgi:app
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
