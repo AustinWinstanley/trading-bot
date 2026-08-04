@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import sqlite3
 from zoneinfo import ZoneInfo
@@ -159,6 +160,21 @@ def main() -> None:
         journal_is_pristine=journal_is_pristine,
         unstopped_symbols=unstopped_symbols,
     )
+
+    # Persisted for the read-only dashboard (dashboard/), which must never
+    # call Alpaca itself — this is the one place that result reaches disk.
+    # Written unconditionally (healthy or not) so the dashboard can show
+    # either state, not just failures.
+    health_status_path = REPO_ROOT / "state" / f"health_status{state_suffix}.json"
+    health_status_path.write_text(json.dumps({
+        "ts": now.isoformat(),
+        "healthy": not problems,
+        "problems": problems,
+        "equity": account.get("equity"),
+        "positions": len(positions),
+        "open_orders": len(orders),
+    }))
+
     print(
         f"profile={args.profile} equity={account.get('equity')} "
         f"positions={len(positions)} open_orders={len(orders)}"

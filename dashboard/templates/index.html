@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>trading-bot monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <h1>trading-bot monitor</h1>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-profile="base" role="tab" aria-selected="true">Base (1x)</button>
+      <button class="tab" data-profile="2x" role="tab" aria-selected="false">2x</button>
+    </div>
+    <div class="status-banner" id="status-banner">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">loading…</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel span-2" id="panel-equity">
+      <h2>Equity</h2>
+      <canvas id="equity-chart" width="900" height="260"></canvas>
+      <div class="legend">
+        <span><i class="swatch equity"></i>equity</span>
+        <span><i class="swatch halt"></i>peak-drawdown halt</span>
+        <span><i class="swatch kill"></i>monthly kill switch</span>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-budget">
+      <h2>Risk budget</h2>
+      <div id="budget-bars" class="budget-bars"></div>
+    </section>
+
+    <section class="panel" id="panel-overlay">
+      <h2>Volatility overlay</h2>
+      <div id="overlay-card" class="kv"></div>
+    </section>
+
+    <section class="panel" id="panel-cooldown">
+      <h2>Re-entry cooldown</h2>
+      <ul id="cooldown-list" class="plain-list"><li class="muted">none</li></ul>
+    </section>
+
+    <section class="panel" id="panel-health">
+      <h2>Health check</h2>
+      <ul id="health-list" class="plain-list"><li class="muted">no data yet</li></ul>
+    </section>
+
+    <section class="panel span-2" id="panel-positions">
+      <h2>Positions</h2>
+      <div class="table-wrap">
+        <table id="positions-table">
+          <thead>
+            <tr><th>Symbol</th><th>Sleeve</th><th>Qty</th><th>Price</th><th>Value</th><th>Stop</th><th>Unrealized P&amp;L</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel span-2" id="panel-exposure">
+      <h2>Exposure by sleeve — target vs actual</h2>
+      <div class="table-wrap">
+        <table id="exposure-table">
+          <thead>
+            <tr><th>Sleeve</th><th>Target long/short/gross</th><th>Actual long/short/gross</th><th>Unrealized P&amp;L</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel span-2" id="panel-orders">
+      <h2>Live trade feed</h2>
+      <div class="table-wrap">
+        <table id="orders-table">
+          <thead>
+            <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Sleeve</th><th>Qty</th><th>Notional</th><th>Status</th><th>Reason</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel span-2" id="panel-rejections">
+      <h2>Why didn't it trade? (last 7 days)</h2>
+      <div class="table-wrap">
+        <table id="rejections-table">
+          <thead><tr><th>Reason</th><th>Count</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
