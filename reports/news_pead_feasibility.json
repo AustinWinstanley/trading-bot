@@ -1,0 +1,52 @@
+{
+  "decision": "proceed_news_conditioned_event_study",
+  "strategy": "news-conditioned post-earnings drift feasibility",
+  "audit_window": {
+    "start": "2026-01-01",
+    "end": "2026-07-31"
+  },
+  "articles": 147305,
+  "timestamp_coverage": 1.0,
+  "earnings_labeled_articles": 11766,
+  "single_symbol_earnings_events": 11102,
+  "unique_event_symbols": 3766,
+  "events_by_publication_session": {
+    "before_open": 5268,
+    "after_close": 4061,
+    "during_market": 1763,
+    "non_session_day": 10
+  },
+  "pre_registered_gate": {
+    "minimum_single_symbol_events": 500,
+    "minimum_timestamp_coverage": 0.95,
+    "passed": true
+  },
+  "true_pead_status": {
+    "decision": "still_deferred",
+    "reason": "No versioned pre-announcement EPS/revenue consensus or contributor count is present in the news feed."
+  },
+  "next_study_contract": {
+    "signal_inputs": [
+      "first publication timestamp",
+      "opening gap after publication",
+      "first-30-minute abnormal volume",
+      "VWAP hold or rejection"
+    ],
+    "entry": "No earlier than the first completed 30-minute regular-session bar after publication.",
+    "controls": [
+      "matched non-earnings gaps",
+      "generic gap-and-volume rule already rejected in drift_study.json",
+      "SPY-adjusted forward returns"
+    ],
+    "prohibitions": [
+      "Do not infer an earnings surprise sign from a headline.",
+      "Do not use updated_at or article revisions to move an event earlier.",
+      "Do not tune on 2026-08-04-onward data."
+    ]
+  },
+  "limitations": [
+    "Headline regex precision must be manually sampled before a return study.",
+    "Benzinga coverage is vendor-dependent and does not guarantee a complete earnings universe.",
+    "News symbols use current tickers and do not solve delisted-universe survivorship bias."
+  ]
+}

@@ -85,6 +85,24 @@ portfolio. Production remains at twenty names per side.
 
 See `reports/momentum_breadth_study.json`.
 
+### Timestamped earnings-news feasibility — proceed to event study
+
+The frozen 2026-01-01 through 2026-07-31 Alpaca/Benzinga window contains
+147,305 unique articles with 100% usable first-publication timestamps. A
+high-precision deterministic label, excluding previews, estimates, calendars,
+and transcripts, found 11,102 unique single-symbol earnings-result events
+across 3,766 symbols. That clears the pre-registered feasibility requirements
+of 500 events and 95% timestamp coverage.
+
+This advances only a news-conditioned price/volume event study. True PEAD
+remains deferred because the feed does not contain versioned pre-announcement
+EPS/revenue consensus or contributor counts. The next study may use the first
+publication time, next tradable opening gap, first-30-minute abnormal volume,
+and VWAP confirmation; it may not infer surprise direction from the headline
+or tune on 2026-08-04-onward data.
+
+See `reports/news_pead_feasibility.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse
