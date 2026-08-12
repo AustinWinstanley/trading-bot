@@ -88,6 +88,65 @@ def select_quote_pair(
     }
 
 
+def select_delta_quote_pair(
+    snapshots: dict,
+    *,
+    today: dt.date,
+    target_dte: int,
+    target_delta: float,
+    width: float,
+) -> dict:
+    """Select the standard-monthly short put nearest a predeclared delta."""
+    rows = []
+    for symbol, snapshot in snapshots.items():
+        parsed = parse_contract(symbol)
+        greeks = snapshot.get("greeks") or {}
+        delta = greeks.get("delta")
+        if not parsed or delta is None or not np.isfinite(float(delta)):
+            continue
+        expiry, strike = parsed
+        if expiry.weekday() != 4 or not 15 <= expiry.day <= 21:
+            continue
+        rows.append((symbol, expiry, strike, snapshot))
+    if not rows:
+        raise ValueError("no standard-monthly SPY puts with Greeks")
+    expiry = min({r[1] for r in rows}, key=lambda d: abs((d - today).days - target_dte))
+    same_expiry = [r for r in rows if r[1] == expiry]
+    pairs = []
+    for short in same_expiry:
+        lower = [r for r in same_expiry if np.isclose(r[2], short[2] - width)]
+        if lower:
+            delta = abs(float((short[3].get("greeks") or {})["delta"]))
+            pairs.append((abs(delta - target_delta), short, lower[0]))
+    if not pairs:
+        raise ValueError(f"no exact ${width:g} put pairs with Greeks")
+    _, short, long = min(pairs, key=lambda row: row[0])
+    short_quote = short[3].get("latestQuote") or {}
+    long_quote = long[3].get("latestQuote") or {}
+    short_bid = float(short_quote.get("bp") or 0)
+    long_ask = float(long_quote.get("ap") or 0)
+    executable_credit = short_bid - long_ask
+    return {
+        "expiration_date": expiry.isoformat(),
+        "short_symbol": short[0],
+        "short_strike": short[2],
+        "short_bid": short_bid,
+        "short_ask": float(short_quote.get("ap") or 0),
+        "short_quote_ts": short_quote.get("t"),
+        "short_delta": (short[3].get("greeks") or {}).get("delta"),
+        "short_iv": short[3].get("impliedVolatility"),
+        "long_symbol": long[0],
+        "long_strike": long[2],
+        "long_bid": float(long_quote.get("bp") or 0),
+        "long_ask": long_ask,
+        "long_quote_ts": long_quote.get("t"),
+        "long_delta": (long[3].get("greeks") or {}).get("delta"),
+        "long_iv": long[3].get("impliedVolatility"),
+        "executable_credit": executable_credit,
+        "maximum_loss": (width - executable_credit) * 100,
+    }
+
+
 def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
     snapshots = {}
     token = None
@@ -97,8 +156,8 @@ def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
             "type": "put",
             "expiration_date_gte": (today + dt.timedelta(days=30)).isoformat(),
             "expiration_date_lte": (today + dt.timedelta(days=60)).isoformat(),
-            "strike_price_gte": round(spot * 0.84, 2),
-            "strike_price_lte": round(spot * 0.94, 2),
+            "strike_price_gte": round(spot * 0.75, 2),
+            "strike_price_lte": round(spot * 0.99, 2),
             "limit": 1000,
         }
         if token:
@@ -160,13 +219,47 @@ def record(path: Path, row: dict) -> None:
         )
 
 
+def record_candidate(path: Path, strategy: str, row: dict) -> None:
+    """Append a named candidate without changing the legacy control table."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS candidate_observations(
+                ts TEXT, strategy TEXT, profile TEXT, spot REAL,
+                account_equity REAL, options_buying_power REAL,
+                signal_enabled INTEGER, expiration_date TEXT,
+                short_symbol TEXT, short_strike REAL, short_delta REAL,
+                long_symbol TEXT, long_strike REAL, executable_credit REAL,
+                maximum_loss REAL, credit_pct_of_width REAL,
+                within_risk_budget INTEGER, credit_qualified INTEGER,
+                qualified INTEGER, raw TEXT,
+                PRIMARY KEY(ts, strategy))
+        """)
+        conn.execute(
+            "INSERT OR REPLACE INTO candidate_observations VALUES (" +
+            ",".join("?" * 20) + ")",
+            (
+                row["ts"], strategy, row["profile"], row["spot"],
+                row["account_equity"], row["options_buying_power"],
+                int(row["signal_enabled"]), row["expiration_date"],
+                row["short_symbol"], row["short_strike"], row["short_delta"],
+                row["long_symbol"], row["long_strike"],
+                row["executable_credit"], row["maximum_loss"],
+                row["credit_pct_of_width"], int(row["within_risk_budget"]),
+                int(row["credit_qualified"]), int(row["qualified"]),
+                json.dumps(row, sort_keys=True),
+            ),
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=("base", "2x"), default="2x")
     args = parser.parse_args()
     config_name = "config_2x.yaml" if args.profile == "2x" else "config.yaml"
     cfg = load_config(REPO_ROOT / config_name)
-    experiment = cfg.sleeves_paper.get("options_experiments", {}).get(
+    experiments = cfg.sleeves_paper.get("options_experiments", {})
+    experiment = experiments.get(
         "bull_put_fixed_width", {}
     )
     if experiment.get("mode", "off") != "shadow":
@@ -186,8 +279,9 @@ def main() -> None:
     if not spot:
         raise ValueError("SPY latest price unavailable")
     signal = signal_state(client, today)
+    snapshots = option_chain(client, spot, today)
     pair = select_quote_pair(
-        option_chain(client, spot, today),
+        snapshots,
         spot=spot,
         today=today,
         target_dte=int(experiment["target_dte"]),
@@ -215,6 +309,39 @@ def main() -> None:
         f"${row['executable_credit']:.2f} max_loss=${row['maximum_loss']:.2f} "
         f"within_budget={row['within_risk_budget']}"
     )
+
+    delta_cfg = experiments.get("bull_put_delta_selected", {})
+    if delta_cfg.get("mode", "off") == "shadow":
+        delta_pair = select_delta_quote_pair(
+            snapshots,
+            today=today,
+            target_dte=int(delta_cfg["target_dte"]),
+            target_delta=float(delta_cfg["target_short_delta"]),
+            width=float(delta_cfg["strike_width"]),
+        )
+        candidate = {**row, **delta_pair}
+        width = float(delta_cfg["strike_width"])
+        candidate["credit_pct_of_width"] = delta_pair["executable_credit"] / width
+        candidate["within_risk_budget"] = bool(
+            delta_pair["executable_credit"] > 0
+            and delta_pair["maximum_loss"] <= equity * float(delta_cfg["max_loss_pct"])
+        )
+        candidate["credit_qualified"] = bool(
+            candidate["credit_pct_of_width"]
+            >= float(delta_cfg["min_credit_pct_of_width"])
+        )
+        candidate["qualified"] = bool(
+            candidate["signal_enabled"]
+            and candidate["within_risk_budget"]
+            and candidate["credit_qualified"]
+        )
+        record_candidate(out, "bull_put_delta_selected", candidate)
+        print(
+            f"delta shadow: short_delta={candidate['short_delta']:.3f} "
+            f"credit=${candidate['executable_credit']:.2f} "
+            f"credit/width={candidate['credit_pct_of_width']:.1%} "
+            f"qualified={candidate['qualified']}"
+        )
 
 
 if __name__ == "__main__":

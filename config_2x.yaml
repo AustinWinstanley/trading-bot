@@ -145,3 +145,12 @@ paper_portfolio:
       short_moneyness: 0.90
       strike_width: 5.0
       max_loss_pct: 0.05
+    bull_put_delta_selected:
+      # Candidate is quote-qualified but still read-only. Promotion requires
+      # a separately reviewed change from shadow to paper_active.
+      mode: "shadow"
+      target_dte: 45
+      target_short_delta: 0.20
+      strike_width: 5.0
+      min_credit_pct_of_width: 0.15
+      max_loss_pct: 0.05
