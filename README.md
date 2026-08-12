@@ -352,6 +352,13 @@ does **not** validate true PEAD: the feed has no versioned pre-announcement
 consensus estimates, so it cannot calculate standardized earnings surprise.
 Raw vendor news is cached locally and gitignored.
 
+Intraday research shares one five-minute SPY/QQQ/IWM panel and execution
+contract in `backtest/intraday.py`: completed-bar signals, next-bar-open entry,
+same-session exit, 2 bp per leg primary ETF cost, and 5 bp per leg stress. The
+2024-02 through 2026-07 Alpaca panel has 625 sessions and roughly 48,400 bars
+per ETF. It is an IEX screening panel, not consolidated SIP data, and it does
+not contain the 2020 or 2022 stress regimes.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.

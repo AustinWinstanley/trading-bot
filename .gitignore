@@ -11,6 +11,7 @@ state/*.db
 state/*.json
 state/*.lock
 state/news/
+state/intraday/
 state/crontab-*.txt
 logs/
 .pytest_cache/

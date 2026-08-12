@@ -103,6 +103,22 @@ or tune on 2026-08-04-onward data.
 
 See `reports/news_pead_feasibility.json`.
 
+### Common intraday ETF panel — usable for screening
+
+A shared causality-safe framework now covers SPY, QQQ, and IWM from 2024-02-01
+through 2026-07-31. Each instrument has 625 sessions and approximately 48,400
+five-minute bars; the median complete session has the expected 78 bars.
+Signals are observed only on completed bars, enter at the next bar's open, and
+must exit in the same session. The primary liquid-ETF convention is 2 bp per
+leg, with a required 5 bp-per-leg stress sensitivity.
+
+The account-configured free feed is IEX, not consolidated SIP, five-minute bars
+cannot resolve within-bar stop/target ordering, and the panel cannot validate
+COVID or 2022. It is suitable for screening the candidate family, not final
+promotion by itself.
+
+See `reports/intraday_data_audit.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse
