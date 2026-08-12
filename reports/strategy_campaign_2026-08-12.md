@@ -113,6 +113,14 @@ several one-way turns per year, it is plausibly worth tenths of a percentage
 point of annual return without adding market risk. This is an estimate, not a
 backtest result, until turnover and the timing experiment are both observed.
 
+The read-only matcher is now implemented in `engine/execution_timing.py` and
+surfaced in every weekly report. On the currently imported journals its
+stricter same-session/same-symbol/same-side rule finds 21 matched fills across
+three sessions: base adverse slippage -0.63 bp, 2× +12.97 bp, for a +13.60 bp
+2× disadvantage at an average 4.00-minute schedule gap. This is control
+progress, not a decision. The current schedule remains unchanged until 100
+matched fills; the tool cannot alter cron or advance phases automatically.
+
 ## Operational verification
 
 - Full test suite passes.
