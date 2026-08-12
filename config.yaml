@@ -112,8 +112,8 @@ execution:
   timezone: America/New_York
 
 # --------------------------------------------------------------------------
-# Paper portfolio (Alpaca) — the evidence-backed stack, long-only v1.
-# Deferred to iterations: options overlays, MOM_LS (needs shorts), LLM veto.
+# Paper portfolio (Alpaca) — the evidence-backed long/short stack.
+# Options research remains read-only/shadow; no LLM participates in trading.
 paper_portfolio:
   sleeves:
     equity_core: 0.40   # unconditional SPY core; replaced invalidated clone study

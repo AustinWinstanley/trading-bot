@@ -5,7 +5,8 @@ IP-blocked from this host, so nothing here may depend on them.
 
 Free-tier constraints this module is built around:
   * IEX feed only (~8-10% of consolidated volume) — fine for daily bars, thin
-    for intraday microstructure. Every strategy here is daily-bar based.
+    for intraday microstructure. Deployed strategies use completed daily bars;
+    intraday research uses the thin feed only as a screening dataset.
   * 200 requests/minute — the bars endpoint takes comma-separated symbols, so
     batch rather than looping one symbol at a time.
 """
