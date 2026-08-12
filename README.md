@@ -108,6 +108,16 @@ current construction remains deployed while real paper fills accumulate.
 Historical easy-to-borrow status is unavailable, making all variants optimistic
 execution bounds.
 
+A production-fidelity follow-up concentrated both sides of MOM_LS to create
+larger whole-share slots. Ten names per side reduced base zero-share short
+targets from 24.84% to 5.01% and raised average realized base short gross from
+7.41% to 9.85%. That additional exposure did not improve the portfolio: Sharpe
+fell in all four profile/window cells, while early-window maximum drawdown
+worsened from -12.54% to -14.06% in base and from -22.99% to -27.03% in 2×.
+Five- and fifteen-name sensitivity checks also failed to dominate. Production
+therefore remains at twenty names per side; fixing capacity by concentrating
+the signal introduces more risk than the recovered short exposure earns.
+
 A 5,000-path, 63-session block bootstrap puts useful ranges around those point
 estimates. With the deliberately severe universal-zero delisting drag applied:
 

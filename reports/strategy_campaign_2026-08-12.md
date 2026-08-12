@@ -69,6 +69,22 @@ control.
 
 See `reports/tsmom_liquidity_alignment_study.json`.
 
+### Whole-share-aware MOM_LS breadth — reject
+
+Concentrating both sides from twenty to ten names materially improved
+deployability: base zero-share short targets fell from 24.84% to 5.01%, and
+average realized base short gross increased from 7.41% to 9.85%. The added
+concentration nevertheless reduced Sharpe in all four screening cells and
+worsened early-window maximum drawdown by 1.52 percentage points in base and
+4.04 points in 2×. Five- and fifteen-name sensitivity checks also failed to
+dominate the twenty-name control.
+
+The result separates execution capacity from expected return: larger slots do
+recover intended short exposure, but the narrower signal is not a better
+portfolio. Production remains at twenty names per side.
+
+See `reports/momentum_breadth_study.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse
