@@ -323,6 +323,40 @@ switching a control off globally: `risk.stop_exempt_sleeves` and
 Evidence usually covers one sleeve. Applying its conclusion everywhere invents
 support the study does not provide.
 
+### `risk.restoration_exempt_sleeves` — the one exemption that loosens a gate
+
+Every other sleeve-scoped control in this section narrows or redirects a
+check. `risk.restoration_exempt_sleeves` (`RiskLimits.averaging_down_permitted_for`,
+`engine/risk.py`'s two "averaging down" checks) is the one that removes a
+check — the otherwise-unconditional "reject because this position is a
+loser" block — for listed sleeves. `config_2x.yaml` sets `[mom_ls]`;
+`config.yaml` deliberately does not set this at all, since base is the
+unchanged control. It adds no new sizing logic: a rebalance proposal is
+always `target - held`, and mom_ls's target has no reference to a
+position's P&L, so removing this one check does not let a proposal request
+more than the position would already be entitled to as a non-loser —
+every other cap (position/exposure/leverage) still applies on top. See
+reports/target_restoration_study.json and the "experiment tier" section
+above for the evidence and why this was judged worth the lab's lighter bar
+despite failing the hard promotion gate's zero-tolerance drawdown rule.
+
+### `scripts/weekly.py`'s mom_ls rebuild is now profile-aware
+
+Before 2026-08-12, `build_mom_ls_targets()` always loaded `config.yaml`
+regardless of which profile invoked it, and both profiles' `paper_portfolio.
+mom_ls_targets_file` pointed at the same `state/mom_ls_targets.json` — so a
+2x-only change to `mom_ls_top_n` would have been silently inert (the shared
+file was always built from base's parameters) or, worse, would have
+clobbered the shared file with whichever profile's weekly run happened to
+execute last. `build_mom_ls_targets(cfg)` now takes an explicit config, and
+`main()` only runs the 2x-specific rebuild when `config_2x.yaml`'s
+`mom_ls_targets_file` differs from `config.yaml`'s — see `_mom_ls_params`
+and the CRITICAL guard in `main()` for the case where parameters diverge
+but the file path was left shared (a misconfiguration, not something to
+paper over). Any future 2x-only mom_ls construction change (breadth,
+filters, cadence) needs its own `mom_ls_targets_file`, not just a changed
+parameter.
+
 ### `equity_core` + `trend` silently capped at a quarter of their target
 
 Found in a 2026-08-03 review of the server journal: `max_position_pct` (15%

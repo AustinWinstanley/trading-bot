@@ -523,7 +523,10 @@ def evaluate(
             if held is not None and not held.is_short:
                 result.rejected.append(RejectedProposal(symbol, "cannot short a symbol held long (would be a wash)", raw))
                 continue
-            if held is not None and held.is_short and held.unrealized_pct < 0:
+            if (
+                held is not None and held.is_short and held.unrealized_pct < 0
+                and not cfg.risk.averaging_down_permitted_for(clean["sleeve"])
+            ):
                 result.rejected.append(
                     RejectedProposal(symbol, f"averaging down is never permitted (short is {held.unrealized_pct:.2%})", raw))
                 continue
@@ -667,9 +670,16 @@ def evaluate(
             )
             continue
 
-        # Averaging down — never, under any config.
+        # Averaging down — never, unless the sleeve is explicitly listed in
+        # risk.restoration_exempt_sleeves (see RiskLimits.restoration_exempt_sleeves
+        # and reports/target_restoration_study.json). Everything below this
+        # still applies unconditionally on top — this only removes the
+        # additional "reject because it's a loser" check.
         held = account.positions.get(symbol)
-        if held is not None and held.unrealized_pct < 0:
+        if (
+            held is not None and held.unrealized_pct < 0
+            and not cfg.risk.averaging_down_permitted_for(clean["sleeve"])
+        ):
             result.rejected.append(
                 RejectedProposal(
                     symbol,

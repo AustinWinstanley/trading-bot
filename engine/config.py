@@ -62,12 +62,31 @@ class RiskLimits:
     # disables this entirely, matching pre-existing behaviour.
     elevated_position_pct: float | None = None
     elevated_position_sleeves: frozenset[str] = frozenset()
+    # Averaging down is never permitted UNLESS a sleeve is explicitly listed
+    # here — see reports/target_restoration_study.json: candidate improved
+    # Sharpe and CAGR in every tested cell (4/4), at a 0.19-0.60pp max
+    # drawdown cost in 3 of 4. Rejected by the hard promotion gate's
+    # zero-tolerance drawdown rule, but judged worth trying live in the 2x
+    # lab under the lighter experiment-tier bar (AGENTS.md's "experiment
+    # tier" section) — base account never sets this. The exemption adds NO
+    # new sizing logic of its own: a rebalance proposal is always
+    # `target - held`, and mom_ls's target is momentum-rank-driven with no
+    # reference to a position's P&L, so "up to the unchanged systematic
+    # target" is already guaranteed by how the proposal was built, and every
+    # other cap (position/exposure/leverage) still applies unconditionally
+    # on top. This ONLY removes the additional, currently-unconditional
+    # "reject because this position is a loser" check.
+    restoration_exempt_sleeves: frozenset[str] = frozenset()
 
     def stops_apply_to(self, sleeve: str) -> bool:
         return sleeve not in self.stop_exempt_sleeves
 
     def reentry_block_applies_to(self, sleeve: str) -> bool:
         return sleeve not in self.reentry_block_exempt_sleeves
+
+    def averaging_down_permitted_for(self, sleeve: str) -> bool:
+        parts = {p for p in sleeve.split("+") if p}
+        return bool(parts) and parts <= self.restoration_exempt_sleeves
 
     def position_cap_pct(self, sleeve: str) -> float:
         """Max single-position fraction of equity for this proposal's sleeve.
@@ -341,6 +360,9 @@ def load_config(path: Path | str | None = None) -> Config:
         ),
         elevated_position_sleeves=_sleeve_set(
             r.get("elevated_position_sleeves"), "risk.elevated_position_sleeves"
+        ),
+        restoration_exempt_sleeves=_sleeve_set(
+            r.get("restoration_exempt_sleeves"), "risk.restoration_exempt_sleeves"
         ),
     )
 

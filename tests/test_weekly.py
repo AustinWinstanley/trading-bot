@@ -285,3 +285,24 @@ def test_event_volatility_summary_flags_a_dead_collector(tmp_path):
     _event_volatility_db(db, stale.isoformat())
     lines = weekly.summarize_event_volatility_shadow(db, stale_after_days=21)
     assert any(line.startswith("STALE") for line in lines)
+
+
+def test_mom_ls_params_reflects_config_divergence():
+    from engine.config import load_config
+    from engine.data import REPO_ROOT
+
+    base = load_config()
+    two_x = load_config(REPO_ROOT / "config_2x.yaml")
+    # base is the unchanged control (breadth 20); 2x is running the lab's
+    # experiment-tier breadth-15 candidate from momentum_breadth_study.json
+    # — see config_2x.yaml's mom_ls_top_n comment.
+    assert weekly._mom_ls_params(base)[0] == 20
+    assert weekly._mom_ls_params(two_x)[0] == 15
+    assert weekly._mom_ls_params(base) != weekly._mom_ls_params(two_x)
+    # A distinct targets file is required whenever the params diverge —
+    # main() relies on this to decide whether the 2x rebuild is safe to run
+    # at all (see the CRITICAL clobbering guard in main()).
+    assert (
+        base.sleeves_paper["mom_ls_targets_file"]
+        != two_x.sleeves_paper["mom_ls_targets_file"]
+    )
