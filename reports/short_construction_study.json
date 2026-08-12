@@ -1,0 +1,508 @@
+{
+  "decision": "reject",
+  "evidence_tier": "screening_only",
+  "screening_tier_caveat": "All backtest data used here is <= 2026-08-12. Per AGENTS.md, 2026-08-13 onward is the current frozen final-validation window; this study is pre-registered screening evidence, not final validation, and its methodology/thresholds were fixed before looking at any data past that boundary. This is also not a hard-promotion-gate candidate -- it changes short construction logic itself, which needs new gate/execution code before it could ever run live, scoped separately by a human.",
+  "pre_registration": {
+    "objective_class": "return_enhancer (hard-gate reported for transparency; not the actual decision bar)",
+    "actual_decision_bar": "Experiment-tier (2x lab, capped): does the residual fill measurably close the short-capacity gap (>=95% average capacity in all 4 cells) without a meaningful Sharpe loss (no cell losing more than 0.02 Sharpe vs control)? This is explicitly looser than the zero-tolerance hard promotion gate.",
+    "control": "current whole-share bottom 20 (short_capacity_study.py's own accepted control)",
+    "primary_candidate": "residual-fill (SPY)",
+    "sensitivity_only": [
+      "residual-fill (QQQ)"
+    ],
+    "proxy_choice_rationale": "SH/PSQ/SQQQ/SDS (config's approved inverse_etfs list) have zero coverage in state/xsec/close.parquet -- verified, not assumed. SPY and QQQ are already columns in that same panel with full coverage, so a plain short of SPY is used as the primary proxy (cleaner than a levered daily-rebalanced inverse fund, no new data source, and it directly offsets the same SPY-long core exposure that the capacity gap otherwise leaves under-hedged). QQQ is a sensitivity-only variant.",
+    "residual_fill_mechanic": "Each rebalance: after whole-share individual-name shorting fills what it can, shortfall_dollars = max(target_short_gross_dollars - realized_individual_dollars, 0); proxy is shorted floor(shortfall_dollars / proxy_price) whole shares (engine/risk.py's gate invariant requires integer short qty for every symbol, not just individual stocks, so the proxy leg is floored the same way, not fractional).",
+    "proxy_symbols_excluded_from_individual_name_ranking": true,
+    "proxy_exclusion_empirically_a_no_op": "Neither SPY nor QQQ ever appears in the top-20 or bottom-20 momentum rank across all 247 control rebalances -- verified separately. The exclusion is a correctness safeguard, not a result-moving change.",
+    "cost_convention": "individual-name legs: 15bps (existing cross-sectional convention). Proxy leg: 2.0bps, AGENTS.md's rate for single-name ETF pairs -- the closest existing category, not a category written with this exact use case in mind.",
+    "borrow_convention": "Unchanged flat SHORT_BORROW=3%/yr on total short gross via profile_returns, applied identically to the individual and proxy legs. Likely conservative for the proxy leg (broad ETF borrow is typically cheaper than small-cap short interest) -- not modeling that difference is a limitation, not an oversight."
+  },
+  "control_reproduction": {
+    "max_abs_error": 0.0,
+    "tolerance": 0.0005,
+    "reproduced": true,
+    "errors": {
+      "capacity.base.target_short_gross": 0.0,
+      "capacity.base.average_realized_short_gross": 0.0,
+      "capacity.base.average_capacity_pct": 0.0,
+      "capacity.base.zero_share_target_pct": 0.0,
+      "capacity.base.average_selected_shorts": 0.0,
+      "early_2020_2022.base.cagr": 0.0,
+      "early_2020_2022.base.sharpe": 0.0,
+      "early_2020_2022.base.max_dd": 0.0,
+      "early_2020_2022.base.vol": 0.0,
+      "early_2020_2022.base.sortino": 0.0,
+      "heldout_2023_plus.base.cagr": 0.0,
+      "heldout_2023_plus.base.sharpe": 0.0,
+      "heldout_2023_plus.base.max_dd": 0.0,
+      "heldout_2023_plus.base.vol": 0.0,
+      "heldout_2023_plus.base.sortino": 0.0,
+      "capacity.2x.target_short_gross": 0.0,
+      "capacity.2x.average_realized_short_gross": 0.0,
+      "capacity.2x.average_capacity_pct": 0.0,
+      "capacity.2x.zero_share_target_pct": 0.0,
+      "capacity.2x.average_selected_shorts": 0.0,
+      "early_2020_2022.2x.cagr": 0.0,
+      "early_2020_2022.2x.sharpe": 0.0,
+      "early_2020_2022.2x.max_dd": 0.0,
+      "early_2020_2022.2x.vol": 0.0,
+      "early_2020_2022.2x.sortino": 0.0,
+      "heldout_2023_plus.2x.cagr": 0.0,
+      "heldout_2023_plus.2x.sharpe": 0.0,
+      "heldout_2023_plus.2x.max_dd": 0.0,
+      "heldout_2023_plus.2x.vol": 0.0,
+      "heldout_2023_plus.2x.sortino": 0.0
+    }
+  },
+  "capacity_before_after": [
+    {
+      "profile": "base",
+      "proxy_symbol": "SPY",
+      "target_short_gross": 0.15,
+      "before_avg_realized_short_gross": 0.0918,
+      "before_avg_capacity_pct": 61.2,
+      "after_avg_realized_short_gross": 0.1339,
+      "after_avg_capacity_pct": 89.2,
+      "individual_leg_avg_capacity_pct": 60.7,
+      "proxy_rebalances_zero_filled_despite_shortfall_pct": 7.3,
+      "zero_share_target_pct_individual_names": 24.8
+    },
+    {
+      "profile": "base",
+      "proxy_symbol": "QQQ",
+      "target_short_gross": 0.15,
+      "before_avg_realized_short_gross": 0.0918,
+      "before_avg_capacity_pct": 61.2,
+      "after_avg_realized_short_gross": 0.1345,
+      "after_avg_capacity_pct": 89.6,
+      "individual_leg_avg_capacity_pct": 60.8,
+      "proxy_rebalances_zero_filled_despite_shortfall_pct": 2.0,
+      "zero_share_target_pct_individual_names": 24.8
+    },
+    {
+      "profile": "2x",
+      "proxy_symbol": "SPY",
+      "target_short_gross": 0.3,
+      "before_avg_realized_short_gross": 0.2521,
+      "before_avg_capacity_pct": 84.0,
+      "after_avg_realized_short_gross": 0.2862,
+      "after_avg_capacity_pct": 95.4,
+      "individual_leg_avg_capacity_pct": 83.9,
+      "proxy_rebalances_zero_filled_despite_shortfall_pct": 8.9,
+      "zero_share_target_pct_individual_names": 3.4
+    },
+    {
+      "profile": "2x",
+      "proxy_symbol": "QQQ",
+      "target_short_gross": 0.3,
+      "before_avg_realized_short_gross": 0.2521,
+      "before_avg_capacity_pct": 84.0,
+      "after_avg_realized_short_gross": 0.2874,
+      "after_avg_capacity_pct": 95.8,
+      "individual_leg_avg_capacity_pct": 83.8,
+      "proxy_rebalances_zero_filled_despite_shortfall_pct": 3.2,
+      "zero_share_target_pct_individual_names": 3.4
+    }
+  ],
+  "basis_risk_correlation": {
+    "base.SPY.early_2020_2022": 0.541,
+    "base.SPY.heldout_2023_plus": 0.447,
+    "base.QQQ.early_2020_2022": 0.604,
+    "base.QQQ.heldout_2023_plus": 0.49,
+    "2x.SPY.early_2020_2022": 0.552,
+    "2x.SPY.heldout_2023_plus": 0.502,
+    "2x.QQQ.early_2020_2022": 0.628,
+    "2x.QQQ.heldout_2023_plus": 0.464
+  },
+  "basis_risk_note": "Correlation between the daily return of the individual whole-share short leg and the daily return of a plain short proxy leg, per window. Below 1.0 is the basis risk the proxy leg adds relative to shorting more individual losers directly; a materially positive but well-below-1 correlation is expected (momentum losers and the broad index share market beta but not idiosyncratic risk).",
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 current whole-share bottom 20",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
+      },
+      {
+        "portfolio": "base \u2014 residual-fill (SPY)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0735,
+        "ann_return": 0.0765,
+        "vol": 0.1081,
+        "sharpe": 0.708,
+        "sortino": 0.983,
+        "max_dd": -0.1263,
+        "x_money": 1.187
+      },
+      {
+        "portfolio": "base \u2014 residual-fill (QQQ)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0807,
+        "ann_return": 0.0831,
+        "vol": 0.1076,
+        "sharpe": 0.772,
+        "sortino": 1.074,
+        "max_dd": -0.1182,
+        "x_money": 1.207
+      },
+      {
+        "portfolio": "2x \u2014 current whole-share bottom 20",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1222,
+        "ann_return": 0.1391,
+        "vol": 0.2198,
+        "sharpe": 0.633,
+        "sortino": 0.885,
+        "max_dd": -0.2334,
+        "x_money": 1.322
+      },
+      {
+        "portfolio": "2x \u2014 residual-fill (SPY)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1213,
+        "ann_return": 0.1376,
+        "vol": 0.2167,
+        "sharpe": 0.635,
+        "sortino": 0.888,
+        "max_dd": -0.2288,
+        "x_money": 1.32
+      },
+      {
+        "portfolio": "2x \u2014 residual-fill (QQQ)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1239,
+        "ann_return": 0.1398,
+        "vol": 0.2163,
+        "sharpe": 0.646,
+        "sortino": 0.905,
+        "max_dd": -0.2259,
+        "x_money": 1.327
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 current whole-share bottom 20",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
+      },
+      {
+        "portfolio": "base \u2014 residual-fill (SPY)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1564,
+        "ann_return": 0.1536,
+        "vol": 0.1232,
+        "sharpe": 1.247,
+        "sortino": 1.729,
+        "max_dd": -0.1414,
+        "x_money": 1.675
+      },
+      {
+        "portfolio": "base \u2014 residual-fill (QQQ)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1515,
+        "ann_return": 0.149,
+        "vol": 0.1205,
+        "sharpe": 1.237,
+        "sortino": 1.721,
+        "max_dd": -0.1394,
+        "x_money": 1.649
+      },
+      {
+        "portfolio": "2x \u2014 current whole-share bottom 20",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2644,
+        "ann_return": 0.2673,
+        "vol": 0.251,
+        "sharpe": 1.065,
+        "sortino": 1.479,
+        "max_dd": -0.2709,
+        "x_money": 2.299
+      },
+      {
+        "portfolio": "2x \u2014 residual-fill (SPY)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2572,
+        "ann_return": 0.2608,
+        "vol": 0.248,
+        "sharpe": 1.052,
+        "sortino": 1.456,
+        "max_dd": -0.2699,
+        "x_money": 2.253
+      },
+      {
+        "portfolio": "2x \u2014 residual-fill (QQQ)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2502,
+        "ann_return": 0.2548,
+        "vol": 0.2463,
+        "sharpe": 1.034,
+        "sortino": 1.434,
+        "max_dd": -0.2676,
+        "x_money": 2.208
+      }
+    ]
+  },
+  "primary_promotion_gate_hard_bar": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.728,
+          "candidate_sharpe": 0.708,
+          "control_cagr": 0.0781,
+          "candidate_cagr": 0.0735,
+          "control_max_dd": -0.1253,
+          "candidate_max_dd": -0.1263,
+          "d_sharpe": -0.02,
+          "d_cagr": -0.0046,
+          "d_max_dd": -0.001
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.633,
+          "candidate_sharpe": 0.635,
+          "control_cagr": 0.1222,
+          "candidate_cagr": 0.1213,
+          "control_max_dd": -0.2334,
+          "candidate_max_dd": -0.2288,
+          "d_sharpe": 0.002,
+          "d_cagr": -0.0009,
+          "d_max_dd": 0.0046
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.291,
+          "candidate_sharpe": 1.247,
+          "control_cagr": 0.1688,
+          "candidate_cagr": 0.1564,
+          "control_max_dd": -0.1462,
+          "candidate_max_dd": -0.1414,
+          "d_sharpe": -0.044,
+          "d_cagr": -0.0124,
+          "d_max_dd": 0.0048
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.065,
+          "candidate_sharpe": 1.052,
+          "control_cagr": 0.2644,
+          "candidate_cagr": 0.2572,
+          "control_max_dd": -0.2709,
+          "candidate_max_dd": -0.2699,
+          "d_sharpe": -0.013,
+          "d_cagr": -0.0072,
+          "d_max_dd": 0.001
+        }
+      }
+    ]
+  },
+  "sensitivity_gate_hard_bar_not_eligible_for_promotion": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.728,
+          "candidate_sharpe": 0.772,
+          "control_cagr": 0.0781,
+          "candidate_cagr": 0.0807,
+          "control_max_dd": -0.1253,
+          "candidate_max_dd": -0.1182,
+          "d_sharpe": 0.044,
+          "d_cagr": 0.0026,
+          "d_max_dd": 0.0071
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.633,
+          "candidate_sharpe": 0.646,
+          "control_cagr": 0.1222,
+          "candidate_cagr": 0.1239,
+          "control_max_dd": -0.2334,
+          "candidate_max_dd": -0.2259,
+          "d_sharpe": 0.013,
+          "d_cagr": 0.0017,
+          "d_max_dd": 0.0075
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.291,
+          "candidate_sharpe": 1.237,
+          "control_cagr": 0.1688,
+          "candidate_cagr": 0.1515,
+          "control_max_dd": -0.1462,
+          "candidate_max_dd": -0.1394,
+          "d_sharpe": -0.054,
+          "d_cagr": -0.0173,
+          "d_max_dd": 0.0068
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.065,
+          "candidate_sharpe": 1.034,
+          "control_cagr": 0.2644,
+          "candidate_cagr": 0.2502,
+          "control_max_dd": -0.2709,
+          "candidate_max_dd": -0.2676,
+          "d_sharpe": -0.031,
+          "d_cagr": -0.0142,
+          "d_max_dd": 0.0033
+        }
+      }
+    ]
+  },
+  "experiment_tier_criteria": {
+    "closes_capacity_gap_to_95pct_all_cells": false,
+    "sharpe_deltas_vs_control": [
+      -0.02,
+      0.002,
+      -0.044,
+      -0.013
+    ],
+    "no_meaningful_sharpe_loss": false,
+    "experiment_tier_worthy": false
+  },
+  "limitations": [
+    "Historical easy-to-borrow/locate availability is unavailable; shorting the proxy at all assumes it is always borrowable, which is realistic for SPY/QQQ specifically but not verified against a historical locate feed.",
+    "SH/PSQ/SQQQ/SDS (the actually-configured inverse ETFs) are not in the historical panel; results here are for a plain SPY/QQQ short, not the configured instruments, and would need new data to validate directly.",
+    "The flat 3% borrow rate applied identically to the individual and proxy legs likely overstates the proxy leg's real cost.",
+    "The universe of currently-listed stocks is survivorship-biased (inherited from short_capacity_study/xsec_data).",
+    "Weekly rebalance only; does not model daily drift-band trades.",
+    "The proxy leg reduces overall net long bias (it offsets the same 0.40 SPY-long core exposure the rest of the portfolio carries) as a side effect of closing the short-gross gap -- this study measures MOM_LS-level Sharpe/CAGR/drawdown, not that portfolio-level netting effect in isolation."
+  ],
+  "starting_equity": 10000.0
+}
