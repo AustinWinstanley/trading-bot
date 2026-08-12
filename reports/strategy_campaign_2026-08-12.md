@@ -119,6 +119,22 @@ promotion by itself.
 
 See `reports/intraday_data_audit.json`.
 
+### Fixed intraday family screen — no qualifier
+
+One frozen specification each for opening-range continuation, VWAP mean
+reversion, gap continuation, and compression breakout was tested on SPY, QQQ,
+and IWM. The gate required at least 30 trades, positive mean return, and profit
+factor above one at 5 bp per leg in each ETF and both temporal windows.
+
+Opening-range continuation, VWAP reversion, and gap continuation lost in all
+six cells. Compression breakout was profitable only in IWM (profit factor
+1.085/1.375), but had just 18/24 trades and lost on SPY and QQQ. No family may
+advance to directional option translation from this screen. Threshold changes
+would require a newly pre-registered study and future evidence, not selection
+from these results.
+
+See `reports/intraday_strategy_study.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse
