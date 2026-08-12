@@ -336,6 +336,13 @@ campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`:
 | [2026-08-03](reports/strategy_campaign_2026-08-03.md) | Removed the never-backtested stop and re-entry block from MOM_LS; rejected a correlation cap. |
 | [2026-08-04](reports/strategy_campaign_2026-08-04.md) | Fixed the shared panel/promotion-gate machinery and a live SPY position-cap bug; re-audited eight prior rejections on the corrected data — all confirmed, several relabeled or resolved on cleaner evidence. Built point-in-time fundamentals/insider data; quality filter deferred on coverage, accruals rejected under the standard gate but passes a risk-reduction gate in both held-out cells. |
 
+The base-versus-2× execution-timing control can be inspected at any time with
+`python -m scripts.execution_timing`. It read-only matches same-session,
+same-symbol, same-side MOM_LS fills, weights slippage by matched reference
+notional, and reports progress toward the frozen 100-pair control minimum. It
+never changes cron automatically; reaching the threshold only authorizes a
+separately reviewed 20-session candidate schedule.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.

@@ -129,6 +129,30 @@ def test_live_config_has_no_clone_allocation():
     assert weekly.clone_allocation() == 0.0
 
 
+def test_execution_timing_summary_surfaces_control_progress(tmp_path):
+    base = tmp_path / "base.db"
+    leveraged = tmp_path / "leveraged.db"
+    for path, ts, fill in (
+        (base, "2026-08-10T09:47:00-04:00", 100.01),
+        (leveraged, "2026-08-10T09:51:00-04:00", 100.08),
+    ):
+        conn = sqlite3.connect(path)
+        conn.execute("""
+            CREATE TABLE orders(
+                ts, symbol, side, sleeve, filled_qty, reference_price,
+                filled_avg_price)
+        """)
+        conn.execute(
+            "INSERT INTO orders VALUES (?,?,?,?,?,?,?)",
+            (ts, "A", "buy", "mom_ls", 1, 100, fill),
+        )
+        conn.commit()
+        conn.close()
+    lines = weekly.summarize_execution_timing(base, leveraged)
+    assert "1/100 matched fills" in lines[0]
+    assert "gap +7.00 bp" in lines[0]
+
+
 def test_options_shadow_summary_reports_qualification_rate(tmp_path):
     db = tmp_path / "options.db"
     conn = sqlite3.connect(db)

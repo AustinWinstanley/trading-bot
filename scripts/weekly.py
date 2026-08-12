@@ -17,6 +17,7 @@ from pathlib import Path
 
 from engine.attribution import execution_summary
 from engine.data import REPO_ROOT
+from engine.execution_timing import timing_summary
 
 DB = REPO_ROOT / "state" / "paper.db"
 DB_2X = REPO_ROOT / "state" / "paper_2x.db"
@@ -260,6 +261,30 @@ def summarize_week(db_path: Path = DB) -> list[str]:
     return lines
 
 
+def summarize_execution_timing(
+    base_path: Path = DB,
+    leveraged_path: Path = DB_2X,
+) -> list[str]:
+    if not base_path.exists() or not leveraged_path.exists():
+        return ["execution timing: both journals are required"]
+    with sqlite3.connect(base_path) as base, sqlite3.connect(
+        leveraged_path
+    ) as leveraged:
+        row = timing_summary(base, leveraged)
+    if not row["matched_fills"]:
+        return ["execution timing: no matched MOM_LS fills since 2026-08-04"]
+    base_slip = row["base_adverse_slippage_bps"]
+    leveraged_slip = row["leveraged_adverse_slippage_bps"]
+    gap = row["leveraged_minus_base_bps"]
+    return [
+        f"execution timing control: {row['matched_fills']}/"
+        f"{row['control_min_pairs']} matched fills over "
+        f"{row['matched_sessions']} sessions; adverse slippage base "
+        f"{base_slip:+.2f} bp, 2x {leveraged_slip:+.2f} bp, gap {gap:+.2f} bp; "
+        f"{row['recommendation']}"
+    ]
+
+
 def summarize_options_shadow(db_path: Path = OPTIONS_SHADOW_2X) -> list[str]:
     """Summarize read-only option candidates; never contacts the broker."""
     if not db_path.exists():
@@ -344,6 +369,8 @@ def main() -> None:
     body += [f"- {l}" for l in summarize_week(DB)]
     body += ["", "## 2× account"]
     body += [f"- {l}" for l in summarize_week(DB_2X)]
+    body += ["", "## Execution timing experiment"]
+    body += [f"- {l}" for l in summarize_execution_timing()]
     body += ["", "## Options experiments (read-only shadow)"]
     body += [f"- {l}" for l in summarize_options_shadow()]
     body += [f"- {l}" for l in summarize_momentum_options_shadow()]
