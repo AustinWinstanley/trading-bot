@@ -62,7 +62,10 @@ esac
   cd "$BOT"
   case "$JOB" in
     daily)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily ;;
-    daily2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x ;;
+    daily2x)
+      timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x &&
+        timeout 120 .venv/bin/python -m scripts.options_shadow --profile 2x
+      ;;
     stops)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only ;;
     stops2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only --profile 2x ;;
     weekly)   timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly ;;
