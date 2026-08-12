@@ -24,6 +24,7 @@ DB_2X = REPO_ROOT / "state" / "paper_2x.db"
 OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "options_shadow_2x.db"
 MOMENTUM_OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "momentum_options_shadow_2x.db"
 EVENT_VOLATILITY_SHADOW_2X = REPO_ROOT / "state" / "event_volatility_shadow_2x.db"
+ZERO_DTE_SHADOW_2X = REPO_ROOT / "state" / "zero_dte_shadow_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
@@ -356,6 +357,21 @@ def summarize_event_volatility_shadow(
     ] or ["event-volatility shadow: no observations yet"]
 
 
+def summarize_zero_dte_shadow(db_path: Path = ZERO_DTE_SHADOW_2X) -> list[str]:
+    if not db_path.exists():
+        return ["0DTE shadow: no observations yet"]
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*), SUM(structure_qualified), AVG(atm_straddle_ask), "
+            "AVG(executable_credit), AVG(maximum_loss) FROM observations"
+        ).fetchone()
+    return [
+        f"0DTE surface: {row[0]} observations, {int(row[1] or 0)} condors "
+        f"quote-qualified; average straddle ask ${row[2] or 0:.2f}, "
+        f"condor credit ${row[3] or 0:.2f}, max loss ${row[4] or 0:,.2f}"
+    ]
+
+
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()
@@ -375,6 +391,7 @@ def main() -> None:
     body += [f"- {l}" for l in summarize_options_shadow()]
     body += [f"- {l}" for l in summarize_momentum_options_shadow()]
     body += [f"- {l}" for l in summarize_event_volatility_shadow()]
+    body += [f"- {l}" for l in summarize_zero_dte_shadow()]
     out = REPORT_DIR / f"weekly-{today}.md"
     out.write_text("\n".join(body) + "\n")
     print(f"wrote {out}")

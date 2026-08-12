@@ -1,0 +1,15 @@
+{
+  "decision": "collect_read_only_surface",
+  "strategy": "SPY 0DTE ATM surface and defined-risk iron-condor feasibility",
+  "mode": "read-only shadow",
+  "directional_0dte": "disabled because no intraday directional family qualified",
+  "collection": "Runs after the existing 2x morning paper cycle; no new cron pair is required.",
+  "qualification_is_not_return_evidence": "A quote-qualified condor only fits the declared credit and loss bounds. It says nothing about expected return until exits and expiration outcomes are observed.",
+  "safety": [
+    "No method submits, replaces, cancels, exercises, or otherwise mutates a broker account.",
+    "Uses positive displayed bid/ask size on all four legs.",
+    "Prices short legs at bid and long legs at ask.",
+    "Directional_enabled is false and cannot be changed by observations."
+  ],
+  "review_minimum": "At least 60 sessions spanning quiet, trend, and macro-event days before designing a paper-active test."
+}
