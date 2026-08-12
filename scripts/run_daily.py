@@ -375,7 +375,7 @@ def main() -> None:
             "origin": {}, "gross_leverage": 0.0, "sleeve_targets": {},
         }
     else:
-        targets, diag = build_targets(cfg, t)
+        targets, diag = build_targets(cfg, t, held=frozenset(positions))
         targets, diag = apply_target_scale(targets, diag, overlay)
     diag["volatility_overlay"] = overlay
     if args.stops_only:

@@ -74,7 +74,14 @@ class AlpacaError(RuntimeError):
 
 
 class AlpacaClient:
-    def __init__(self, key: str | None = None, secret: str | None = None, *, paper: bool = True):
+    def __init__(
+        self,
+        key: str | None = None,
+        secret: str | None = None,
+        *,
+        paper: bool = True,
+        max_calls_per_min: int | None = None,
+    ):
         load_env()
         self.key = key or os.environ.get("ALPACA_API_KEY", "")
         self.secret = secret or os.environ.get("ALPACA_API_SECRET", "")
@@ -86,7 +93,12 @@ class AlpacaClient:
         )
         self.data_base = os.environ.get("ALPACA_DATA_BASE", "https://data.alpaca.markets")
         self.feed = os.environ.get("ALPACA_FEED", "iex")
-        self._limiter = RateLimiter()
+        # Callers that run alongside another process sharing this key's
+        # 200/min budget (e.g. a read-only shadow collector running near a
+        # trading job) may pass a lower ceiling so no single process can
+        # approach the account-wide limit on its own. Default (180) is
+        # unchanged for every existing caller.
+        self._limiter = RateLimiter(max_calls=max_calls_per_min or 180)
         self._session = requests.Session()
         self._session.headers.update(
             {"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret}

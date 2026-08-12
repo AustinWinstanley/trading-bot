@@ -10,9 +10,11 @@ from scripts.options_shadow import (
 )
 
 
-def _snapshot(bid, ask, delta):
+def _snapshot(bid, ask, delta, bid_size=10, ask_size=10):
     return {
-        "latestQuote": {"bp": bid, "ap": ask, "t": "t"},
+        "latestQuote": {
+            "bp": bid, "ap": ask, "bs": bid_size, "as": ask_size, "t": "t",
+        },
         "greeks": {"delta": delta},
         "impliedVolatility": 0.2,
     }
@@ -34,7 +36,33 @@ def test_select_quote_pair_uses_conservative_executable_credit():
     assert row["short_strike"] == 695
     assert row["long_strike"] == 690
     assert row["executable_credit"] == 0.60
-    assert row["maximum_loss"] == pytest.approx(440)
+    # width(5.00) - credit(0.60) + round-trip friction(4 legs * $0.10 = 0.40),
+    # matching backtest/bull_put_credit_spread_study.py's credit_spread_terms
+    # — the shadow's whole purpose is comparing live feasibility against the
+    # same budget the study charges.
+    assert row["maximum_loss"] == pytest.approx(480)
+
+
+def test_select_quote_pair_skips_a_leg_with_zero_displayed_size():
+    # The 695 strike is otherwise the best short-moneyness match but has no
+    # displayed size on either side of its quote — not actually executable
+    # — so the selector must fall through to the next-best short strike
+    # rather than treating a zero-size quote as tradeable.
+    snapshots = {
+        "SPY260918P00695000": _snapshot(1.20, 1.25, -0.10, bid_size=0, ask_size=0),
+        "SPY260918P00690000": _snapshot(0.55, 0.60, -0.07),
+        "SPY260918P00685000": _snapshot(0.30, 0.35, -0.05),
+    }
+    row = select_quote_pair(
+        snapshots,
+        spot=772.0,
+        today=dt.date(2026, 8, 12),
+        target_dte=45,
+        short_moneyness=0.90,
+        width=5.0,
+    )
+    assert row["short_strike"] == 690
+    assert row["long_strike"] == 685
 
 
 def test_parse_contract_rejects_non_spy_put():
