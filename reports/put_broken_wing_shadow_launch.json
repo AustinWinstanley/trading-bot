@@ -1,0 +1,37 @@
+{
+  "decision": "collect_shadow",
+  "strategy": "SPY put broken-wing butterfly",
+  "pre_registration": {
+    "account_profile": "2x paper",
+    "mode": "read-only shadow",
+    "target_dte": 45,
+    "target_upper_put_delta": 0.25,
+    "structure": "buy upper put / sell two puts 2 points lower / buy tail put another 4 points lower",
+    "entry_regime": "prior SPY above 200-day average and prior 20-session realized volatility below 15%",
+    "maximum_entry_debit": 0.5,
+    "minimum_peak_profit_dollars": 100,
+    "maximum_loss_pct_of_equity": 0.05,
+    "minimum_observations_before_review": 20,
+    "minimum_independent_expirations_before_review": 3
+  },
+  "first_observation_2026_08_12": {
+    "upper_delta": -0.248,
+    "net_debit": -0.19,
+    "interpretation": "approximately $19 net credit at the observed quote sides",
+    "peak_profit_dollars": 219,
+    "maximum_loss_dollars": 181,
+    "qualified": true
+  },
+  "promotion_policy": [
+    "A qualified observation authorizes data collection only and can never submit an order.",
+    "Review after at least 20 observations spanning at least three independent expirations.",
+    "Before paper-active promotion, verify quote freshness, positive displayed size on every leg, atomic multi-leg order construction, exit handling, assignment handling, and account-level annual loss limits.",
+    "Paper-active promotion requires a separate reviewed config and code change; no automatic transition exists."
+  ],
+  "limitations": [
+    "The free indicative options feed modifies quotes and may not represent an executable OPRA market.",
+    "One favorable snapshot is not an expected-return estimate.",
+    "The narrow peak-profit region creates substantial path and exit-timing sensitivity.",
+    "American early assignment and expiration handling are not tested by quote collection."
+  ]
+}
