@@ -32,6 +32,7 @@ def build_deployable_stream(
     account_equity: pd.Series | float = STARTING_EQUITY,
     account_multiplier: float = 0.30,
     allow_target_restoration_at_loss: bool = False,
+    match_long_to_short_capacity: bool = False,
     lookback: int = 252,
     skip: int = 21,
     long_n: int = 20,
@@ -88,16 +89,23 @@ def build_deployable_stream(
             continue
 
         eq = float(equity.loc[date])
-        long_dollars = eq * account_multiplier * 0.5 / long_n
         short_dollars = eq * account_multiplier * 0.5 / short_n
+        desired_shorts = {
+            symbol: -float(np.floor(short_dollars / float(px[symbol])))
+            for symbol in shorts if pd.notna(px[symbol]) and px[symbol] > 0
+        }
+        long_total = eq * account_multiplier * 0.5
+        if match_long_to_short_capacity:
+            long_total = min(
+                long_total,
+                sum(-qty * float(px[symbol]) for symbol, qty in desired_shorts.items()),
+            )
+        long_dollars = long_total / long_n
         desired_qty: dict[str, float] = {
             symbol: long_dollars / float(px[symbol])
             for symbol in longs if pd.notna(px[symbol]) and px[symbol] > 0
         }
-        desired_qty.update({
-            symbol: -float(np.floor(short_dollars / float(px[symbol])))
-            for symbol in shorts if pd.notna(px[symbol]) and px[symbol] > 0
-        })
+        desired_qty.update(desired_shorts)
 
         for symbol in sorted(set(shares) | set(desired_qty)):
             price = float(px.get(symbol, np.nan))
