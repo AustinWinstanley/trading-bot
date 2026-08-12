@@ -366,6 +366,12 @@ IWM, with 18 and 24 trades—below the 30-trade minimum—and lost on SPY/QQQ. N
 family qualified for option translation; changing thresholds after this result
 would be tuning, not independent evidence.
 
+The corresponding 1DTE defined-risk spread translator exists but is research-
+interlocked. `python -m scripts.intraday_options_shadow` reads the committed
+intraday decision before credentials; because no family qualified, it exits
+without contacting Alpaca. It cannot submit orders. A future qualified signal
+could authorize quote collection, not automatic paper activation.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.
