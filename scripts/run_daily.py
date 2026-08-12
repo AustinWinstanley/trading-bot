@@ -30,13 +30,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from engine.attribution import build_exposure_attribution
-from engine.config import load_config
+from engine.config import Config, load_config
 from engine.data import REPO_ROOT, atr, load_env
 from engine.execute import Trader
 from engine.leverage_overlay import apply_target_scale, recommend_leverage
 from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
-                         SymbolData, evaluate)
+                         SymbolData, _experiment_for_sleeve,
+                         compute_experiment_standdowns, evaluate)
 
 ET = ZoneInfo("America/New_York")
 
@@ -139,7 +140,8 @@ def load_risk_state(equity: float, today: dt.date) -> dict:
     else:
         st = {"peak_equity": equity, "month": today.strftime("%Y-%m"),
               "month_start_equity": equity, "day": today.isoformat(),
-              "day_start_equity": equity, "recent_losses": {}, "halted": False}
+              "day_start_equity": equity, "recent_losses": {}, "halted": False,
+              "experiment_realized_pnl": {}, "experiment_standdowns": []}
     if st["day"] != today.isoformat():
         st["day"], st["day_start_equity"] = today.isoformat(), equity
     if st["month"] != today.strftime("%Y-%m"):
@@ -276,6 +278,56 @@ def sync_broker_stops(
     return protective_symbols
 
 
+def held_sleeve_by_symbol(conn: sqlite3.Connection, symbols) -> dict[str, str]:
+    """Best-known sleeve attribution for each currently-held symbol.
+
+    Positions carry no sleeve tag from the broker — the journal's most
+    recent buy/short order for a symbol is the only record of which sleeve
+    most recently opened or added to it. A symbol with no such order (e.g.
+    a position opened before the orders table existed, or outside the bot)
+    maps to nothing and is therefore not attributed to any experiment.
+    """
+    out: dict[str, str] = {}
+    for symbol in symbols:
+        row = conn.execute(
+            "SELECT sleeve FROM orders WHERE symbol=? AND side IN ('buy','short') "
+            "AND sleeve IS NOT NULL ORDER BY ts DESC LIMIT 1",
+            (symbol,),
+        ).fetchone()
+        if row and row[0]:
+            out[symbol] = row[0]
+    return out
+
+
+def experiment_exposure_and_unrealized_pnl(
+    positions: dict[str, Position], held_sleeve: dict[str, str], cfg: Config,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Dollar gross exposure and unrealized P&L per experiment name, from
+    currently held positions and their journal-derived sleeve attribution.
+
+    Pure — no I/O — so the aggregation is unit-testable without a database.
+    Unrealized P&L uses each position's overall unrealized_pct (entry to
+    current price), the same precision the pre-existing recent_losses check
+    already relies on — not exact per-lot cost basis.
+    """
+    exposure: dict[str, float] = {}
+    unrealized: dict[str, float] = {}
+    if not cfg.experiments:
+        return exposure, unrealized
+    for symbol, sleeve in held_sleeve.items():
+        pos = positions.get(symbol)
+        if pos is None:
+            continue
+        experiment = _experiment_for_sleeve(cfg, sleeve)
+        if experiment is None:
+            continue
+        exposure[experiment.name] = exposure.get(experiment.name, 0.0) + abs(pos.market_value)
+        unrealized[experiment.name] = (
+            unrealized.get(experiment.name, 0.0) + pos.unrealized_pct * abs(pos.market_value)
+        )
+    return exposure, unrealized
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -324,6 +376,29 @@ def main() -> None:
     st = load_risk_state(equity, today)
     conn = db()
     ts = now_et.isoformat()
+
+    # ---- experiment-tier exposure / P&L / stand-down -----------------
+    # Computed unconditionally (independent of halt/--stops-only mode,
+    # like the software-stop check) so a breach is caught and flattened
+    # even on a stops-only run. No-op when the profile has no experiments
+    # configured (true for both profiles today; config_2x.yaml gains its
+    # first entries in a later phase).
+    held_sleeve = held_sleeve_by_symbol(conn, positions) if cfg.experiments else {}
+    exp_exposure, exp_unrealized = experiment_exposure_and_unrealized_pnl(
+        positions, held_sleeve, cfg
+    )
+    exp_realized = dict(st.get("experiment_realized_pnl", {}))
+    cumulative_pnl_pct = {
+        name: (exp_realized.get(name, 0.0) + exp_unrealized.get(name, 0.0)) / equity
+        for name in cfg.experiments
+    } if equity > 0 else {}
+    experiment_standdowns = compute_experiment_standdowns(cfg, cumulative_pnl_pct)
+    previously_stood_down = set(st.get("experiment_standdowns", []))
+    newly_stood_down = experiment_standdowns - previously_stood_down
+    if experiment_standdowns:
+        print(f"experiments: standdown={sorted(experiment_standdowns)} "
+              f"new={sorted(newly_stood_down)}")
+
     fixed_leverage = float(cfg.sleeves_paper.get("gross_leverage", 1.0))
     overlay = recommend_leverage(
         conn,
@@ -417,6 +492,32 @@ def main() -> None:
                                   cfg.execution.max_limit_slippage_pct,
                               ),
                               "rationale": f"software stop: {pos.current_price} <= {stop}"})
+
+    # 4a-bis. experiment stand-down flatten — a newly-triggered stand-down
+    # must not leave existing sleeve risk in place until the next signal
+    # happens to reduce it. Generated immediately, same priority as a
+    # software stop, and (like 4a) runs even in --stops-only mode since
+    # this is a risk-reduction action, not a rebalance.
+    for name in sorted(newly_stood_down):
+        for sym, sleeve in held_sleeve.items():
+            experiment = _experiment_for_sleeve(cfg, sleeve)
+            if experiment is None or experiment.name != name:
+                continue
+            if any(pr["symbol"] == sym for pr in proposals):
+                continue
+            pos = positions.get(sym)
+            if pos is None:
+                continue
+            reference_prices[sym] = pos.current_price
+            side = "cover" if pos.is_short else "sell"
+            proposals.append({
+                "symbol": sym, "side": side, "sleeve": sleeve,
+                "notional": abs(pos.market_value),
+                "limit_price": marketable_limit(
+                    pos.current_price, side, cfg.execution.max_limit_slippage_pct,
+                ),
+                "rationale": f"experiment {name!r} stood down: cumulative loss limit breached",
+            })
 
     # 4b. rebalance drift — skipped entirely in --stops-only mode. targets is
     # a placeholder ({}) there, and letting it reach this loop would read as
@@ -522,6 +623,7 @@ def main() -> None:
         month_start_equity=st["month_start_equity"],
         recent_losses={k: dt.date.fromisoformat(v) for k, v in st["recent_losses"].items()},
         halted=st["halted"],
+        experiment_standdowns=experiment_standdowns,
     )
     ctx = MarketContext(now=now_et, is_trading_day=bool(clock.get("is_open")) or args.force,
                         symbols=symbol_data)
@@ -532,7 +634,8 @@ def main() -> None:
         buying_power = max(lev * equity - long_exposure, 0.0)
     result = evaluate(proposals, AccountState(equity=equity, cash=cash, positions=positions,
                                               buying_power=buying_power,
-                                              shorting_enabled=shorting_enabled),
+                                              shorting_enabled=shorting_enabled,
+                                              experiment_gross_exposure=exp_exposure),
                       risk_state, ctx, cfg)
 
     for rej in result.rejected:
@@ -674,12 +777,28 @@ def main() -> None:
             print(f"    submit {order.symbol} FAILED: {exc}")
             submission_failures.append(f"{order.symbol}: {exc}")
 
-    # record realised losses for the revenge-trade block
+    # record realised losses for the revenge-trade block, and realized P&L
+    # for any experiment-tier sleeve exit — gains and losses both, since a
+    # stand-down is judged on cumulative P&L, not just on losing trades.
+    experiment_realized_pnl = dict(st.get("experiment_realized_pnl", {}))
     for order in result.approved:
         if order.side in ("sell", "cover") and order.symbol in positions:
             pos = positions[order.symbol]
             if pos.unrealized_pct < 0:
                 st["recent_losses"][order.symbol] = today.isoformat()
+            experiment = _experiment_for_sleeve(cfg, order.sleeve)
+            if experiment is not None:
+                # Approximation: the position's overall unrealized_pct
+                # (entry to current price) applied to the dollar amount
+                # this order closes — not exact per-lot cost basis, the
+                # same precision the recent_losses check above already
+                # relies on for this same position.
+                experiment_realized_pnl[experiment.name] = (
+                    experiment_realized_pnl.get(experiment.name, 0.0)
+                    + pos.unrealized_pct * order.notional
+                )
+    st["experiment_realized_pnl"] = experiment_realized_pnl
+    st["experiment_standdowns"] = sorted(experiment_standdowns)
 
     # ---- journal + report ------------------------------------------------
     if args.dry_run:

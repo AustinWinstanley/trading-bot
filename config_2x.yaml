@@ -200,3 +200,23 @@ paper_portfolio:
       wing_width: 5.0
       min_credit_pct_of_width: 0.10
       max_loss_pct: 0.05
+
+# The experiment tier (engine/config.py's ExperimentConfig, engine/risk.py's
+# gate governance, AGENTS.md's "experiment tier" section) — a second,
+# lighter-weight evidence bar for capped, pre-registered paper-trading
+# experiments in this lab account, distinct from the options_experiments
+# read-only shadows above and from the hard promotion gate that governs
+# core allocation. No entries yet as of 2026-08-12: this block is reserved
+# for a later phase, once a specific experiment has a registration document
+# under reports/experiments/. Example shape:
+#
+# experiments:
+#   <name>:
+#     status: off              # off | shadow | paper
+#     allocation_pct: 0.05     # hard gross-exposure cap, enforced by the gate
+#     max_cumulative_loss_pct: 0.02   # realized+unrealized budget; breach
+#                                     # auto-flattens the sleeve and stands
+#                                     # it down until a human raises this or
+#                                     # sets status back to off
+#     registration: reports/experiments/<name>.json   # required to exist
+#                                     # before status may leave "off"

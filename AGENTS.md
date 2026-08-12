@@ -227,6 +227,61 @@ as open questions, not settled conventions, in any study that touches them:
   reviewed pass with the resulting headline numbers re-verified against
   `short_capacity_study.json`'s existing whole-share figures.
 
+### The experiment tier is a second, lighter-weight evidence bar — not a bypass
+
+`config_2x.yaml`'s top-level `experiments:` block (`engine/config.py`'s
+`ExperimentConfig`, parsed by `_parse_experiments`) is a formal second tier,
+distinct from the hard promotion gate above. It exists because the 2x
+account is deliberately the aggressive lab (base stays the unchanged
+control) and because paper-trading learnings are valuable even when a
+signal hasn't cleared a full frozen-window study — but that lower bar has to
+be capped and pre-committed, not open-ended:
+
+- **Three statuses**: `off` (no proposals ever generated for this sleeve —
+  the default and the only status that needs no registration file),
+  `shadow` (read-only observation; the gate rejects any real buy/short whose
+  sleeve resolves to a shadow experiment, so a bug that tries to size one
+  cannot reach the broker even by accident), `paper` (real paper orders,
+  sized and capped by the gate).
+- **A registration document is required before `status` can leave `off`.**
+  `_parse_experiments` raises `ConfigError` at load time if the file at
+  `registration:` doesn't exist — the same enforced-honesty pattern as the
+  frozen-window promotion gate, just checked earlier and more cheaply.
+  Follow the existing `reports/*_shadow_launch.json` shape: hypothesis,
+  measurement plan, review bar, known gaps.
+- **`allocation_pct` is a hard per-experiment gross-exposure cap**, enforced
+  by `engine/risk.py`'s gate as a shrink step (same "tighten, never relax"
+  philosophy as every other cap in that file) — never just documentation.
+  Total `allocation_pct` across every non-`off` experiment is capped at
+  `MAX_TOTAL_EXPERIMENT_ALLOCATION_PCT` (30% as of 2026-08-12); core
+  allocation always keeps the majority of lab equity.
+- **`max_cumulative_loss_pct` drives an automatic stand-down.**
+  `scripts/run_daily.py` computes realized-plus-unrealized P&L per
+  experiment each run (`experiment_realized_pnl` persisted in
+  `risk_state_2x.json`, unrealized from currently-held positions via their
+  most recent journal-recorded sleeve — positions carry no sleeve tag from
+  the broker, so the journal is the only record) and calls
+  `engine.risk.compute_experiment_standdowns`. A breach adds the experiment
+  to `RiskState.experiment_standdowns`, which blocks new entries in the
+  same run and — critically — the daily runner immediately injects
+  sell/cover proposals for every position attributed to that experiment
+  (section 4a-bis, same priority as a software stop), so a breach flattens
+  the sleeve instead of waiting for the next signal to happen to reduce it.
+  Un-standing-down requires a human: raise `max_cumulative_loss_pct` (a
+  reviewed config change, not automatic) or set `status: off`.
+- **Promotion to core allocation still requires the hard gate** on the
+  (re-frozen, see above) validation window. Nothing about clearing an
+  experiment's own review bar substitutes for that — the experiment tier
+  answers "is this worth learning from live," not "is this worth trusting."
+- Sleeve attribution uses the same `+`-joined exact-membership matching as
+  the stop/re-entry exemption sets (`engine/risk._experiment_for_sleeve`,
+  `_sleeve_contains`) — a combined sleeve like `"mom_ls+bull_put_live"` is
+  still correctly governed by its experiment part.
+
+As of 2026-08-12 no experiment is registered yet — Phase 1 built the
+framework only; the first `paper`-status entries are a later phase's work,
+each needing its own registration document before it can leave `off`.
+
 ### Validate a new study against the accepted one
 
 If a study reimplements a sleeve, prove the control reproduces the existing

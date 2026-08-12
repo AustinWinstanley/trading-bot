@@ -7,7 +7,7 @@ limit must stop the bot, not silently loosen it.
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -16,6 +16,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_PATH = REPO_ROOT / "config.yaml"
 
 VALID_MODES = {"paper", "live", "halt"}
+# off = no proposals ever generated; shadow = read-only observation, may
+# never place a real order; paper = real (paper-broker) orders, sized and
+# risk-bounded by the gate. See engine/risk.py's experiment governance.
+VALID_EXPERIMENT_STATUSES = {"off", "shadow", "paper"}
+# Core validated allocation must always keep the majority of lab equity —
+# the experiment tier is capped bandwidth for unproven ideas, not a second
+# core. Sum of allocation_pct across every non-off experiment is checked
+# against this at config-load time.
+MAX_TOTAL_EXPERIMENT_ALLOCATION_PCT = 0.30
 
 
 class ConfigError(Exception):
@@ -99,6 +108,29 @@ class UniverseFilters:
 
 
 @dataclass(frozen=True)
+class ExperimentConfig:
+    """One pre-registered, capped experiment-tier sleeve.
+
+    Distinct from the hard promotion gate (backtest/promotion.py) that
+    governs core allocation: this is the lighter-weight second tier for
+    capped, pre-registered paper-trading experiments, evaluated on
+    plausible evidence rather than the full frozen-window study. Promotion
+    from here to core allocation still requires the hard gate — this
+    dataclass carries no promotion authority of its own.
+    """
+
+    name: str
+    status: str
+    allocation_pct: float
+    max_cumulative_loss_pct: float
+    registration_path: str
+
+    @property
+    def is_paper_active(self) -> bool:
+        return self.status == "paper"
+
+
+@dataclass(frozen=True)
 class Config:
     mode: str
     starting_equity: float
@@ -108,6 +140,7 @@ class Config:
     sleeves: dict
     sleeves_paper: dict
     leveraged_symbols: frozenset[str]
+    experiments: dict[str, ExperimentConfig] = field(default_factory=dict)
 
 
 def _require(mapping: dict, key: str, path: str):
@@ -157,6 +190,84 @@ def _positive_number(value, name: str, *, high: float) -> float:
     if not (0 < value <= high):
         raise ConfigError(f"{name} must be in (0, {high}], got {value}")
     return value
+
+
+def _parse_experiments(raw: dict) -> dict[str, ExperimentConfig]:
+    """Parse the top-level `experiments:` block (kept separate from the
+    existing `paper_portfolio.options_experiments` block deliberately — that
+    one is a read-only quote-collection convention that already works;
+    this is the newer, stricter, real-order-capable tier).
+
+    A registration document (the pre-committed hypothesis, measurement plan,
+    and review bar) is required to exist on disk before `status` may leave
+    "off". This is enforced here, at load time, so an experiment can never
+    silently start sizing real activity against a promise nobody wrote down.
+    """
+    block = raw.get("experiments")
+    if block is None:
+        return {}
+    if not isinstance(block, dict):
+        raise ConfigError("experiments must be a mapping of name -> settings")
+
+    experiments: dict[str, ExperimentConfig] = {}
+    total_active_alloc = 0.0
+    for name, settings in block.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ConfigError(f"experiments key must be a non-empty string, got {name!r}")
+        if not isinstance(settings, dict):
+            raise ConfigError(f"experiments.{name} must be a mapping")
+
+        status = _require(settings, "status", f"experiments.{name}")
+        if status not in VALID_EXPERIMENT_STATUSES:
+            raise ConfigError(
+                f"experiments.{name}.status must be one of "
+                f"{sorted(VALID_EXPERIMENT_STATUSES)}, got {status!r}"
+            )
+        allocation_pct = _fraction(
+            _require(settings, "allocation_pct", f"experiments.{name}"),
+            f"experiments.{name}.allocation_pct",
+        )
+        max_cumulative_loss_pct = _fraction(
+            _require(settings, "max_cumulative_loss_pct", f"experiments.{name}"),
+            f"experiments.{name}.max_cumulative_loss_pct",
+        )
+        registration_path = _require(settings, "registration", f"experiments.{name}")
+        if not isinstance(registration_path, str) or not registration_path.strip():
+            raise ConfigError(f"experiments.{name}.registration must be a non-empty path string")
+        registration_path = registration_path.strip()
+
+        if status != "off" and not (REPO_ROOT / registration_path).exists():
+            raise ConfigError(
+                f"experiments.{name}.status is {status!r} but its registration file "
+                f"{registration_path!r} does not exist — write the pre-registration "
+                "(hypothesis, measurement plan, review bar) before turning this on"
+            )
+        if max_cumulative_loss_pct > allocation_pct:
+            raise ConfigError(
+                f"experiments.{name}.max_cumulative_loss_pct ({max_cumulative_loss_pct}) "
+                f"must be <= allocation_pct ({allocation_pct}) — a sleeve cannot be "
+                "permitted to lose more of equity than it is allocated"
+            )
+
+        experiments[name] = ExperimentConfig(
+            name=name,
+            status=status,
+            allocation_pct=allocation_pct,
+            max_cumulative_loss_pct=max_cumulative_loss_pct,
+            registration_path=registration_path,
+        )
+        if status != "off":
+            total_active_alloc += allocation_pct
+
+    if total_active_alloc > MAX_TOTAL_EXPERIMENT_ALLOCATION_PCT + 1e-9:
+        raise ConfigError(
+            f"experiments: total allocation_pct across non-off experiments is "
+            f"{total_active_alloc:.2%}, which exceeds the "
+            f"{MAX_TOTAL_EXPERIMENT_ALLOCATION_PCT:.0%} cap — core allocation must "
+            "keep at least "
+            f"{1 - MAX_TOTAL_EXPERIMENT_ALLOCATION_PCT:.0%} of equity"
+        )
+    return experiments
 
 
 def _parse_time(value, name: str) -> dt.time:
@@ -369,6 +480,8 @@ def load_config(path: Path | str | None = None) -> Config:
                     "becomes the real filter and the weekly one is decorative"
                 )
 
+    experiments = _parse_experiments(raw)
+
     return Config(
         mode=mode,
         starting_equity=float(starting_equity),
@@ -378,4 +491,5 @@ def load_config(path: Path | str | None = None) -> Config:
         sleeves=sleeves,
         sleeves_paper=paper,
         leveraged_symbols=leveraged_symbols,
+        experiments=experiments,
     )

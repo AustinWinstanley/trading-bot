@@ -18,7 +18,7 @@ import math
 from dataclasses import dataclass, field, asdict
 from typing import Any, Iterable
 
-from engine.config import Config
+from engine.config import Config, ExperimentConfig
 
 VALID_SIDES = {"buy", "sell", "short", "cover"}
 
@@ -62,6 +62,12 @@ class AccountState:
     # exposure), NOT the broker's 4x buying power — the config is the cap.
     buying_power: float | None = None
     shorting_enabled: bool = True
+    # Dollar gross exposure already held per experiment name, computed
+    # externally (scripts/run_daily.py, from the journal's most recent
+    # sleeve attribution per held symbol) and passed in — same precedent as
+    # buying_power above, since positions carry no sleeve tag from the
+    # broker. Absent/zero for any experiment means no current exposure.
+    experiment_gross_exposure: dict[str, float] = field(default_factory=dict)
 
     def short_exposure(self) -> float:
         return sum(abs(p.market_value) for p in self.positions.values() if p.is_short)
@@ -88,6 +94,14 @@ class RiskState:
     recent_losses: dict[str, dt.date] = field(default_factory=dict)
     # Set once the absolute halt has fired; cleared only by a human.
     halted: bool = False
+    # Experiment names whose cumulative realized+unrealized loss has breached
+    # their configured max_cumulative_loss_pct. Computed externally
+    # (scripts/run_daily.py) each run from persisted realized P&L plus
+    # current unrealized P&L; the gate only consumes it. A stood-down
+    # experiment's new buy/short proposals are rejected — existing positions
+    # are flattened by the daily runner injecting sell/cover proposals,
+    # which the gate always allows through regardless of this set.
+    experiment_standdowns: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -174,6 +188,43 @@ def _sleeve_contains(sleeve: str, name: str) -> bool:
     parts instead — the same exactness the stop/re-entry exemption sets use.
     """
     return name in sleeve.split("+")
+
+
+def _experiment_for_sleeve(cfg: Config, sleeve: str) -> ExperimentConfig | None:
+    """Which experiment-tier config (if any) governs this proposal's sleeve.
+
+    Uses the same `+`-joined exact-membership check as the stop/re-entry
+    exemption sets, so a combined-attribution sleeve (e.g.
+    "mom_ls+bull_put_live") is still correctly governed by the experiment
+    part of its name.
+    """
+    for name, experiment in cfg.experiments.items():
+        if _sleeve_contains(sleeve, name):
+            return experiment
+    return None
+
+
+def compute_experiment_standdowns(
+    cfg: Config, cumulative_pnl_pct: dict[str, float]
+) -> frozenset[str]:
+    """Which experiments have breached their loss budget and must stand down.
+
+    `cumulative_pnl_pct` is realized-plus-unrealized P&L per experiment name,
+    as a signed fraction of account equity (negative = loss) — computed
+    externally by the daily runner. Pure and independently testable so the
+    stand-down threshold logic has coverage even before any experiment is
+    live. An "off" experiment is excluded: it cannot be trading, so it
+    cannot be stood down (there is nothing to flatten and no gate check
+    would ever look at it).
+    """
+    standdowns = set()
+    for name, experiment in cfg.experiments.items():
+        if experiment.status == "off":
+            continue
+        pnl = cumulative_pnl_pct.get(name, 0.0)
+        if pnl <= -experiment.max_cumulative_loss_pct:
+            standdowns.add(name)
+    return frozenset(standdowns)
 
 
 def stop_distance_pct(cfg: Config, price: float, atr14: float) -> float:
@@ -333,6 +384,10 @@ def evaluate(
 
     open_position_count = len(account.positions)
     committed_notional: dict[str, float] = {}
+    # Notional committed THIS run per experiment name, mirroring
+    # committed_notional — added to account.experiment_gross_exposure (the
+    # pre-run baseline) when checking each subsequent proposal's room.
+    committed_experiment: dict[str, float] = {}
     leveraged_exposure = account.leveraged_exposure(cfg.leveraged_symbols)
     long_exposure = account.long_exposure()
     gross_exposure = account.gross_exposure()
@@ -347,6 +402,7 @@ def evaluate(
         symbol = clean["symbol"]
         requested = clean["notional"]
         adjustments: list[str] = []
+        experiment = _experiment_for_sleeve(cfg, clean["sleeve"])
 
         # Covers close short risk — always allowed through, like sells.
         if clean["side"] == "cover":
@@ -402,6 +458,21 @@ def evaluate(
                     RejectedProposal(symbol, "broker account does not permit shorting", raw)
                 )
                 continue
+            if experiment is not None:
+                if experiment.name in risk_state.experiment_standdowns:
+                    result.rejected.append(RejectedProposal(
+                        symbol, f"experiment {experiment.name!r} stood down: cumulative "
+                        "loss limit breached", raw))
+                    continue
+                if experiment.status == "off":
+                    result.rejected.append(RejectedProposal(
+                        symbol, f"experiment {experiment.name!r} is off; no new entries", raw))
+                    continue
+                if experiment.status == "shadow":
+                    result.rejected.append(RejectedProposal(
+                        symbol, f"experiment {experiment.name!r} is shadow-only "
+                        "(read-only observation); no real orders permitted", raw))
+                    continue
             if result.new_entries_blocked:
                 result.rejected.append(
                     RejectedProposal(symbol, f"new entries blocked: {'; '.join(result.notes) or result.halt_reason}", raw)
@@ -479,12 +550,24 @@ def evaluate(
             gross_cap = cfg.risk.max_gross_exposure_pct * account.equity
             gross_room = gross_cap - gross_exposure - total_committed_short
             room = min(short_room, gross_room)
+            exp_cap_note = ""
+            if experiment is not None:
+                exp_cap = experiment.allocation_pct * account.equity
+                exp_committed = committed_experiment.get(experiment.name, 0.0)
+                exp_room = (
+                    exp_cap
+                    - account.experiment_gross_exposure.get(experiment.name, 0.0)
+                    - exp_committed
+                )
+                if exp_room < room:
+                    room = exp_room
+                    exp_cap_note = f" (experiment {experiment.name!r} allocation cap {exp_cap:,.2f})"
             if room <= 0:
                 result.rejected.append(
                     RejectedProposal(
                         symbol,
                         f"short or gross exposure cap reached "
-                        f"(short {short_cap:,.2f}, gross {gross_cap:,.2f})",
+                        f"(short {short_cap:,.2f}, gross {gross_cap:,.2f}){exp_cap_note}",
                         raw,
                     ))
                 continue
@@ -516,11 +599,31 @@ def evaluate(
                               limit_price=clean["limit_price"], stop_price=stop_price,
                               requested_notional=requested, adjustments=adjustments))
             committed_notional[f"SHORT:{symbol}"] = committed_notional.get(f"SHORT:{symbol}", 0.0) + approved_notional
+            if experiment is not None:
+                committed_experiment[experiment.name] = (
+                    committed_experiment.get(experiment.name, 0.0) + approved_notional
+                )
             if held is None:
                 open_position_count += 1
             continue
 
         # --- buys ---
+
+        if experiment is not None:
+            if experiment.name in risk_state.experiment_standdowns:
+                result.rejected.append(RejectedProposal(
+                    symbol, f"experiment {experiment.name!r} stood down: cumulative "
+                    "loss limit breached", raw))
+                continue
+            if experiment.status == "off":
+                result.rejected.append(RejectedProposal(
+                    symbol, f"experiment {experiment.name!r} is off; no new entries", raw))
+                continue
+            if experiment.status == "shadow":
+                result.rejected.append(RejectedProposal(
+                    symbol, f"experiment {experiment.name!r} is shadow-only "
+                    "(read-only observation); no real orders permitted", raw))
+                continue
 
         if result.new_entries_blocked:
             result.rejected.append(
@@ -686,6 +789,34 @@ def evaluate(
                 )
                 approved_notional = lev_room
 
+        # Experiment-tier allocation cap. Checked against the pre-run baseline
+        # (account.experiment_gross_exposure) plus anything already committed
+        # to this same experiment earlier in this proposal loop.
+        if experiment is not None:
+            exp_cap = experiment.allocation_pct * account.equity
+            exp_committed = committed_experiment.get(experiment.name, 0.0)
+            exp_room = (
+                exp_cap
+                - account.experiment_gross_exposure.get(experiment.name, 0.0)
+                - exp_committed
+            )
+            if exp_room <= 0:
+                result.rejected.append(
+                    RejectedProposal(
+                        symbol,
+                        f"experiment {experiment.name!r} allocation cap reached "
+                        f"({exp_cap:,.2f})",
+                        raw,
+                    )
+                )
+                continue
+            if approved_notional > exp_room:
+                adjustments.append(
+                    f"shrunk to experiment {experiment.name!r} allocation cap "
+                    f"({approved_notional:,.2f} -> {exp_room:,.2f})"
+                )
+                approved_notional = exp_room
+
         # Cash / margin headroom.
         if approved_notional > cash_remaining:
             if cash_remaining <= 0:
@@ -729,6 +860,10 @@ def evaluate(
         )
 
         committed_notional[symbol] = already_committed + approved_notional
+        if experiment is not None:
+            committed_experiment[experiment.name] = (
+                committed_experiment.get(experiment.name, 0.0) + approved_notional
+            )
         cash_remaining -= approved_notional
         long_exposure += approved_notional
         gross_exposure += approved_notional
@@ -737,11 +872,11 @@ def evaluate(
         if data.is_leveraged or symbol in cfg.leveraged_symbols:
             leveraged_exposure += approved_notional
 
-    _assert_gate_invariants(result, cfg)
+    _assert_gate_invariants(result, cfg, risk_state)
     return result
 
 
-def _assert_gate_invariants(result: GateResult, cfg: Config) -> None:
+def _assert_gate_invariants(result: GateResult, cfg: Config, risk_state: RiskState) -> None:
     """The gate's contract, enforced at runtime as well as in tests.
 
     A bug that let the gate enlarge an order or drop a stop would be the single
@@ -788,3 +923,21 @@ def _assert_gate_invariants(result: GateResult, cfg: Config) -> None:
             raise AssertionError(
                 f"GATE INVARIANT VIOLATED: {order.symbol} {order.side} approved while entries are blocked"
             )
+        # Experiment-tier entries: an off/shadow experiment must never place a
+        # real order, and a stood-down experiment must never open new risk —
+        # asserted here as well as rejected inline, so a future code path
+        # that skips the inline check still cannot reach the broker.
+        if order.side in ("buy", "short"):
+            experiment = _experiment_for_sleeve(cfg, order.sleeve)
+            if experiment is not None:
+                if experiment.status != "paper":
+                    raise AssertionError(
+                        f"GATE INVARIANT VIOLATED: {order.symbol} {order.side} approved for "
+                        f"experiment {experiment.name!r} whose status is "
+                        f"{experiment.status!r}, not 'paper'"
+                    )
+                if experiment.name in risk_state.experiment_standdowns:
+                    raise AssertionError(
+                        f"GATE INVARIANT VIOLATED: {order.symbol} {order.side} approved for "
+                        f"stood-down experiment {experiment.name!r}"
+                    )
