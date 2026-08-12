@@ -45,3 +45,19 @@ def test_target_restoration_bypasses_only_loss_based_rejection():
     assert control_diag.rejected_restorations > 0
     assert candidate_diag.rejected_restorations == 0
     assert candidate_diag.trades > control_diag.trades
+
+
+def test_capacity_matching_does_not_target_more_longs_than_shorts():
+    close, volume = _matrices()
+    result, _ = build_deployable_stream(
+        close, volume, lookback=2, skip=1, long_n=2, short_n=2,
+        rebalance=2, min_price=0, min_dollar_volume=0,
+        match_long_to_short_capacity=True,
+    )
+    live = result.weights[result.weights.abs().sum(axis=1) > 0]
+    assert len(live) > 0
+    long_gross = live.clip(lower=0).sum(axis=1)
+    short_gross = -live.clip(upper=0).sum(axis=1)
+    # Drift and no-averaging can create small path differences after entry;
+    # the initial capacity-matched targets themselves cannot be net long.
+    assert long_gross.iloc[0] <= short_gross.iloc[0] + 1e-9

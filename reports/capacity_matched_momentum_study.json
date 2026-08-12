@@ -1,0 +1,277 @@
+{
+  "decision": "reject",
+  "pre_registration": {
+    "objective_class": "risk_reducer",
+    "candidate": "Size MOM_LS longs to attainable whole-share short target dollars without changing ranks or concentrating shorts.",
+    "max_cagr_cost_pp": 1.0,
+    "min_dd_improvement_pct": 0.05,
+    "scope": "Both profiles and both screening windows must pass; 2026-08-04 onward is frozen final validation."
+  },
+  "promotion_gate": {
+    "objective_class": "risk_reducer",
+    "passed": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "risk_reducer",
+        "passed": true,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": true,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 0.713,
+          "candidate_sharpe": 0.845,
+          "control_cagr": 0.0756,
+          "candidate_cagr": 0.0835,
+          "control_max_dd": -0.1254,
+          "candidate_max_dd": -0.0958,
+          "d_sharpe": 0.132,
+          "d_cagr": 0.0079,
+          "d_max_dd": 0.0296,
+          "cagr_cost_pp": -0.79,
+          "max_cagr_cost_pp": 1.0,
+          "dd_improvement_pct": 0.236,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "risk_reducer",
+        "passed": true,
+        "checks": {
+          "cagr_cost_within_budget": true,
+          "drawdown_improves_enough": true,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 0.616,
+          "candidate_sharpe": 0.692,
+          "control_cagr": 0.1172,
+          "candidate_cagr": 0.1308,
+          "control_max_dd": -0.2299,
+          "candidate_max_dd": -0.1969,
+          "d_sharpe": 0.076,
+          "d_cagr": 0.0136,
+          "d_max_dd": 0.033,
+          "cagr_cost_pp": -1.36,
+          "max_cagr_cost_pp": 1.0,
+          "dd_improvement_pct": 0.1435,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": false,
+          "drawdown_improves_enough": true,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 1.297,
+          "candidate_sharpe": 1.287,
+          "control_cagr": 0.1658,
+          "candidate_cagr": 0.1356,
+          "control_max_dd": -0.1413,
+          "candidate_max_dd": -0.1242,
+          "d_sharpe": -0.01,
+          "d_cagr": -0.0302,
+          "d_max_dd": 0.0171,
+          "cagr_cost_pp": 3.02,
+          "max_cagr_cost_pp": 1.0,
+          "dd_improvement_pct": 0.121,
+          "min_dd_improvement_pct": 0.05
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "risk_reducer",
+        "passed": false,
+        "checks": {
+          "cagr_cost_within_budget": false,
+          "drawdown_improves_enough": false,
+          "not_worse_on_every_axis": true
+        },
+        "inputs": {
+          "control_sharpe": 1.042,
+          "candidate_sharpe": 1.018,
+          "control_cagr": 0.2518,
+          "candidate_cagr": 0.2286,
+          "control_max_dd": -0.2661,
+          "candidate_max_dd": -0.2561,
+          "d_sharpe": -0.024,
+          "d_cagr": -0.0232,
+          "d_max_dd": 0.01,
+          "cagr_cost_pp": 2.32,
+          "max_cagr_cost_pp": 1.0,
+          "dd_improvement_pct": 0.0376,
+          "min_dd_improvement_pct": 0.05
+        }
+      }
+    ]
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 unmatched whole-share control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0756,
+        "ann_return": 0.0787,
+        "vol": 0.1103,
+        "sharpe": 0.713,
+        "sortino": 0.99,
+        "max_dd": -0.1254,
+        "x_money": 1.193,
+        "profile": "base",
+        "variant": "unmatched whole-share control"
+      },
+      {
+        "portfolio": "base \u2014 capacity-matched longs",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0835,
+        "ann_return": 0.0849,
+        "vol": 0.1004,
+        "sharpe": 0.845,
+        "sortino": 1.19,
+        "max_dd": -0.0958,
+        "x_money": 1.214,
+        "profile": "base",
+        "variant": "capacity-matched longs"
+      },
+      {
+        "portfolio": "2x \u2014 unmatched whole-share control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1172,
+        "ann_return": 0.1342,
+        "vol": 0.2179,
+        "sharpe": 0.616,
+        "sortino": 0.857,
+        "max_dd": -0.2299,
+        "x_money": 1.308,
+        "profile": "2x",
+        "variant": "unmatched whole-share control"
+      },
+      {
+        "portfolio": "2x \u2014 capacity-matched longs",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1308,
+        "ann_return": 0.1442,
+        "vol": 0.2085,
+        "sharpe": 0.692,
+        "sortino": 0.966,
+        "max_dd": -0.1969,
+        "x_money": 1.347,
+        "profile": "2x",
+        "variant": "capacity-matched longs"
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 unmatched whole-share control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1658,
+        "ann_return": 0.162,
+        "vol": 0.1249,
+        "sharpe": 1.297,
+        "sortino": 1.806,
+        "max_dd": -0.1413,
+        "x_money": 1.723,
+        "profile": "base",
+        "variant": "unmatched whole-share control"
+      },
+      {
+        "portfolio": "base \u2014 capacity-matched longs",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1356,
+        "ann_return": 0.1332,
+        "vol": 0.1034,
+        "sharpe": 1.287,
+        "sortino": 1.786,
+        "max_dd": -0.1242,
+        "x_money": 1.57,
+        "profile": "base",
+        "variant": "capacity-matched longs"
+      },
+      {
+        "portfolio": "2x \u2014 unmatched whole-share control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2518,
+        "ann_return": 0.2559,
+        "vol": 0.2455,
+        "sharpe": 1.042,
+        "sortino": 1.447,
+        "max_dd": -0.2661,
+        "x_money": 2.219,
+        "profile": "2x",
+        "variant": "unmatched whole-share control"
+      },
+      {
+        "portfolio": "2x \u2014 capacity-matched longs",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2286,
+        "ann_return": 0.2331,
+        "vol": 0.2289,
+        "sharpe": 1.018,
+        "sortino": 1.409,
+        "max_dd": -0.2561,
+        "x_money": 2.076,
+        "profile": "2x",
+        "variant": "capacity-matched longs"
+      }
+    ]
+  },
+  "exposure": [
+    {
+      "profile": "base",
+      "variant": "unmatched whole-share control",
+      "average_account_long_gross": 0.1191,
+      "average_account_short_gross": 0.0741
+    },
+    {
+      "profile": "base",
+      "variant": "capacity-matched longs",
+      "average_account_long_gross": 0.0732,
+      "average_account_short_gross": 0.0739
+    },
+    {
+      "profile": "2x",
+      "variant": "unmatched whole-share control",
+      "average_account_long_gross": 0.2372,
+      "average_account_short_gross": 0.2014
+    },
+    {
+      "profile": "2x",
+      "variant": "capacity-matched longs",
+      "average_account_long_gross": 0.1967,
+      "average_account_short_gross": 0.2016
+    }
+  ],
+  "limitations": [
+    "Historical easy-to-borrow availability is unavailable.",
+    "Current-listing stock data remains survivorship-biased.",
+    "The simulator evaluates once per close rather than twice intraday."
+  ]
+}
