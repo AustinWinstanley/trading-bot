@@ -54,7 +54,11 @@ def clone_targets(cfg: Config, tradable: set[str]) -> dict[str, float]:
     return {s: w for s in names}
 
 
-def tsmom_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float]:
+def tsmom_targets(
+    cfg: Config,
+    bars: dict[str, pd.DataFrame],
+    held: frozenset[str] = frozenset(),
+) -> dict[str, float]:
     p = cfg.sleeves_paper
     sleeve = p["sleeves"]["tsmom"]
     lookback = int(p["tsmom_lookback_days"])
@@ -76,13 +80,28 @@ def tsmom_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     total = sum(signals.values())
     targets = {s: sleeve * v / total for s, v in signals.items()}
 
-    # Apply the same liquidity floor as the risk gate, using completed bars,
-    # after normalization. Dropping after weights are assigned deliberately
-    # leaves the rejected allocation in cash; redistributing it would change
-    # the strategy and has not passed the promotion gate. The risk gate still
-    # rechecks this independently at order time.
+    # Liquidity floor, using completed bars, after normalization. Dropping a
+    # NOT-currently-held symbol here leaves its allocation in cash — the gate
+    # rechecks the same floor independently at order time (on a window that
+    # includes today's partial bar, so it can be marginally stricter; this is
+    # a screen, not a guarantee of a fill either way) and simply rejects the
+    # buy, which is inert.
+    #
+    # A symbol already HELD is never dropped here. Removing it from targets
+    # would make the daily diff read "target 0" against a real position, and
+    # engine/risk.py lets every sell/cover through unconditionally (closing
+    # risk is never blocked) — so dropping a held name is not "stays in cash
+    # until liquidity returns", it is an unconditional forced exit that the
+    # gate cannot refuse, on a signal that only measures liquidity, not
+    # whether the position should be closed. That is a real strategy change
+    # (an exit rule) that no study has evaluated; keeping the target intact
+    # for held names preserves the pre-existing behavior (the gate can still
+    # reject a *buy* on this symbol, but a *sell* must come from an actual
+    # signal decision, not a liquidity dip).
     floor = float(p.get("tsmom_min_dollar_volume", 0.0))
     for sym in list(targets):
+        if sym in held:
+            continue
         df = bars[sym]
         if "volume" not in df or len(df) < 21:
             continue
@@ -138,8 +157,18 @@ def mom_ls_targets(cfg: Config) -> dict[str, float]:
     return out
 
 
-def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], dict]:
-    """Combined symbol -> weight, plus per-sleeve diagnostics."""
+def build_targets(
+    cfg: Config,
+    client: AlpacaClient,
+    held: frozenset[str] = frozenset(),
+) -> tuple[dict[str, float], dict]:
+    """Combined symbol -> weight, plus per-sleeve diagnostics.
+
+    `held` is the set of symbols currently in the broker account. It is used
+    only to exempt already-held TSMOM positions from the liquidity-floor
+    drop — see tsmom_targets' docstring/comment. An empty default keeps
+    every other caller (tests, studies with no live positions) unaffected.
+    """
     p = cfg.sleeves_paper
     lookback = int(p["tsmom_lookback_days"])
     need = sorted(set(p["tsmom_universe"]) | {p["trend_symbol"]})
@@ -163,7 +192,7 @@ def build_targets(cfg: Config, client: AlpacaClient) -> tuple[dict[str, float], 
 
     sleeves = {
         "equity_core": equity_core_targets(cfg),
-        "tsmom": tsmom_targets(cfg, bars),
+        "tsmom": tsmom_targets(cfg, bars, held),
         "trend": trend_targets(cfg, bars),
         "mom_ls": mom_ls_targets(cfg),
     }

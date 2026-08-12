@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 from engine.config import load_config
 from engine.data import REPO_ROOT, load_env
 from engine.execute import Trader
-from scripts.momentum_options_shadow import parse_option
+from scripts.momentum_options_shadow import MAX_PAGES, parse_option, run_slot
 
 ET = ZoneInfo("America/New_York")
 
@@ -70,7 +70,7 @@ def chain(client: Trader, spot: float, today: dt.date, last_event: dt.date) -> d
     snapshots = {}
     for kind in ("call", "put"):
         token = None
-        while True:
+        for _ in range(MAX_PAGES):
             params = {
                 "feed": "indicative", "type": kind,
                 "expiration_date_gte": today.isoformat(),
@@ -82,10 +82,19 @@ def chain(client: Trader, spot: float, today: dt.date, last_event: dt.date) -> d
                 params["page_token"] = token
             payload = client._get(client.data_base, "/v1beta1/options/snapshots/SPY", params)
             snapshots.update(payload.get("snapshots") or {})
-            token = payload.get("next_page_token")
-            if not token:
+            next_token = payload.get("next_page_token")
+            if not next_token or next_token == token:
                 break
+            token = next_token
     return snapshots
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, kind: str) -> None:
+    """Additive migration so an already-deployed table gains new columns
+    without losing rows — see scripts/options_shadow.py's _ensure_column."""
+    existing = {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
 
 
 def record(path: Path, row: dict) -> None:
@@ -99,13 +108,18 @@ def record(path: Path, row: dict) -> None:
                 straddle_debit REAL, implied_break_even_move_pct REAL, raw TEXT,
                 PRIMARY KEY(ts, event_name, event_date))
         """)
+        _ensure_column(conn, "observations", "run_slot", "TEXT")
         conn.execute(
-            "INSERT OR REPLACE INTO observations VALUES (" + ",".join("?" * 13) + ")",
+            "INSERT OR REPLACE INTO observations "
+            "(ts, profile, event_name, event_date, days_to_event, spot, "
+            "expiration_date, strike, call_symbol, put_symbol, straddle_debit, "
+            "implied_break_even_move_pct, raw, run_slot) "
+            "VALUES (" + ",".join("?" * 14) + ")",
             (row["ts"], row["profile"], row["event_name"], row["event_date"],
              row["days_to_event"], row["spot"], row["expiration_date"],
              row["strike"], row["call_symbol"], row["put_symbol"],
              row["straddle_debit"], row["implied_break_even_move_pct"],
-             json.dumps(row, sort_keys=True)),
+             json.dumps(row, sort_keys=True), row["run_slot"]),
         )
 
 
@@ -131,17 +145,34 @@ def main() -> None:
         return
     load_env()
     suffix = "_2X" if args.profile == "2x" else ""
-    client = Trader(key=os.environ.get("ALPACA_API_KEY" + suffix),
-                    secret=os.environ.get("ALPACA_API_SECRET" + suffix))
+    key = os.environ.get("ALPACA_API_KEY" + suffix)
+    secret = os.environ.get("ALPACA_API_SECRET" + suffix)
+    if suffix and not (key and secret):
+        # Trader() falls back to the unsuffixed ALPACA_API_KEY/SECRET when
+        # given None — silently recording "profile": "2x" rows sourced from
+        # the base account's equity/positions. Stand down loudly instead,
+        # matching scripts/run_daily.py's guard for the same failure mode.
+        print(f"CRITICAL: profile {args.profile} needs ALPACA_API_KEY{suffix} / "
+              f"ALPACA_API_SECRET{suffix} in .env — standing down")
+        raise SystemExit(1)
+    client = Trader(
+        key=key, secret=secret,
+        # Runs sequentially with other read-only collectors against a
+        # shared 200/min account budget; keep any single script well
+        # below that so it can never starve the others or a nearby
+        # trading job's own calls.
+        max_calls_per_min=40,
+    )
     spot = client.latest_price("SPY")
     if not spot:
         raise ValueError("SPY latest price unavailable")
     snapshots = chain(client, spot, today, max(date for _, date in events))
     out = REPO_ROOT / "state" / f"event_volatility_shadow_{args.profile}.db"
-    now = dt.datetime.now(ET).isoformat()
+    now_dt = dt.datetime.now(ET)
+    now = now_dt.isoformat()
     for name, date in events:
         row = select_atm_straddle(snapshots, spot=spot, event_date=date)
-        row.update(ts=now, profile=args.profile, event_name=name,
+        row.update(ts=now, profile=args.profile, event_name=name, run_slot=run_slot(now_dt),
                    event_date=date.isoformat(), days_to_event=(date - today).days,
                    spot=spot)
         record(out, row)

@@ -24,6 +24,35 @@ from engine.execute import Trader
 ET = ZoneInfo("America/New_York")
 OCC = re.compile(r"^SPY(?P<expiry>\d{6})P(?P<strike>\d{8})$")
 
+# Matches backtest/bull_put_credit_spread_study.py's FRICTION_PER_LEG and
+# round_trip_friction (4 legs: open+close on both the short and long leg).
+# The shadow's whole purpose is comparing live-quote feasibility against the
+# study's verdict; a shadow that omits the cost the study charges "qualifies"
+# trades the study would have rejected as over budget — see the recorded
+# 2026-08-12 observation, which read within_risk_budget=True at $492 when
+# the study's own formula puts it at $532, over the $500 budget.
+FRICTION_PER_LEG = 0.10
+ROUND_TRIP_FRICTION = 4 * FRICTION_PER_LEG
+
+# Belt-and-suspenders against an API that never advances (or echoes a
+# stable) page token — bounds worst-case pagination regardless of server
+# behavior. 20 pages * 1000 contracts/page comfortably covers any real
+# SPY chain in the strike/expiry windows these selectors query.
+MAX_PAGES = 20
+
+
+def run_slot(now: dt.datetime) -> str:
+    """Coarse tag for which of shadows2x's two daily firings produced a row.
+
+    A 0DTE/short-dated structure's risk profile differs meaningfully between
+    the morning and midday runs (different time-to-expiry, different
+    intraday vol regime); without this tag, review minima stated in
+    observation counts silently mix two regimes into one number. The cutoff
+    sits at the midpoint between the two scheduled shadows2x firings
+    (~10:06 and ~12:54 ET).
+    """
+    return "morning" if now.astimezone(ET).time() < dt.time(11, 30) else "midday"
+
 
 def parse_contract(symbol: str) -> tuple[dt.date, float] | None:
     match = OCC.match(symbol)
@@ -51,9 +80,12 @@ def select_quote_pair(
         expiry, strike = parsed
         if expiry.weekday() != 4 or not 15 <= expiry.day <= 21:
             continue
+        quote = snapshot.get("latestQuote") or {}
+        if not all(float(quote.get(k) or 0) > 0 for k in ("bp", "ap", "bs", "as")):
+            continue  # no displayed size on this leg's quote — not executable
         rows.append((symbol, expiry, strike, snapshot))
     if not rows:
-        raise ValueError("no standard-monthly SPY put snapshots")
+        raise ValueError("no standard-monthly SPY put snapshots with displayed size")
     expiry = min({r[1] for r in rows}, key=lambda d: abs((d - today).days - target_dte))
     same_expiry = [r for r in rows if r[1] == expiry]
     short = min(same_expiry, key=lambda r: abs(r[2] - spot * short_moneyness))
@@ -66,7 +98,7 @@ def select_quote_pair(
     short_bid = float(short_quote.get("bp") or 0)
     long_ask = float(long_quote.get("ap") or 0)
     executable_credit = short_bid - long_ask
-    maximum_loss = (width - executable_credit) * 100
+    maximum_loss = (width - executable_credit + ROUND_TRIP_FRICTION) * 100
     return {
         "expiration_date": expiry.isoformat(),
         "short_symbol": short[0],
@@ -107,9 +139,12 @@ def select_delta_quote_pair(
         expiry, strike = parsed
         if expiry.weekday() != 4 or not 15 <= expiry.day <= 21:
             continue
+        quote = snapshot.get("latestQuote") or {}
+        if not all(float(quote.get(k) or 0) > 0 for k in ("bp", "ap", "bs", "as")):
+            continue  # no displayed size on this leg's quote — not executable
         rows.append((symbol, expiry, strike, snapshot))
     if not rows:
-        raise ValueError("no standard-monthly SPY puts with Greeks")
+        raise ValueError("no standard-monthly SPY puts with Greeks and displayed size")
     expiry = min({r[1] for r in rows}, key=lambda d: abs((d - today).days - target_dte))
     same_expiry = [r for r in rows if r[1] == expiry]
     pairs = []
@@ -143,7 +178,7 @@ def select_delta_quote_pair(
         "long_delta": (long[3].get("greeks") or {}).get("delta"),
         "long_iv": long[3].get("impliedVolatility"),
         "executable_credit": executable_credit,
-        "maximum_loss": (width - executable_credit) * 100,
+        "maximum_loss": (width - executable_credit + ROUND_TRIP_FRICTION) * 100,
     }
 
 
@@ -166,9 +201,12 @@ def select_put_broken_wing(
         expiry, strike = parsed
         if expiry.weekday() != 4 or not 15 <= expiry.day <= 21:
             continue
+        quote = snapshot.get("latestQuote") or {}
+        if not all(float(quote.get(k) or 0) > 0 for k in ("bp", "ap", "bs", "as")):
+            continue  # no displayed size on this leg's quote — not executable
         rows.append((symbol, expiry, strike, snapshot))
     if not rows:
-        raise ValueError("no standard-monthly puts for broken-wing butterfly")
+        raise ValueError("no standard-monthly puts with displayed size for broken-wing butterfly")
     expiry = min({r[1] for r in rows}, key=lambda d: abs((d - today).days - target_dte))
     same_expiry = [r for r in rows if r[1] == expiry]
     structures = []
@@ -194,6 +232,12 @@ def select_put_broken_wing(
     net_debit = upper_ask + lower_ask - 2 * middle_bid
     peak_profit = (upper_width - net_debit) * 100
     downside_loss = (lower_width - upper_width + net_debit) * 100
+    # Unlike select_quote_pair/select_delta_quote_pair above, this does NOT
+    # add ROUND_TRIP_FRICTION: no backtest study establishes a friction
+    # convention for this 4-leg structure (the $0.40 figure comes from
+    # backtest/bull_put_credit_spread_study.py's 2-leg spread), and inventing
+    # one here would be no more justified than omitting it. Treat this
+    # max_loss as a lower bound until a butterfly study exists.
     maximum_loss = max(net_debit * 100, downside_loss, 0.0)
     return {
         "expiration_date": expiry.isoformat(),
@@ -227,7 +271,7 @@ def select_put_broken_wing(
 def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
     snapshots = {}
     token = None
-    while True:
+    for _ in range(MAX_PAGES):
         params = {
             "feed": "indicative",
             "type": "put",
@@ -241,9 +285,11 @@ def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
             params["page_token"] = token
         payload = client._get(client.data_base, "/v1beta1/options/snapshots/SPY", params)
         snapshots.update(payload.get("snapshots") or {})
-        token = payload.get("next_page_token")
-        if not token:
+        next_token = payload.get("next_page_token")
+        if not next_token or next_token == token:
             return snapshots
+        token = next_token
+    return snapshots
 
 
 def signal_state(client: Trader, today: dt.date) -> dict:
@@ -265,6 +311,16 @@ def signal_state(client: Trader, today: dt.date) -> dict:
     }
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, kind: str) -> None:
+    """Additive migration so an already-deployed table gains new columns
+    without losing rows — CREATE TABLE IF NOT EXISTS alone does nothing for
+    a table that already exists with an older schema. Mirrors
+    scripts/run_daily.py's db() migration pattern."""
+    existing = {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+
+
 def record(path: Path, row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as conn:
@@ -280,8 +336,16 @@ def record(path: Path, row: dict) -> None:
                 long_quote_ts TEXT, executable_credit REAL, maximum_loss REAL,
                 within_risk_budget INTEGER, raw TEXT)
         """)
+        _ensure_column(conn, "observations", "run_slot", "TEXT")
         conn.execute(
-            "INSERT OR REPLACE INTO observations VALUES (" + ",".join("?" * 28) + ")",
+            "INSERT OR REPLACE INTO observations "
+            "(ts, profile, spot, account_equity, options_buying_power, "
+            "signal_enabled, spy_prior_close, spy_ma_200, realized_vol_20d, "
+            "expiration_date, short_symbol, short_strike, short_bid, short_ask, "
+            "short_delta, short_iv, short_quote_ts, long_symbol, long_strike, "
+            "long_bid, long_ask, long_delta, long_iv, long_quote_ts, "
+            "executable_credit, maximum_loss, within_risk_budget, raw, run_slot) "
+            "VALUES (" + ",".join("?" * 29) + ")",
             (
                 row["ts"], row["profile"], row["spot"], row["account_equity"],
                 row["options_buying_power"], int(row["signal_enabled"]),
@@ -292,6 +356,7 @@ def record(path: Path, row: dict) -> None:
                 row["long_bid"], row["long_ask"], row["long_delta"], row["long_iv"],
                 row["long_quote_ts"], row["executable_credit"], row["maximum_loss"],
                 int(row["within_risk_budget"]), json.dumps(row, sort_keys=True),
+                row["run_slot"],
             ),
         )
 
@@ -312,9 +377,15 @@ def record_candidate(path: Path, strategy: str, row: dict) -> None:
                 qualified INTEGER, raw TEXT,
                 PRIMARY KEY(ts, strategy))
         """)
+        _ensure_column(conn, "candidate_observations", "run_slot", "TEXT")
         conn.execute(
-            "INSERT OR REPLACE INTO candidate_observations VALUES (" +
-            ",".join("?" * 20) + ")",
+            "INSERT OR REPLACE INTO candidate_observations "
+            "(ts, strategy, profile, spot, account_equity, options_buying_power, "
+            "signal_enabled, expiration_date, short_symbol, short_strike, "
+            "short_delta, long_symbol, long_strike, executable_credit, "
+            "maximum_loss, credit_pct_of_width, within_risk_budget, "
+            "credit_qualified, qualified, raw, run_slot) "
+            "VALUES (" + ",".join("?" * 21) + ")",
             (
                 row["ts"], strategy, row["profile"], row["spot"],
                 row["account_equity"], row["options_buying_power"],
@@ -324,7 +395,7 @@ def record_candidate(path: Path, strategy: str, row: dict) -> None:
                 row["executable_credit"], row["maximum_loss"],
                 row["credit_pct_of_width"], int(row["within_risk_budget"]),
                 int(row["credit_qualified"]), int(row["qualified"]),
-                json.dumps(row, sort_keys=True),
+                json.dumps(row, sort_keys=True), row["run_slot"],
             ),
         )
 
@@ -345,9 +416,23 @@ def main() -> None:
 
     load_env()
     suffix = "_2X" if args.profile == "2x" else ""
+    key = os.environ.get("ALPACA_API_KEY" + suffix)
+    secret = os.environ.get("ALPACA_API_SECRET" + suffix)
+    if suffix and not (key and secret):
+        # Trader() falls back to the unsuffixed ALPACA_API_KEY/SECRET when
+        # given None — silently recording "profile": "2x" rows sourced from
+        # the base account's equity/positions. Stand down loudly instead,
+        # matching scripts/run_daily.py's guard for the same failure mode.
+        print(f"CRITICAL: profile {args.profile} needs ALPACA_API_KEY{suffix} / "
+              f"ALPACA_API_SECRET{suffix} in .env — standing down")
+        raise SystemExit(1)
     client = Trader(
-        key=os.environ.get("ALPACA_API_KEY" + suffix),
-        secret=os.environ.get("ALPACA_API_SECRET" + suffix),
+        key=key, secret=secret,
+        # Runs sequentially with other read-only collectors against a
+        # shared 200/min account budget; keep any single script well
+        # below that so it can never starve the others or a nearby
+        # trading job's own calls.
+        max_calls_per_min=40,
     )
     now = dt.datetime.now(ET)
     today = now.date()
@@ -369,6 +454,7 @@ def main() -> None:
     row = {
         "ts": now.isoformat(),
         "profile": args.profile,
+        "run_slot": run_slot(now),
         "spot": spot,
         "account_equity": equity,
         "options_buying_power": float(account.get("options_buying_power") or 0),

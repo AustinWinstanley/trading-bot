@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 from engine.config import load_config
 from engine.data import REPO_ROOT, load_env
 from engine.execute import Trader
-from scripts.momentum_options_shadow import parse_option
+from scripts.momentum_options_shadow import MAX_PAGES, parse_option, run_slot
 
 ET = ZoneInfo("America/New_York")
 
@@ -87,7 +87,7 @@ def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
     snapshots = {}
     for kind in ("call", "put"):
         token = None
-        while True:
+        for _ in range(MAX_PAGES):
             params = {
                 "feed": "indicative", "type": kind,
                 "expiration_date": today.isoformat(),
@@ -101,10 +101,19 @@ def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
                 client.data_base, "/v1beta1/options/snapshots/SPY", params
             )
             snapshots.update(payload.get("snapshots") or {})
-            token = payload.get("next_page_token")
-            if not token:
+            next_token = payload.get("next_page_token")
+            if not next_token or next_token == token:
                 break
+            token = next_token
     return snapshots
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, kind: str) -> None:
+    """Additive migration so an already-deployed table gains new columns
+    without losing rows — see scripts/options_shadow.py's _ensure_column."""
+    existing = {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
 
 
 def record(path: Path, row: dict) -> None:
@@ -118,12 +127,17 @@ def record(path: Path, row: dict) -> None:
                 structure_qualified INTEGER, directional_enabled INTEGER,
                 raw TEXT)
         """)
+        _ensure_column(conn, "observations", "run_slot", "TEXT")
         conn.execute(
-            "INSERT OR REPLACE INTO observations VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO observations "
+            "(ts, profile, spot, atm_straddle_ask, executable_credit, "
+            "credit_pct_of_width, maximum_loss, structure_qualified, "
+            "directional_enabled, raw, run_slot) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (row["ts"], row["profile"], row["spot"], row["atm_straddle_ask"],
              row["executable_credit"], row["credit_pct_of_width"],
              row["maximum_loss"], int(row["structure_qualified"]),
-             int(row["directional_enabled"]), json.dumps(row, sort_keys=True)),
+             int(row["directional_enabled"]), json.dumps(row, sort_keys=True),
+             row["run_slot"]),
         )
 
 
@@ -139,9 +153,23 @@ def main() -> None:
         print("0DTE shadow off")
         return
     load_env()
+    key = os.environ.get("ALPACA_API_KEY_2X")
+    secret = os.environ.get("ALPACA_API_SECRET_2X")
+    if not (key and secret):
+        # Trader() falls back to the unsuffixed ALPACA_API_KEY/SECRET when
+        # given None — silently recording "profile": "2x" rows sourced from
+        # the base account's equity/positions. Stand down loudly instead,
+        # matching scripts/run_daily.py's guard for the same failure mode.
+        print("CRITICAL: profile 2x needs ALPACA_API_KEY_2X / "
+              "ALPACA_API_SECRET_2X in .env — standing down")
+        raise SystemExit(1)
     client = Trader(
-        key=os.environ.get("ALPACA_API_KEY_2X"),
-        secret=os.environ.get("ALPACA_API_SECRET_2X"),
+        key=key, secret=secret,
+        # Runs sequentially with other read-only collectors against a
+        # shared 200/min account budget; keep any single script well
+        # below that so it can never starve the others or a nearby
+        # trading job's own calls.
+        max_calls_per_min=40,
     )
     today = dt.datetime.now(ET).date()
     spot = client.latest_price("SPY")
@@ -159,8 +187,10 @@ def main() -> None:
         # four-leg market. Missing evidence is not a trading-run failure.
         print(f"0DTE shadow: no valid quoted structure ({exc})")
         return
+    now_dt = dt.datetime.now(ET)
     row.update(
-        ts=dt.datetime.now(ET).isoformat(), profile=args.profile, spot=spot,
+        ts=now_dt.isoformat(), profile=args.profile, spot=spot,
+        run_slot=run_slot(now_dt),
         directional_enabled=bool(settings.get("directional_enabled", False)),
     )
     equity = float(account["equity"])

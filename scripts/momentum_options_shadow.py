@@ -27,6 +27,17 @@ OCC = re.compile(
     r"^(?P<root>[A-Z]+)(?P<expiry>\d{6})(?P<kind>[CP])(?P<strike>\d{8})$"
 )
 
+# Belt-and-suspenders against an API that never advances (or echoes a
+# stable) page token — bounds worst-case pagination regardless of server
+# behavior.
+MAX_PAGES = 20
+
+
+def run_slot(now: dt.datetime) -> str:
+    """Coarse tag for which of shadows2x's two daily firings produced a row —
+    see scripts/options_shadow.py's run_slot for the full rationale."""
+    return "morning" if now.astimezone(ET).time() < dt.time(11, 30) else "midday"
+
 
 def parse_option(symbol: str) -> tuple[str, dt.date, str, float] | None:
     match = OCC.match(symbol)
@@ -50,7 +61,7 @@ def option_chain(
 ) -> dict:
     snapshots = {}
     token = None
-    while True:
+    for _ in range(MAX_PAGES):
         params = {
             "feed": "indicative",
             "type": kind,
@@ -66,9 +77,11 @@ def option_chain(
             client.data_base, f"/v1beta1/options/snapshots/{symbol}", params
         )
         snapshots.update(payload.get("snapshots") or {})
-        token = payload.get("next_page_token")
-        if not token:
+        next_token = payload.get("next_page_token")
+        if not next_token or next_token == token:
             return snapshots
+        token = next_token
+    return snapshots
 
 
 def select_directional_vertical(
@@ -140,6 +153,14 @@ def select_directional_vertical(
     }
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, kind: str) -> None:
+    """Additive migration so an already-deployed table gains new columns
+    without losing rows — see scripts/options_shadow.py's _ensure_column."""
+    existing = {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+
+
 def record(path: Path, row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as conn:
@@ -153,8 +174,14 @@ def record(path: Path, row: dict) -> None:
                 reward_to_risk REAL, qualified INTEGER, reason TEXT, raw TEXT,
                 PRIMARY KEY(ts, rank_side))
         """)
+        _ensure_column(conn, "observations", "run_slot", "TEXT")
         conn.execute(
-            "INSERT OR REPLACE INTO observations VALUES (" + ",".join("?" * 20) + ")",
+            "INSERT OR REPLACE INTO observations "
+            "(ts, profile, rank_side, rank, underlying, direction, "
+            "expiration_date, long_symbol, long_strike, long_delta, "
+            "short_symbol, short_strike, short_delta, net_debit, "
+            "maximum_profit, maximum_loss, reward_to_risk, qualified, "
+            "reason, raw, run_slot) VALUES (" + ",".join("?" * 21) + ")",
             (
                 row["ts"], row["profile"], row["rank_side"], row["rank"],
                 row["underlying"], row["direction"], row["expiration_date"],
@@ -162,7 +189,7 @@ def record(path: Path, row: dict) -> None:
                 row["short_symbol"], row["short_strike"], row["short_delta"],
                 row["net_debit"], row["maximum_profit"], row["maximum_loss"],
                 row["reward_to_risk"], int(row["qualified"]), row["reason"],
-                json.dumps(row, sort_keys=True),
+                json.dumps(row, sort_keys=True), row["run_slot"],
             ),
         )
 
@@ -192,13 +219,28 @@ def main() -> None:
 
     load_env()
     suffix = "_2X" if args.profile == "2x" else ""
+    key = os.environ.get("ALPACA_API_KEY" + suffix)
+    secret = os.environ.get("ALPACA_API_SECRET" + suffix)
+    if suffix and not (key and secret):
+        # Trader() falls back to the unsuffixed ALPACA_API_KEY/SECRET when
+        # given None — silently recording "profile": "2x" rows sourced from
+        # the base account's equity/positions. Stand down loudly instead,
+        # matching scripts/run_daily.py's guard for the same failure mode.
+        print(f"CRITICAL: profile {args.profile} needs ALPACA_API_KEY{suffix} / "
+              f"ALPACA_API_SECRET{suffix} in .env — standing down")
+        raise SystemExit(1)
     client = Trader(
-        key=os.environ.get("ALPACA_API_KEY" + suffix),
-        secret=os.environ.get("ALPACA_API_SECRET" + suffix),
+        key=key, secret=secret,
+        # Runs sequentially with other read-only collectors against a
+        # shared 200/min account budget; keep any single script well
+        # below that so it can never starve the others or a nearby
+        # trading job's own calls.
+        max_calls_per_min=40,
     )
     account = client.get_account()
     equity = float(account["equity"])
-    now = dt.datetime.now(ET).isoformat()
+    now_dt = dt.datetime.now(ET)
+    now = now_dt.isoformat()
     output = REPO_ROOT / "state" / f"momentum_options_shadow_{args.profile}.db"
     attempts = int(settings["max_rank_attempts_per_side"])
     for rank_side, symbols, direction, kind in (
@@ -228,7 +270,7 @@ def main() -> None:
         if selected is None:
             print(f"momentum options {rank_side}: no candidate ({'; '.join(errors)})")
             continue
-        selected.update(ts=now, profile=args.profile)
+        selected.update(ts=now, profile=args.profile, run_slot=run_slot(now_dt))
         selected["qualified"] = bool(
             0 < selected["maximum_loss"]
             <= equity * float(settings["max_debit_pct"])
