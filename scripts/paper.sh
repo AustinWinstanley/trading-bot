@@ -68,6 +68,8 @@ esac
       if [ "$daily_rc" -eq 0 ]; then
         timeout 120 .venv/bin/python -m scripts.options_shadow --profile 2x ||
           echo "WARNING: read-only options shadow failed; trading run succeeded"
+        timeout 180 .venv/bin/python -m scripts.momentum_options_shadow --profile 2x ||
+          echo "WARNING: read-only momentum-options shadow failed; trading run succeeded"
       fi
       if [ "$daily_rc" -eq 0 ]; then true; else false; fi
       ;;
