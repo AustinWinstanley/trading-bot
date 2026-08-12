@@ -343,6 +343,15 @@ notional, and reports progress toward the frozen 100-pair control minimum. It
 never changes cron automatically; reaching the threshold only authorizes a
 separately reviewed 20-session candidate schedule.
 
+A point-in-time Alpaca/Benzinga news audit found 147,305 articles from
+2026-01-01 through 2026-07-31 with 100% usable first-publication timestamps.
+A deterministic, preview-excluding label identified 11,102 unique
+single-symbol earnings-result events across 3,766 symbols, comfortably passing
+the pre-registered feasibility bar for a news-conditioned event study. This
+does **not** validate true PEAD: the feed has no versioned pre-announcement
+consensus estimates, so it cannot calculate standardized earnings surprise.
+Raw vendor news is cached locally and gitignored.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.
