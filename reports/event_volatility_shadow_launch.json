@@ -1,0 +1,27 @@
+{
+  "decision": "collect_shadow",
+  "strategy": "SPY at-the-money straddle debit observed ahead of scheduled CPI/FOMC releases",
+  "pre_registration": {
+    "account_profile": "2x paper",
+    "mode": "read-only shadow",
+    "observation_window_days": 10,
+    "events": "Hardcoded CPI/FOMC calendar dates in config_2x.yaml's options_experiments.event_volatility.events, through 2026-12-10.",
+    "minimum_observations_before_review": 20,
+    "minimum_independent_events_before_review": 4
+  },
+  "hypothesis": "Implied break-even move priced into the ATM straddle ahead of a scheduled macro release can be compared, after the fact, to the realized move — a volatility-premium question, distinct from and not requiring any directional view.",
+  "known_gaps": [
+    "The event calendar is a fixed list of dates, not a live feed — it silently stops producing observations after 2026-12-10 with no error, no CRITICAL line, and no cron-visible signal. Whoever next extends config_2x.yaml's events list should treat 'no observations in a while' as potentially this, not necessarily a broken collector (see scripts/weekly.py's summarize_event_volatility_shadow, which checks staleness against the most recent observation rather than a rolling window for exactly this reason).",
+    "The observation window is inclusive of the event day itself (0 <= days_to_event <= window), so an observation taken after a pre-market release has already happened would still be recorded as 'ahead of' that event unless the collector happens to run only pre-market that day. Worth double-checking before treating a same-day observation as a true pre-event snapshot."
+  ],
+  "promotion_policy": [
+    "A recorded observation is quote/price data only and can never submit an order.",
+    "Review after at least 20 observations spanning at least four independent scheduled events, given how sparse the calendar is (a handful of CPI/FOMC dates per quarter) — a much longer collection period than the near-daily shadows.",
+    "No paper-active path is defined yet; this shadow exists to determine whether event-conditioned implied vol is even mispriced relative to realized moves before any strategy is designed around it."
+  ],
+  "limitations": [
+    "The free indicative options feed modifies quotes and may not represent an executable OPRA market.",
+    "A single straddle snapshot says nothing about the realized move until the event has actually occurred and been observed separately.",
+    "The event list requires manual maintenance; it is not sourced from a calendar API."
+  ]
+}

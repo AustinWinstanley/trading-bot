@@ -108,7 +108,7 @@ actual delisting proceeds are unavailable, so this reduces rather than removes
 the uncertainty.
 
 A whole-share capacity study also modeled the actual $10,000 account sizes.
-The base account realizes only 9.14% average short exposure versus its 15%
+The base account realizes only 9.18% average short exposure versus its 15%
 target because 25.0% of ranked shorts round below one share. The 2× account
 realizes 25.04% versus 30%, with 3.9% rounding to zero:
 
@@ -133,6 +133,22 @@ worsened from -12.54% to -14.06% in base and from -22.99% to -27.03% in 2×.
 Five- and fifteen-name sensitivity checks also failed to dominate. Production
 therefore remains at twenty names per side; fixing capacity by concentrating
 the signal introduces more risk than the recovered short exposure earns.
+
+**These two paragraphs report two different numbers for the same nominal
+quantity** (base short gross for the deployed twenty-name construction):
+9.18% above from `short_capacity_study.py`, 7.41% here from
+`backtest/deployable_momentum.py` (a separate simulator, built later).
+`deployable_momentum.py` has not been checked to reproduce
+`short_capacity_study.py`'s control, which AGENTS.md's own research
+convention requires before trusting a reimplementation's variants — treat
+7.41%/9.85% as unreconciled against the figures above until that check
+exists. Neither backtest number matches the live paper journals either: the
+base account's actual realized short gross was 6.13% as of 2026-08-12,
+lower than both estimates. All three are measuring related but distinct
+things (two backtest constructions over different windows, one realized
+figure from actual fills), and the gap between them is itself informative —
+whole-share rounding at $10k equity is evidently costlier in practice than
+either backtest fully captures.
 
 A 5,000-path, 63-session block bootstrap puts useful ranges around those point
 estimates. With the deliberately severe universal-zero delisting drag applied:

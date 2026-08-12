@@ -95,6 +95,44 @@ not a return study, and the 0DTE surface collector is read-only observation.
 **Check `reports/*.json` for an existing `decision` before proposing a
 change.** Overriding one needs new evidence, not a fresh opinion.
 
+### The 2026-08-04 frozen window was substantially spent by 2026-08-12
+
+An audit of the 2026-08-12 campaign found the freeze above was honored in
+letter more often than in spirit. Two concrete violations, both since
+addressed:
+
+- The execution-timing experiment generated its hypothesis from the frozen
+  live journal, measured its effect on that same frozen data, revised its
+  matching methodology after seeing an interim result computed on it, and
+  set its promotion threshold below an already-observed effect size — four
+  of the policy's five prohibitions in one candidate.
+- A live `engine/portfolio.py` liquidity-floor change was made in direct
+  response to FXE's behavior observed only in the frozen paper journal,
+  before any study of the *shipped* variant existed (the backing study
+  tested a different, pre-normalization construction and had zero
+  discriminating power on the cached data — see
+  `reports/tsmom_liquidity_alignment_study.json`'s `no_effect`/
+  `all_no_effect` fields).
+
+More broadly: the entire 2026-08-12 equity-side candidate slate (breadth,
+capacity-matching, target restoration) was *sourced* from reading the frozen
+window's rejection/loss patterns. Each individual study then correctly
+avoided tuning on 2026-08-04+ data — but candidate selection is itself a
+researcher degree of freedom, and nothing in the record flags that the
+candidates themselves were chosen by looking at the window meant to
+validate them. This doesn't make those studies' conclusions wrong; it means
+their eventual validation against 2026-08-04..08-12 specifically would be
+partly circular.
+
+**2026-08-13 onward is the new frozen final-validation window.**
+2026-08-04 through 2026-08-12 is demoted to screening status — usable the
+way `early_2020_2022`/`heldout_2023_plus` are used (a bar a candidate must
+clear, not evidence on its own), but no longer treated as untouched. The
+same prohibitions apply to the new window: no study may tune its
+methodology, thresholds, or candidate variant on 2026-08-13+ data, and
+candidate *selection* should be justified independently of what that window
+shows before it accrues meaningfully, not reverse-engineered from it.
+
 Campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`.
 
 ### The cross-sectional panel has no COVID-crash coverage
