@@ -9,6 +9,7 @@ these tests exercise the same open_ro() codepath production uses.
 
 from __future__ import annotations
 
+import datetime as dt
 import shutil
 import sqlite3
 from pathlib import Path
@@ -44,19 +45,21 @@ CREATE TABLE leverage_recommendations(
 """
 
 def _build_journal(db_path: Path) -> None:
+    today = dt.date.today()
+    dates = [(today - dt.timedelta(days=offset)).isoformat() for offset in (2, 1, 0)]
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA)
 
     conn.executemany(
         "INSERT INTO snapshots VALUES (?,?,?,?,?)",
         [
-            ("2026-08-01T09:47:00-04:00", 10000.0, 3000.0,
+            (f"{dates[0]}T09:47:00-04:00", 10000.0, 3000.0,
              '{"SPY": {"qty": 10, "px": 700.0}, "AAOI": {"qty": 5, "px": 100.0}}',
              '{"origin": {"SPY": "equity_core+trend", "AAOI": "mom_ls"}}'),
-            ("2026-08-02T09:47:00-04:00", 10200.0, 3200.0,
+            (f"{dates[1]}T09:47:00-04:00", 10200.0, 3200.0,
              '{"SPY": {"qty": 10, "px": 714.0}, "AAOI": {"qty": 5, "px": 102.0}}',
              '{"origin": {"SPY": "equity_core+trend", "AAOI": "mom_ls"}}'),
-            ("2026-08-03T09:47:00-04:00", 10500.0, 3500.0,
+            (f"{dates[2]}T09:47:00-04:00", 10500.0, 3500.0,
              '{"SPY": {"qty": 10, "px": 730.0}, "AAOI": {"qty": 5, "px": 104.0}}',
              '{"origin": {"SPY": "equity_core+trend", "AAOI": "mom_ls"}}'),
         ],
@@ -67,31 +70,31 @@ def _build_journal(db_path: Path) -> None:
         "reference_price, filled_qty, filled_avg_price, filled_at) "
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         [
-            ("2026-08-03T09:47:01-04:00", "SPY", "buy", "equity_core+trend", 1, 730.0,
+            (f"{dates[2]}T09:47:01-04:00", "SPY", "buy", "equity_core+trend", 1, 730.0,
              731.0, 0.0, "clean", "id-1", "filled", 730.0, 730.0, 1.0, 730.5,
-             "2026-08-03T09:47:05-04:00"),
-            ("2026-08-03T09:47:02-04:00", "AAOI", "buy", "mom_ls", 1, 104.0,
+             f"{dates[2]}T09:47:05-04:00"),
+            (f"{dates[2]}T09:47:02-04:00", "AAOI", "buy", "mom_ls", 1, 104.0,
              105.0, 0.0, "clean", "id-2", "filled", 104.0, 104.0, 1.0, 104.2,
-             "2026-08-03T09:47:06-04:00"),
+             f"{dates[2]}T09:47:06-04:00"),
         ],
     )
     conn.executemany(
         "INSERT INTO rejections(ts, symbol, reason, sleeve, side, requested_notional) "
         "VALUES (?,?,?,?,?,?)",
         [
-            ("2026-08-03T09:47:00-04:00", "FOO", "price 3.21 below minimum 5.00", "mom_ls", "buy", 75.0),
-            ("2026-08-03T09:47:00-04:00", "BAR", "price 4.10 below minimum 5.00", "mom_ls", "buy", 75.0),
-            ("2026-08-03T09:47:00-04:00", "BAZ", "short notional 12.30 rounds below 1 whole share", "mom_ls", "short", 75.0),
+            (f"{dates[2]}T09:47:00-04:00", "FOO", "price 3.21 below minimum 5.00", "mom_ls", "buy", 75.0),
+            (f"{dates[2]}T09:47:00-04:00", "BAR", "price 4.10 below minimum 5.00", "mom_ls", "buy", 75.0),
+            (f"{dates[2]}T09:47:00-04:00", "BAZ", "short notional 12.30 rounds below 1 whole share", "mom_ls", "short", 75.0),
         ],
     )
     conn.execute(
         "INSERT INTO stops VALUES (?,?,?,?,?)",
-        ("SPY", 620.0, 700.0, "2026-08-01", "broker"),
+        ("SPY", 620.0, 700.0, dates[0], "broker"),
     )
     conn.execute(
         "INSERT INTO attribution_snapshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
-            "2026-08-03T09:47:07-04:00", 10500.0,
+            f"{dates[2]}T09:47:07-04:00", 10500.0,
             0.6, 0.15, 0.75, 0.58, 0.10, 0.68,
             "{}",
             '{"equity_core+trend": {"long": 0.58, "short": 0.0, "net": 0.58, '
@@ -103,7 +106,7 @@ def _build_journal(db_path: Path) -> None:
     conn.execute(
         "INSERT INTO leverage_recommendations VALUES (?,?,?,?,?,?,?,?,?,?)",
         (
-            "2026-08-03T09:47:07-04:00", "base", "shadow", 40,
+            f"{dates[2]}T09:47:07-04:00", "base", "shadow", 40,
             0.12, 0.15, 0.8, 0.8, 1, "shadow recommendation only",
         ),
     )
@@ -124,13 +127,15 @@ def repo_root(tmp_path: Path) -> Path:
     state = tmp_path / "state"
     state.mkdir()
     _build_journal(state / "paper.db")
+    today = dt.date.today()
+    loss_date = (today - dt.timedelta(days=2)).isoformat()
     (state / "risk_state.json").write_text(
         '{"peak_equity": 10500.0, "month": "2026-08", "month_start_equity": 10000.0, '
-        '"day": "2026-08-03", "day_start_equity": 10400.0, '
-        '"recent_losses": {"XYZ": "2026-08-01"}, "halted": false}'
+        f'"day": "{today.isoformat()}", "day_start_equity": 10400.0, '
+        f'"recent_losses": {{"XYZ": "{loss_date}"}}, "halted": false}}'
     )
     (state / "health_status.json").write_text(
-        '{"ts": "2026-08-03T09:47:08-04:00", "healthy": true, "problems": [], '
+        f'{{"ts": "{today.isoformat()}T09:47:08-04:00", "healthy": true, "problems": [], '
         '"equity": 10500.0, "positions": 2, "open_orders": 0}'
     )
     return tmp_path

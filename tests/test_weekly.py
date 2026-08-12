@@ -41,10 +41,22 @@ def test_short_slot_handles_missing_db(tmp_path, monkeypatch):
 
 def _run_slot(slot, tmp_path):
     """Run paper.sh with an unknown job so nothing trades; rc 2 means it got past the guard."""
+    # macOS does not ship util-linux flock. A successful stub lets this test
+    # isolate the ET slot guard and unknown-job dispatch without depending on
+    # the developer machine's package set; production still uses real flock.
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir(exist_ok=True)
+    fake_flock = fake_bin / "flock"
+    fake_flock.write_text("#!/bin/sh\nexit 0\n")
+    fake_flock.chmod(0o755)
     proc = subprocess.run(
         [str(PAPER_SH), "__notajob__", slot],
         capture_output=True,
-        env={"PATH": "/usr/bin:/bin", "PAPER_LOG_DIR": str(tmp_path)},
+        env={
+            "PATH": f"{fake_bin}:/usr/bin:/bin",
+            "PAPER_LOG_DIR": str(tmp_path),
+            "PAPER_BOT_ROOT": str(weekly.REPO_ROOT),
+        },
     )
     lock = weekly.REPO_ROOT / "state" / "paper-__notajob__.lock"
     lock.unlink(missing_ok=True)
