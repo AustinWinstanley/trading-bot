@@ -359,6 +359,13 @@ same-session exit, 2 bp per leg primary ETF cost, and 5 bp per leg stress. The
 per ETF. It is an IEX screening panel, not consolidated SIP data, and it does
 not contain the 2020 or 2022 stress regimes.
 
+Four fixed intraday families were screened without a parameter grid. Opening-
+range continuation, VWAP mean reversion, and gap continuation lost after 5 bp
+per leg in every ETF/window cell. Compression breakout was positive only in
+IWM, with 18 and 24 trades—below the 30-trade minimum—and lost on SPY/QQQ. No
+family qualified for option translation; changing thresholds after this result
+would be tuning, not independent evidence.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.
