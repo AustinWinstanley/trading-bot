@@ -1,0 +1,273 @@
+{
+  "decision": "reject",
+  "pre_registration": {
+    "objective_class": "return_enhancer",
+    "control": "Live no-averaging gate with weekly ranks, daily 20%/$25 drift band, fractional longs and whole-share shorts.",
+    "candidate": "Permit increases in a losing incumbent only up to its unchanged systematic target.",
+    "promotion_rule": "Higher Sharpe, no lower CAGR and no worse max drawdown in both profiles and both screening windows."
+  },
+  "promotion_gate": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": true,
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.713,
+          "candidate_sharpe": 0.727,
+          "control_cagr": 0.0756,
+          "candidate_cagr": 0.0777,
+          "control_max_dd": -0.1254,
+          "candidate_max_dd": -0.1235,
+          "d_sharpe": 0.014,
+          "d_cagr": 0.0021,
+          "d_max_dd": 0.0019
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.616,
+          "candidate_sharpe": 0.623,
+          "control_cagr": 0.1172,
+          "candidate_cagr": 0.1199,
+          "control_max_dd": -0.2299,
+          "candidate_max_dd": -0.2359,
+          "d_sharpe": 0.007,
+          "d_cagr": 0.0027,
+          "d_max_dd": -0.006
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.297,
+          "candidate_sharpe": 1.303,
+          "control_cagr": 0.1658,
+          "candidate_cagr": 0.1697,
+          "control_max_dd": -0.1413,
+          "candidate_max_dd": -0.145,
+          "d_sharpe": 0.006,
+          "d_cagr": 0.0039,
+          "d_max_dd": -0.0037
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.042,
+          "candidate_sharpe": 1.056,
+          "control_cagr": 0.2518,
+          "candidate_cagr": 0.2603,
+          "control_max_dd": -0.2661,
+          "candidate_max_dd": -0.2721,
+          "d_sharpe": 0.014,
+          "d_cagr": 0.0085,
+          "d_max_dd": -0.006
+        }
+      }
+    ]
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 live no-averaging control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0756,
+        "ann_return": 0.0787,
+        "vol": 0.1103,
+        "sharpe": 0.713,
+        "sortino": 0.99,
+        "max_dd": -0.1254,
+        "x_money": 1.193,
+        "profile": "base",
+        "variant": "live no-averaging control"
+      },
+      {
+        "portfolio": "base \u2014 systematic target restoration",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0777,
+        "ann_return": 0.0807,
+        "vol": 0.111,
+        "sharpe": 0.727,
+        "sortino": 1.009,
+        "max_dd": -0.1235,
+        "x_money": 1.199,
+        "profile": "base",
+        "variant": "systematic target restoration"
+      },
+      {
+        "portfolio": "2x \u2014 live no-averaging control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1172,
+        "ann_return": 0.1342,
+        "vol": 0.2179,
+        "sharpe": 0.616,
+        "sortino": 0.857,
+        "max_dd": -0.2299,
+        "x_money": 1.308,
+        "profile": "2x",
+        "variant": "live no-averaging control"
+      },
+      {
+        "portfolio": "2x \u2014 systematic target restoration",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1199,
+        "ann_return": 0.137,
+        "vol": 0.2199,
+        "sharpe": 0.623,
+        "sortino": 0.867,
+        "max_dd": -0.2359,
+        "x_money": 1.316,
+        "profile": "2x",
+        "variant": "systematic target restoration"
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 live no-averaging control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1658,
+        "ann_return": 0.162,
+        "vol": 0.1249,
+        "sharpe": 1.297,
+        "sortino": 1.806,
+        "max_dd": -0.1413,
+        "x_money": 1.723,
+        "profile": "base",
+        "variant": "live no-averaging control"
+      },
+      {
+        "portfolio": "base \u2014 systematic target restoration",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1697,
+        "ann_return": 0.1656,
+        "vol": 0.1271,
+        "sharpe": 1.303,
+        "sortino": 1.813,
+        "max_dd": -0.145,
+        "x_money": 1.744,
+        "profile": "base",
+        "variant": "systematic target restoration"
+      },
+      {
+        "portfolio": "2x \u2014 live no-averaging control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2518,
+        "ann_return": 0.2559,
+        "vol": 0.2455,
+        "sharpe": 1.042,
+        "sortino": 1.447,
+        "max_dd": -0.2661,
+        "x_money": 2.219,
+        "profile": "2x",
+        "variant": "live no-averaging control"
+      },
+      {
+        "portfolio": "2x \u2014 systematic target restoration",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2603,
+        "ann_return": 0.2637,
+        "vol": 0.2498,
+        "sharpe": 1.056,
+        "sortino": 1.465,
+        "max_dd": -0.2721,
+        "x_money": 2.272,
+        "profile": "2x",
+        "variant": "systematic target restoration"
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "profile": "base",
+      "variant": "live no-averaging control",
+      "rejected_restorations": 1731,
+      "rejected_restoration_notional": 68109.86,
+      "trades": 4398,
+      "traded_notional": 379588.35,
+      "average_account_short_gross": 0.0741
+    },
+    {
+      "profile": "base",
+      "variant": "systematic target restoration",
+      "rejected_restorations": 0,
+      "rejected_restoration_notional": 0.0,
+      "trades": 4706,
+      "traded_notional": 399002.48,
+      "average_account_short_gross": 0.0749
+    },
+    {
+      "profile": "2x",
+      "variant": "live no-averaging control",
+      "rejected_restorations": 2779,
+      "rejected_restoration_notional": 225611.77,
+      "trades": 5188,
+      "traded_notional": 1000480.21,
+      "average_account_short_gross": 0.2012
+    },
+    {
+      "profile": "2x",
+      "variant": "systematic target restoration",
+      "rejected_restorations": 0,
+      "rejected_restoration_notional": 0.0,
+      "trades": 5668,
+      "traded_notional": 1062348.37,
+      "average_account_short_gross": 0.2043
+    }
+  ],
+  "limitations": [
+    "Historical easy-to-borrow availability is unavailable.",
+    "Current-listing stock data remains survivorship-biased.",
+    "The simulator trades once per close; production evaluates twice intraday.",
+    "2026-08-04 onward remains reserved for final shadow validation and is not used to tune this candidate."
+  ]
+}
