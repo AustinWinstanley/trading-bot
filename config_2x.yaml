@@ -172,3 +172,14 @@ paper_portfolio:
       max_debit_pct: 0.02
       min_reward_to_risk: 1.50
       max_rank_attempts_per_side: 3
+    event_volatility:
+      mode: "shadow"
+      observation_window_days: 10
+      events:
+      - {name: "CPI", date: "2026-09-11"}
+      - {name: "FOMC", date: "2026-09-16"}
+      - {name: "CPI", date: "2026-10-14"}
+      - {name: "FOMC", date: "2026-10-28"}
+      - {name: "CPI", date: "2026-11-10"}
+      - {name: "FOMC", date: "2026-12-09"}
+      - {name: "CPI", date: "2026-12-10"}
