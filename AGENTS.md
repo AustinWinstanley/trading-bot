@@ -5,10 +5,11 @@ describes what the system *is*; this describes what will mislead you about it.
 
 ## This is live, and the working tree is what runs
 
-Cron executes `scripts/paper.sh` from `/home/user/trading-bot` directly. An
-edit to `config.yaml` or `engine/` is in force at the next scheduled run
-whether or not it is committed. There is no deploy step separating your working
-tree from production.
+Cron executes `scripts/paper.sh` from the server checkout directly. The wrapper
+derives the repository root from its own location, so the checkout path is not
+fixed. An edit to `config.yaml` or `engine/` is in force at the next scheduled
+run whether or not it is committed. There is no deploy step separating your
+working tree from production.
 
 Consequences:
 
@@ -85,11 +86,14 @@ shadow/paper observation and is judged against the frozen window before any
 config change makes it live.
 
 Existing decisions are binding. Several plausible ideas — rank buffers,
-sector-neutral momentum, price-aware short selection, correlation caps,
-defensive rotation, overnight equity, liquid pairs — have already been tested
-and rejected or deferred, with reasons. **Check `reports/*.json` for an
-existing `decision` before proposing a change.** Overriding one needs new
-evidence, not a fresh opinion.
+sector-neutral momentum, price-aware and concentrated whole-share short
+selection, correlation caps, defensive rotation, overnight equity, liquid
+pairs, and the fixed intraday ETF families — have already been tested and
+rejected or deferred, with reasons. The 1DTE translator stands down because no
+directional intraday family qualified. News passed a data-feasibility check but
+not a return study, and the 0DTE surface collector is read-only observation.
+**Check `reports/*.json` for an existing `decision` before proposing a
+change.** Overriding one needs new evidence, not a fresh opinion.
 
 Campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`.
 
@@ -133,10 +137,27 @@ their return streams cover the crash normally.
 The 15 bps figure above is the convention for cross-sectional stock
 turnover. Other instruments intentionally use a different number and always
 have: 8 bps for the TSMOM asset-ETF sleeve, 5 bps for the sleeve/portfolio
-volatility overlays, 2 bps for single-name ETF pairs. These are deliberate,
-not drift — but they were undocumented until now, so a reader diffing
-`cost_bps` across studies had no way to tell "intentional" from "someone
-typoed it." Record any new instrument-specific rate here when you add one.
+volatility overlays, and 2 bps for single-name ETF pairs. Intraday ETF screens
+use 2 bps **per leg** as the primary assumption and must also survive a
+mandatory 5 bps **per leg** stress. These are deliberate, not drift — but they
+were undocumented until now, so a reader diffing `cost_bps` across studies had
+no way to tell "intentional" from "someone typoed it." Record any new
+instrument-specific rate here when you add one.
+
+### Intraday and options research is observation, not activation
+
+`backtest/intraday.py` uses a shared five-minute SPY/QQQ/IWM IEX panel covering
+2024-02 through 2026-07. It has no 2020 or 2022 stress regimes and is not
+consolidated SIP data. Signals use completed bars and enter at the next bar's
+open, but five-minute OHLC data cannot resolve stop-versus-target ordering
+inside a bar. Treat results as screening evidence, not fill validation.
+
+Option shadow jobs cannot submit paper orders. They collect displayed quotes
+or recommendations, and quote qualification means only that a surface met its
+declared spread, size, credit, or loss bounds — not that the trade has positive
+expected return. A qualified research signal may authorize observation; it
+does not authorize automatic paper activation. The committed launch/decision
+JSON and current config are the authority for each component's status.
 
 Two known gaps are **not** resolved by this campaign and should be treated
 as open questions, not settled conventions, in any study that touches them:

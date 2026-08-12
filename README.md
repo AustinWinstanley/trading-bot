@@ -42,10 +42,23 @@ MOM_LS stands down when its weekly target file is absent or stale. Cash is an
 intentional residual position. MOM_LS alone runs without per-position stops or
 a loss re-entry cooldown — see [Sleeves without stops](#sleeves-without-stops).
 
+### Strategy status
+
+| Status | Components | Effect on paper orders |
+| --- | --- | --- |
+| Active | Equity core, TSMOM, trend, MOM_LS | Build targets that pass through the normal risk gate and may submit paper orders. |
+| Shadow/read-only | 2× volatility recommendation; options, momentum-options, event-volatility, and 0DTE collectors | Record recommendations or displayed quotes only; cannot submit orders. |
+| Standing down | 1DTE intraday spread translator | Exits before contacting Alpaca because no directional intraday family qualified. |
+| Rejected/deferred | Strategies whose committed report decision did not clear its pre-registered gate | Not included in portfolio targets; reconsideration requires new evidence. |
+
+Nothing moves from research or shadow to active merely because its collector
+runs under cron. Activation requires a reviewed config/code change and the
+normal upgrade verification.
+
 ## Current research estimate
 
-The production-equivalent backtest includes transaction costs, 3% short
-borrow, and 5% margin financing, over 2020-07-28 through 2026-07-22:
+The headline backtest includes transaction costs, 3% short borrow, and 5%
+margin financing, over 2020-07-28 through 2026-07-22:
 
 | Portfolio | CAGR | Sharpe | Max drawdown |
 | --- | ---: | ---: | ---: |
@@ -53,10 +66,13 @@ borrow, and 5% margin financing, over 2020-07-28 through 2026-07-22:
 | 2× SPY-core profile | 20.77% | 0.918 | -26.82% |
 | SPY buy and hold | 16.64% | 1.003 | -24.50% |
 
-These are estimates, not forecasts. The individual-stock universe contains
-currently listed companies and is survivorship-biased. Positive MOM_LS results
-are therefore an optimistic upper bound. The sample is also short and dominated
-by the post-2020 market.
+These are idealized-capacity estimates, not forecasts or fully deployable
+$10,000-account results. MOM_LS assumes fractional shorts and a constant target
+short-borrow charge; Alpaca requires whole-share shorts, so the real paper
+accounts achieve less short exposure, as quantified below. The individual-stock
+universe also contains currently listed companies and is survivorship-biased.
+The headline results are therefore an optimistic upper bound. The sample is
+short and dominated by the post-2020 market.
 
 **The window starts 2020-07-28, not 2020-02-13, and contains no COVID-crash
 observation.** The cross-sectional stock panel behind MOM_LS has no usable
@@ -327,14 +343,17 @@ chains in the feasibility snapshot. No bullish options feature was added.
 
 ### Research record
 
-Every study writes one JSON to `reports/` carrying a `decision` field, and
-campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`:
+Current studies write one JSON to `reports/` carrying a `decision` field, and
+campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`. Some
+legacy reports predate the decision-field convention and should not be treated
+as promotion records without their campaign context.
 
 | Campaign | Outcome |
 | --- | --- |
 | [2026-07-23](reports/strategy_campaign_2026-07-23.md) | No candidate passed; the best next investment is point-in-time data, not more parameter sweeps. |
 | [2026-08-03](reports/strategy_campaign_2026-08-03.md) | Removed the never-backtested stop and re-entry block from MOM_LS; rejected a correlation cap. |
 | [2026-08-04](reports/strategy_campaign_2026-08-04.md) | Fixed the shared panel/promotion-gate machinery and a live SPY position-cap bug; re-audited eight prior rejections on the corrected data — all confirmed, several relabeled or resolved on cleaner evidence. Built point-in-time fundamentals/insider data; quality filter deferred on coverage, accruals rejected under the standard gate but passes a risk-reduction gate in both held-out cells. |
+| [2026-08-12](reports/strategy_campaign_2026-08-12.md) | Rejected concentrated whole-share momentum and four fixed intraday families; validated timestamped news feasibility; stood down the 1DTE translator; started read-only 0DTE surface and execution-timing observation. |
 
 The base-versus-2× execution-timing control can be inspected at any time with
 `python -m scripts.execution_timing`. It read-only matches same-session,
@@ -433,7 +452,7 @@ To rebuild the survivorship-biased cross-sectional research matrix:
 
 ## Deployment
 
-The server wrapper expects the checkout at `/home/user/trading-bot`:
+Run the upgrade wrapper from the repository checkout on the server:
 
 ```bash
 scripts/upgrade.sh
