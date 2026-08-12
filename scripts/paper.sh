@@ -63,8 +63,13 @@ esac
   case "$JOB" in
     daily)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily ;;
     daily2x)
-      timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x &&
-        timeout 120 .venv/bin/python -m scripts.options_shadow --profile 2x
+      timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x
+      daily_rc=$?
+      if [ "$daily_rc" -eq 0 ]; then
+        timeout 120 .venv/bin/python -m scripts.options_shadow --profile 2x ||
+          echo "WARNING: read-only options shadow failed; trading run succeeded"
+      fi
+      if [ "$daily_rc" -eq 0 ]; then true; else false; fi
       ;;
     stops)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only ;;
     stops2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only --profile 2x ;;

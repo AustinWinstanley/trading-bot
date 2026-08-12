@@ -20,6 +20,7 @@ from engine.data import REPO_ROOT
 
 DB = REPO_ROOT / "state" / "paper.db"
 DB_2X = REPO_ROOT / "state" / "paper_2x.db"
+OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "options_shadow_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
@@ -257,6 +258,36 @@ def summarize_week(db_path: Path = DB) -> list[str]:
     return lines
 
 
+def summarize_options_shadow(db_path: Path = OPTIONS_SHADOW_2X) -> list[str]:
+    """Summarize read-only option candidates; never contacts the broker."""
+    if not db_path.exists():
+        return ["options shadow: no observations yet"]
+    week_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
+    with sqlite3.connect(db_path) as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' "
+            "AND name='candidate_observations'"
+        ).fetchone()
+        if not exists:
+            return ["options shadow: no candidate observations yet"]
+        rows = conn.execute(
+            "SELECT strategy, COUNT(*), SUM(signal_enabled), SUM(qualified), "
+            "AVG(executable_credit), AVG(credit_pct_of_width), "
+            "AVG(maximum_loss) FROM candidate_observations "
+            "WHERE ts > ? GROUP BY strategy ORDER BY strategy",
+            (week_ago,),
+        ).fetchall()
+    if not rows:
+        return ["options shadow: no observations in the last 7 days"]
+    return [
+        f"options shadow {strategy}: {count} observations, "
+        f"{int(signals or 0)} risk-on, {int(qualified or 0)} qualified; "
+        f"average executable credit ${credit or 0:.2f} "
+        f"({credit_pct or 0:.1%} of width), max loss ${max_loss or 0:,.2f}"
+        for strategy, count, signals, qualified, credit, credit_pct, max_loss in rows
+    ]
+
+
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()
@@ -270,6 +301,8 @@ def main() -> None:
     body += [f"- {l}" for l in summarize_week(DB)]
     body += ["", "## 2× account"]
     body += [f"- {l}" for l in summarize_week(DB_2X)]
+    body += ["", "## Options experiments (read-only shadow)"]
+    body += [f"- {l}" for l in summarize_options_shadow()]
     out = REPORT_DIR / f"weekly-{today}.md"
     out.write_text("\n".join(body) + "\n")
     print(f"wrote {out}")

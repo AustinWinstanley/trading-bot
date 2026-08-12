@@ -127,3 +127,32 @@ def test_refresh_runs_when_clone_sleeve_is_allocated(monkeypatch):
 def test_live_config_has_no_clone_allocation():
     """Guards the assumption the skip depends on."""
     assert weekly.clone_allocation() == 0.0
+
+
+def test_options_shadow_summary_reports_qualification_rate(tmp_path):
+    db = tmp_path / "options.db"
+    conn = sqlite3.connect(db)
+    conn.execute("""
+        CREATE TABLE candidate_observations(
+            ts, strategy, profile, spot, account_equity,
+            options_buying_power, signal_enabled, expiration_date,
+            short_symbol, short_strike, short_delta, long_symbol, long_strike,
+            executable_credit, maximum_loss, credit_pct_of_width,
+            within_risk_budget, credit_qualified, qualified, raw,
+            PRIMARY KEY(ts, strategy))
+    """)
+    now = __import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc
+    ).isoformat()
+    conn.execute(
+        "INSERT INTO candidate_observations VALUES (" + ",".join("?" * 20) + ")",
+        (now, "delta", "2x", 700, 10_000, 3_000, 1, "2026-09-18",
+         "SHORT", 630, -.2, "LONG", 625, .8, 420, .16, 1, 1, 1, "{}"),
+    )
+    conn.commit()
+    conn.close()
+
+    lines = weekly.summarize_options_shadow(db)
+    assert len(lines) == 1
+    assert "1 observations, 1 risk-on, 1 qualified" in lines[0]
+    assert "$0.80 (16.0% of width)" in lines[0]
