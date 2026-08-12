@@ -93,22 +93,31 @@ def short_slot_notional(top_n: int) -> float | None:
     return float(row[0]) * weight / top_n
 
 
-def build_mom_ls_targets() -> list[str]:
+def _mom_ls_params(cfg) -> tuple:
+    p = cfg.sleeves_paper
+    return (p["mom_ls_top_n"], p["mom_ls_min_price"], p["mom_ls_min_dollar_volume"])
+
+
+def build_mom_ls_targets(cfg) -> list[str]:
     """Weekly momentum ranks for the market-neutral sleeve.
 
     12-1 momentum over the operating-company universe, top-N long, bottom-N
     short. Short candidates must be easy-to-borrow whole-share names right
     now, verified against Alpaca per symbol — a rank list containing an
     unborrowable name would silently under-short the sleeve.
+
+    Takes `cfg` explicitly (rather than always loading config.yaml) so a
+    profile whose paper_portfolio.mom_ls_targets_file differs from the base
+    profile's — e.g. the 2x lab running a different breadth per
+    reports/momentum_breadth_study.json's sensitivity result — gets its own
+    rebuild against its own parameters. See main()'s two call sites.
     """
     import json as _json
     import numpy as _np
     import pandas as _pd
-    from engine.config import load_config
     from engine.execute import Trader
 
     notes = []
-    cfg = load_config()
     p = cfg.sleeves_paper
     top_n = int(p["mom_ls_top_n"])
     min_px, min_dv = float(p["mom_ls_min_price"]), float(p["mom_ls_min_dollar_volume"])
@@ -414,14 +423,43 @@ def summarize_zero_dte_shadow(db_path: Path = ZERO_DTE_SHADOW_2X) -> list[str]:
 
 
 def main() -> None:
+    from engine.config import load_config
+
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()
     body = ["# Weekly paper report " + today.isoformat(), "", "## Data refresh"]
     body += [f"- {n}" for n in refresh_data()]
+
+    base_cfg = load_config()
     try:
-        body += [f"- {n}" for n in build_mom_ls_targets()]
+        body += [f"- {n}" for n in build_mom_ls_targets(base_cfg)]
     except Exception as exc:
-        body += [f"- CRITICAL: mom_ls target build failed: {type(exc).__name__}: {exc}"]
+        body += [f"- CRITICAL: mom_ls target build failed (base): {type(exc).__name__}: {exc}"]
+
+    # The 2x lab only gets its own rebuild when its mom_ls_targets_file
+    # actually points somewhere else — running it against the same file the
+    # base profile just wrote would either duplicate work for an identical
+    # result (both profiles unchanged) or silently clobber the shared file
+    # with whichever profile's parameters ran last (profiles diverged but
+    # nobody gave the lab its own output path — a misconfiguration, not a
+    # thing to paper over).
+    cfg_2x = load_config(REPO_ROOT / "config_2x.yaml")
+    base_file = base_cfg.sleeves_paper.get("mom_ls_targets_file")
+    file_2x = cfg_2x.sleeves_paper.get("mom_ls_targets_file")
+    if file_2x != base_file:
+        try:
+            body += [f"- {n}" for n in build_mom_ls_targets(cfg_2x)]
+        except Exception as exc:
+            body += [f"- CRITICAL: mom_ls target build failed (2x): {type(exc).__name__}: {exc}"]
+    elif _mom_ls_params(cfg_2x) != _mom_ls_params(base_cfg):
+        body.append(
+            "- CRITICAL: config_2x.yaml's mom_ls construction "
+            "(top_n/min_price/min_dollar_volume) differs from config.yaml's "
+            "but both share the same mom_ls_targets_file — 2x rebuild "
+            "skipped to avoid clobbering; give config_2x.yaml its own "
+            "mom_ls_targets_file"
+        )
+
     body += ["", "## Base account"]
     body += [f"- {l}" for l in summarize_week(DB)]
     body += ["", "## 2× account"]

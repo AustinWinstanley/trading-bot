@@ -28,6 +28,19 @@ risk:
   # last ~14 opportunities. 1.30 is the 120% target plus headroom.
   elevated_position_pct: 1.30
   elevated_position_sleeves: [equity_core, trend]
+  # Lab-only, evidence-driven relaxation of the otherwise-unconditional
+  # no-averaging-down rule (see reports/target_restoration_study.json:
+  # Sharpe higher and CAGR not lower in 4/4 backtested cells, at a
+  # 0.19-0.60pp max-drawdown cost in 3/4 — rejected by the hard gate's
+  # zero-tolerance drawdown rule, judged worth the lab's lighter
+  # experiment-tier bar per AGENTS.md's "experiment tier" section). Adds no
+  # new sizing logic: mom_ls's target is momentum-rank-driven with no
+  # reference to a position's P&L, so a rebalance proposal (target - held)
+  # is already capped at the same target this position would have if it
+  # were not a loser, and every other position/exposure cap still applies
+  # on top. base config.yaml deliberately does not set this — it is the
+  # unchanged control.
+  restoration_exempt_sleeves: [mom_ls]
 sleeves:
   momentum:
     allocation: 0.45
@@ -101,10 +114,19 @@ paper_portfolio:
     trend: 0.2
     mom_ls: 0.15
   clone_top_n: 3
-  mom_ls_top_n: 20
+  # 15, not config.yaml's 20 — reports/momentum_breadth_study.json's
+  # sensitivity-only "15" candidate improved max drawdown in 4/4 backtested
+  # cells vs the 20-name control, at a Sharpe/CAGR cost in 3/4 (1/4 improved
+  # everything). It was structurally ineligible for promotion under that
+  # study's own pre-registration (10 was the primary candidate, tested and
+  # correctly rejected — worse on every metric), so this is not a
+  # promotion, it's the 2x lab trying a plausible-evidence risk/return
+  # tradeoff under AGENTS.md's lighter "experiment tier" bar. Needs its own
+  # mom_ls_targets_file (below) — see scripts/weekly.py's build_mom_ls_targets.
+  mom_ls_top_n: 15
   mom_ls_min_price: 5.0
   mom_ls_min_dollar_volume: 5000000
-  mom_ls_targets_file: state/mom_ls_targets.json
+  mom_ls_targets_file: state/mom_ls_targets_2x.json
   mom_ls_max_age_days: 10
   tsmom_universe:
   - GLD

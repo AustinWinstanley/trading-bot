@@ -9,6 +9,7 @@ If you change engine/risk.py, this suite is the gate on that change.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 from zoneinfo import ZoneInfo
 
@@ -241,6 +242,61 @@ def test_averaging_down_is_rejected(cfg, clean_risk, ctx):
     )
     result = evaluate([buy("XLK", notional=200.0)], account, clean_risk, ctx, cfg)
     assert "averaging down" in only_rejection(result)
+
+
+def test_averaging_down_is_still_rejected_for_an_unlisted_sleeve_even_with_exemptions_configured(
+    cfg, clean_risk, ctx
+):
+    """The exemption is opt-in per sleeve, not a global switch."""
+    exempt_cfg = dataclasses.replace(
+        cfg, risk=dataclasses.replace(cfg.risk, restoration_exempt_sleeves=frozenset({"mom_ls"}))
+    )
+    account = AccountState(
+        equity=EQUITY,
+        cash=2000.0,
+        positions={"XLK": Position("XLK", qty=5, avg_entry_price=120.0, current_price=100.0)},
+    )
+    result = evaluate(
+        [buy("XLK", notional=200.0, sleeve="momentum")], account, clean_risk, ctx, exempt_cfg
+    )
+    assert "averaging down" in only_rejection(result)
+
+
+def test_averaging_down_is_permitted_for_a_restoration_exempt_sleeve(cfg, clean_risk, ctx):
+    exempt_cfg = dataclasses.replace(
+        cfg, risk=dataclasses.replace(cfg.risk, restoration_exempt_sleeves=frozenset({"mom_ls"}))
+    )
+    account = AccountState(
+        equity=EQUITY,
+        cash=2000.0,
+        positions={"XLK": Position("XLK", qty=5, avg_entry_price=120.0, current_price=100.0)},
+    )
+    result = evaluate(
+        [buy("XLK", notional=200.0, sleeve="mom_ls")], account, clean_risk, ctx, exempt_cfg
+    )
+    assert len(result.approved) == 1
+    assert len(result.rejected) == 0
+
+
+def test_restoration_exemption_does_not_widen_any_other_cap(cfg, clean_risk, ctx):
+    """The exemption removes ONLY the loser check — position/exposure caps
+    still bind exactly as they do for a winner."""
+    exempt_cfg = dataclasses.replace(
+        cfg, risk=dataclasses.replace(cfg.risk, restoration_exempt_sleeves=frozenset({"mom_ls"}))
+    )
+    account = AccountState(
+        equity=EQUITY,
+        cash=100_000.0,
+        positions={"XLK": Position("XLK", qty=5, avg_entry_price=120.0, current_price=100.0)},
+    )
+    huge_request = 5_000.0  # far past max_position_pct * EQUITY
+    result = evaluate(
+        [buy("XLK", notional=huge_request, sleeve="mom_ls")], account, clean_risk, ctx, exempt_cfg
+    )
+    assert len(result.approved) == 1
+    cap = cfg.risk.max_position_pct * EQUITY
+    assert result.approved[0].notional < huge_request
+    assert result.approved[0].notional <= cap - account.positions["XLK"].market_value + 1e-6
 
 
 def test_adding_to_a_winner_is_allowed_but_still_capped(cfg, clean_risk, ctx):
@@ -776,6 +832,27 @@ def test_averaging_down_on_a_losing_short_is_rejected(cfg, clean_risk, ctx_short
                            positions={"XLK": Position("XLK", -5, 90.0, 100.0)})
     result = evaluate([short_prop()], account, clean_risk, ctx_shortable, cfg)
     assert "averaging down" in only_rejection(result)
+
+
+def test_averaging_down_on_a_losing_short_is_permitted_for_a_restoration_exempt_sleeve(
+    cfg, clean_risk, ctx_shortable
+):
+    exempt_cfg = dataclasses.replace(
+        cfg, risk=dataclasses.replace(cfg.risk, restoration_exempt_sleeves=frozenset({"mom_ls"}))
+    )
+    account = AccountState(equity=EQUITY, cash=1000.0,
+                           positions={"XLK": Position("XLK", -5, 90.0, 100.0)})
+    # short_prop() defaults sleeve="mom_ls".
+    result = evaluate([short_prop()], account, clean_risk, ctx_shortable, exempt_cfg)
+    assert len(result.approved) == 1
+    assert len(result.rejected) == 0
+
+
+def test_base_config_carries_no_restoration_exemption():
+    """The base account is the unchanged control — this must stay empty
+    there no matter what the 2x lab config does."""
+    base = load_config()
+    assert base.risk.restoration_exempt_sleeves == frozenset()
 
 
 def test_cover_always_allowed_even_when_halted(cfg, ctx_shortable):
