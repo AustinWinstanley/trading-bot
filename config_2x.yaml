@@ -137,3 +137,11 @@ paper_portfolio:
     lookback_days: 63
     min_observations: 32
     min_scale: 0.25
+  options_experiments:
+    bull_put_fixed_width:
+      # Read-only quote/Greek collection. This mode cannot submit an order.
+      mode: "shadow"
+      target_dte: 45
+      short_moneyness: 0.90
+      strike_width: 5.0
+      max_loss_pct: 0.05
