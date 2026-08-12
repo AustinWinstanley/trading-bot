@@ -14,10 +14,19 @@ import datetime as dt
 import json
 import sqlite3
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from engine.attribution import execution_summary
 from engine.data import REPO_ROOT
 from engine.execution_timing import timing_summary
+
+# Every ts column in these journals is written as dt.datetime.now(ET).isoformat()
+# (e.g. "...T09:51:00-04:00"), never UTC. SQLite compares TEXT columns as
+# strings, not as datetimes, so a cutoff computed in a different offset
+# compares wrong near the boundary — a 13:51Z observation vs a naive 12:00Z
+# cutoff should be included (13:51 > 12:00) but "T09:51:00-04:00" < "T12:00:00"
+# as strings. Every week_ago cutoff below must be computed in ET to match.
+ET = ZoneInfo("America/New_York")
 
 DB = REPO_ROOT / "state" / "paper.db"
 DB_2X = REPO_ROOT / "state" / "paper_2x.db"
@@ -165,7 +174,7 @@ def summarize_week(db_path: Path = DB) -> list[str]:
     if not db_path.exists():
         return ["no journal yet"]
     conn = sqlite3.connect(db_path)
-    week_ago = (dt.datetime.now() - dt.timedelta(days=7)).isoformat()
+    week_ago = (dt.datetime.now(ET) - dt.timedelta(days=7)).isoformat()
 
     snaps = conn.execute(
         "SELECT ts, equity, cash FROM snapshots WHERE ts > ? ORDER BY ts", (week_ago,)
@@ -290,7 +299,7 @@ def summarize_options_shadow(db_path: Path = OPTIONS_SHADOW_2X) -> list[str]:
     """Summarize read-only option candidates; never contacts the broker."""
     if not db_path.exists():
         return ["options shadow: no observations yet"]
-    week_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
+    week_ago = (dt.datetime.now(ET) - dt.timedelta(days=7)).isoformat()
     with sqlite3.connect(db_path) as conn:
         exists = conn.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' "
@@ -321,7 +330,7 @@ def summarize_momentum_options_shadow(
 ) -> list[str]:
     if not db_path.exists():
         return ["momentum-options shadow: no observations yet"]
-    week_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
+    week_ago = (dt.datetime.now(ET) - dt.timedelta(days=7)).isoformat()
     with sqlite3.connect(db_path) as conn:
         rows = conn.execute(
             "SELECT rank_side, COUNT(*), SUM(qualified), AVG(maximum_loss), "
@@ -341,7 +350,16 @@ def summarize_momentum_options_shadow(
 
 def summarize_event_volatility_shadow(
     db_path: Path = EVENT_VOLATILITY_SHADOW_2X,
+    *,
+    stale_after_days: int = 21,
 ) -> list[str]:
+    """All-time per-event breakdown, not a 7-day window: events are sparse
+    and calendar-scheduled (a handful a quarter), so a rolling week is often
+    legitimately empty even when the collector is healthy — a week-window
+    would false-alarm on normal gaps. Staleness is instead judged against
+    the most recent observation regardless of event date, so a collector
+    that has actually stopped running (vs. one correctly waiting for the
+    next scheduled event) is still distinguishable."""
     if not db_path.exists():
         return ["event-volatility shadow: no observations yet"]
     with sqlite3.connect(db_path) as conn:
@@ -350,21 +368,44 @@ def summarize_event_volatility_shadow(
             "AVG(implied_break_even_move_pct) FROM observations "
             "GROUP BY event_name, event_date ORDER BY event_date"
         ).fetchall()
-    return [
+        latest = conn.execute("SELECT MAX(ts) FROM observations").fetchone()[0]
+    if not rows:
+        return ["event-volatility shadow: no observations yet"]
+    lines = [
         f"event-volatility {name} {date}: {count} observations, "
         f"average implied break-even move {move:.2%}"
         for name, date, count, move in rows
-    ] or ["event-volatility shadow: no observations yet"]
+    ]
+    if latest:
+        age_days = (dt.datetime.now(ET) - dt.datetime.fromisoformat(latest)).days
+        if age_days > stale_after_days:
+            lines.append(
+                f"STALE: last observation {age_days}d ago (as of {latest}) — "
+                f"expected within {stale_after_days}d even accounting for gaps "
+                "between scheduled events"
+            )
+    return lines
 
 
 def summarize_zero_dte_shadow(db_path: Path = ZERO_DTE_SHADOW_2X) -> list[str]:
+    """7-day window, matching summarize_options_shadow/
+    summarize_momentum_options_shadow: this collector fires roughly daily
+    (unlike event-volatility's sparse calendar), so an all-time aggregate
+    let a fully-dead collector read as a healthy, growing-looking count —
+    a "0 observations in the last 7 days" line is only reachable now if it
+    actually stopped producing rows."""
     if not db_path.exists():
         return ["0DTE shadow: no observations yet"]
+    week_ago = (dt.datetime.now(ET) - dt.timedelta(days=7)).isoformat()
     with sqlite3.connect(db_path) as conn:
         row = conn.execute(
             "SELECT COUNT(*), SUM(structure_qualified), AVG(atm_straddle_ask), "
-            "AVG(executable_credit), AVG(maximum_loss) FROM observations"
+            "AVG(executable_credit), AVG(maximum_loss) FROM observations "
+            "WHERE ts > ?",
+            (week_ago,),
         ).fetchone()
+    if not row or not row[0]:
+        return ["0DTE shadow: no observations in the last 7 days"]
     return [
         f"0DTE surface: {row[0]} observations, {int(row[1] or 0)} condors "
         f"quote-qualified; average straddle ask ${row[2] or 0:.2f}, "

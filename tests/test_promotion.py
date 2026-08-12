@@ -151,3 +151,62 @@ class TestAllCells:
         candidate = summary(1.1, 0.11, -0.18)
         with pytest.raises(ValueError):
             passes_gate(control, candidate, "not_a_real_class")
+
+
+class TestNoEffect:
+    """A byte-identical control/candidate (zero historical events matched a
+    filter, zero trades cleared a feasibility budget, ...) must not read the
+    same as a genuine loss — see reports/tsmom_liquidity_alignment_study.json
+    and reports/bull_put_fixed_width_study.json, both of which recorded
+    passed: false from four cells with d_sharpe == d_cagr == d_max_dd == 0.0."""
+
+    def test_identical_control_and_candidate_is_no_effect_not_failed(self):
+        control = summary(0.927, 0.1006, -0.0994)
+        candidate = summary(0.927, 0.1006, -0.0994)
+        result = passes_gate(control, candidate, "return_enhancer")
+        assert result.no_effect is True
+        assert result.verdict == "no_effect"
+        # passed stays exactly as computed (still False, for anything that
+        # only reads the old field) — no_effect/verdict are additive.
+        assert result.passed is False
+
+    def test_genuine_loss_is_not_flagged_as_no_effect(self):
+        # Same case as test_fails_on_equal_sharpe above: only sharpe ties,
+        # cagr and drawdown genuinely differ — this is a real comparison,
+        # not an untested candidate, and must not be relabeled no_effect.
+        control = summary(1.0, 0.10, -0.20)
+        candidate = summary(1.0, 0.12, -0.18)
+        result = passes_gate(control, candidate, "return_enhancer")
+        assert result.no_effect is False
+        assert result.verdict == "failed"
+
+    def test_genuine_pass_has_passed_verdict(self):
+        control = summary(1.0, 0.10, -0.20)
+        candidate = summary(1.1, 0.11, -0.18)
+        result = passes_gate(control, candidate, "return_enhancer")
+        assert result.no_effect is False
+        assert result.verdict == "passed"
+
+    def test_all_cells_surfaces_no_effect_at_the_aggregate_level(self):
+        identical = summary(0.927, 0.1006, -0.0994)
+        cells = [
+            ("early_2020_2022", "base", identical, identical),
+            ("early_2020_2022", "2x", identical, identical),
+            ("heldout_2023_plus", "base", identical, identical),
+            ("heldout_2023_plus", "2x", identical, identical),
+        ]
+        result = passes_gate_all_cells(cells, "return_enhancer")
+        assert result["passed"] is False
+        assert result["any_no_effect"] is True
+        assert result["all_no_effect"] is True
+
+    def test_all_cells_mixed_no_effect_and_real_loss(self):
+        identical = summary(1.0, 0.10, -0.20)
+        loser = summary(0.9, 0.09, -0.22)
+        cells = [
+            ("early_2020_2022", "base", identical, identical),
+            ("early_2020_2022", "2x", identical, loser),
+        ]
+        result = passes_gate_all_cells(cells, "return_enhancer")
+        assert result["any_no_effect"] is True
+        assert result["all_no_effect"] is False

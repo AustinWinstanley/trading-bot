@@ -30,7 +30,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "early_2020_2022",
@@ -52,7 +54,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "heldout_2023_plus",
@@ -74,7 +78,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "heldout_2023_plus",
@@ -96,9 +102,13 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       }
-    ]
+    ],
+    "any_no_effect": true,
+    "all_no_effect": true
   },
   "performance": {
     "early_2020_2022": [

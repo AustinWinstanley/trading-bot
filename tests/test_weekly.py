@@ -1,3 +1,4 @@
+import datetime as dt
 import sqlite3
 import subprocess
 
@@ -208,3 +209,79 @@ def test_momentum_options_summary_reports_both_rank_sides(tmp_path):
         "momentum-options long: 1 observations, 1 qualified; "
         "average max loss $100.00, reward/risk 4.00"
     ]
+
+
+def _zero_dte_db(path, ts):
+    conn = sqlite3.connect(path)
+    conn.execute("""
+        CREATE TABLE observations(
+            ts TEXT PRIMARY KEY, profile TEXT, spot REAL,
+            atm_straddle_ask REAL, executable_credit REAL,
+            credit_pct_of_width REAL, maximum_loss REAL,
+            structure_qualified INTEGER, directional_enabled INTEGER, raw TEXT)
+    """)
+    conn.execute(
+        "INSERT INTO observations VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (ts, "2x", 700.0, 5.0, 1.2, 0.24, 380.0, 1, 0, "{}"),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_zero_dte_summary_reports_recent_observations(tmp_path):
+    db = tmp_path / "zero-dte.db"
+    _zero_dte_db(db, dt.datetime.now(weekly.ET).isoformat())
+    lines = weekly.summarize_zero_dte_shadow(db)
+    assert len(lines) == 1
+    assert "1 observations, 1 condors" in lines[0]
+
+
+def test_zero_dte_summary_flags_a_dead_collector_instead_of_reading_healthy(tmp_path):
+    # A real but stale row (well outside the 7-day window) must NOT be
+    # aggregated as if it were current — that's exactly how a dead
+    # collector read as healthy before this fix (all-time aggregate, no
+    # recency check at all).
+    db = tmp_path / "zero-dte.db"
+    stale = dt.datetime.now(weekly.ET) - dt.timedelta(days=30)
+    _zero_dte_db(db, stale.isoformat())
+    assert weekly.summarize_zero_dte_shadow(db) == [
+        "0DTE shadow: no observations in the last 7 days"
+    ]
+
+
+def _event_volatility_db(path, ts):
+    conn = sqlite3.connect(path)
+    conn.execute("""
+        CREATE TABLE observations(
+            ts TEXT, profile TEXT, event_name TEXT, event_date TEXT,
+            days_to_event INTEGER, spot REAL, expiration_date TEXT,
+            strike REAL, call_symbol TEXT, put_symbol TEXT,
+            straddle_debit REAL, implied_break_even_move_pct REAL, raw TEXT,
+            PRIMARY KEY(ts, event_name, event_date))
+    """)
+    conn.execute(
+        "INSERT INTO observations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (ts, "2x", "CPI", "2026-09-10", 5, 700.0, "2026-09-11",
+         700.0, "CALL", "PUT", 8.0, 0.0114, "{}"),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_event_volatility_summary_is_quiet_when_recently_active(tmp_path):
+    # A gap since the scheduled event is normal, not stale — only checked
+    # against the freshness threshold, not a rolling week.
+    db = tmp_path / "event-vol.db"
+    recent = dt.datetime.now(weekly.ET) - dt.timedelta(days=10)
+    _event_volatility_db(db, recent.isoformat())
+    lines = weekly.summarize_event_volatility_shadow(db, stale_after_days=21)
+    assert len(lines) == 1
+    assert "STALE" not in lines[0]
+
+
+def test_event_volatility_summary_flags_a_dead_collector(tmp_path):
+    db = tmp_path / "event-vol.db"
+    stale = dt.datetime.now(weekly.ET) - dt.timedelta(days=45)
+    _event_volatility_db(db, stale.isoformat())
+    lines = weekly.summarize_event_volatility_shadow(db, stale_after_days=21)
+    assert any(line.startswith("STALE") for line in lines)

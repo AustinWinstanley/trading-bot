@@ -20,6 +20,7 @@ import pandas as pd
 from backtest.bull_put_credit_spread_study import (
     MINIMUM_COMPLETED_SPREADS,
     credit_spread_pnl,
+    diagnose_budget_feasibility,
 )
 from backtest.capital_split_study import recent_capacity_profiles
 from backtest.production_portfolio import norm_index, returns_summary
@@ -176,6 +177,19 @@ def main() -> None:
     gate = passes_gate_all_cells(cells, "return_enhancer")
     enough = len(completed) >= MINIMUM_COMPLETED_SPREADS
     advance = enough and gate["passed"]
+    feasibility = diagnose_budget_feasibility(
+        logs, budget_rejection_reason="maximum loss exceeds 5% budget"
+    )
+    if feasibility["structurally_infeasible"]:
+        print(
+            "WARNING: every candidate that reached the budget check was "
+            "rejected by it — fixed $5 width may still be structurally too "
+            "tight for this construction's observed credit range "
+            f"(${feasibility['observed_entry_credit_min']}-"
+            f"${feasibility['observed_entry_credit_max']}) against the 5% "
+            "max-loss budget, not a market-opportunity finding. See "
+            "payload['feasibility']."
+        )
     payload = {
         "decision": "advance_to_standard_window_proxy" if advance else "insufficient_evidence",
         "supersedes_for_capacity_only": "bull_put_credit_spread_study 90%/85% geometry",
@@ -188,6 +202,7 @@ def main() -> None:
             "scope": "Passing advances only to the mandatory standard-window proxy screen.",
         },
         "completed_spreads": len(completed),
+        "feasibility": feasibility,
         "stage_gate": gate,
         "performance": performance,
         "trade_summary": {
