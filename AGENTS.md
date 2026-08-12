@@ -357,6 +357,31 @@ paper over). Any future 2x-only mom_ls construction change (breadth,
 filters, cadence) needs its own `mom_ls_targets_file`, not just a changed
 parameter.
 
+### The 2x lab rebuilds MOM_LS twice a week; base stays weekly
+
+`scripts/paper.sh`'s `momls2x` job runs `scripts.weekly --mom-ls-only`
+mid-week (Wednesday, unslotted like `weekly` — this is a data job, not
+market-hours sensitive), rebuilding only `config_2x.yaml`'s
+`mom_ls_targets_file`. `weekly`'s existing Sunday run still does the same
+rebuild as part of its full flow, so between the two, the 2x lab's MOM_LS
+ranks refresh roughly twice a week instead of once; `config.yaml`/base
+never runs `--mom-ls-only` and stays on its original weekly-only cadence,
+unchanged. `momls2x` deliberately shares `weekly`'s flock lock (both write
+the same file and must never race).
+
+Backed by `reports/mom_ls_cadence_study.json`: genuinely mixed screening
+evidence (helps `early_2020_2022`, both profiles; marginally hurts
+`heldout_2023_plus`, both profiles — Sharpe swings of a few hundredths
+either way, not a clear signal). The rationale for trying it anyway is the
+live-journal finding that the weekly rebuild is the dominant source of
+trade-frequency variance (Mondays: 11-23 orders; other days: 0-5) and the
+only source of new names all week — the extra turnover cost (+0.33pp/yr
+base, +0.63pp/yr 2x CAGR drag per the study) is modest and roughly the same
+order of magnitude as the backtested Sharpe/CAGR swing, so cost alone
+doesn't settle it. This is explicitly a "learn from live fill quality and
+turnover, not validated by backtest" trial under the experiment-tier bar —
+screening-tier evidence (pre-2026-08-13), not a hard-gate promotion.
+
 ### `equity_core` + `trend` silently capped at a quarter of their target
 
 Found in a 2026-08-03 review of the server journal: `max_position_pct` (15%

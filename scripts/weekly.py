@@ -423,7 +423,26 @@ def summarize_zero_dte_shadow(db_path: Path = ZERO_DTE_SHADOW_2X) -> list[str]:
 
 
 def main() -> None:
+    import argparse
+
     from engine.config import load_config
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--mom-ls-only", action="store_true",
+        help="Skip data refresh and the weekly report; rebuild only the 2x "
+             "lab's mid-week MOM_LS targets. Backs the twice-weekly rebuild "
+             "cadence trial in reports/mom_ls_cadence_study.json — screening-"
+             "tier evidence, not a hard-gate promotion (config.yaml/base "
+             "stays weekly-only, unchanged).",
+    )
+    args = ap.parse_args()
+
+    if args.mom_ls_only:
+        cfg_2x = load_config(REPO_ROOT / "config_2x.yaml")
+        for note in build_mom_ls_targets(cfg_2x):
+            print(note)
+        return
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()

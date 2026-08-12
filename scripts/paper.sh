@@ -62,6 +62,11 @@ case "$JOB" in
   # scripts' own timeouts (120+180+120+120=540) plus slack.
   shadows2x) LOCK=shadows2x; TIMEOUT=600  ;;
   weekly)    LOCK=weekly;    TIMEOUT=3000 ;;
+  # Mid-week 2x-only MOM_LS rebuild — reports/mom_ls_cadence_study.json's
+  # experiment-tier trial (config.yaml/base stays weekly-only). Deliberately
+  # shares weekly's lock: both write state/mom_ls_targets_2x.json and must
+  # never race each other.
+  momls2x)   LOCK=weekly;    TIMEOUT=900  ;;
   health)    LOCK=health;    TIMEOUT=120  ;;
   health2x)  LOCK=health2x;  TIMEOUT=120  ;;
   *) LOCK=$JOB; TIMEOUT=120 ;;   # unknown job still needs a lock name; caught below
@@ -94,6 +99,7 @@ esac
       [ "$shadow_failures" -eq 0 ]
       ;;
     weekly)   timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly ;;
+    momls2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly --mom-ls-only ;;
     health)   timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck ;;
     health2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck --profile 2x ;;
     *) echo "unknown job $JOB"; exit 2 ;;

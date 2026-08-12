@@ -38,6 +38,8 @@ def build_deployable_stream(
     long_n: int = 20,
     short_n: int = 20,
     rebalance: int = 5,
+    rebalance_offsets: tuple[int, ...] = (0,),
+    rebalance_only_trading: bool = False,
     min_price: float = 5.0,
     min_dollar_volume: float = 5e6,
     rebalance_band: float = 0.20,
@@ -49,6 +51,23 @@ def build_deployable_stream(
     Returned weights are normalized to the sleeve's 100%-gross research
     stream. Multiplying them by ``account_multiplier`` produces account-level
     exposure, matching ``short_capacity_study.profile_returns``.
+
+    ``rebalance_offsets`` extends the default fixed-integer-step cadence
+    (every ``rebalance``-th trading day, starting ``lookback + skip`` in —
+    the existing "once a week" convention every study here already uses,
+    which drifts a day or two around holidays rather than locking to a
+    literal calendar weekday) with additional interleaved step series, each
+    starting ``offset`` trading days later and stepping by the same
+    ``rebalance``. The default ``(0,)`` reproduces exactly the prior
+    single-series behavior. ``(0, 3)`` adds a second rebuild roughly midway
+    between each weekly one (e.g. modeling a Wednesday rebuild alongside a
+    Sunday-effective-Monday one) without inventing a second selection
+    method. ``rebalance_only_trading`` restricts order evaluation to
+    rebalance days only (no intra-week drift-band trading), which exists so
+    a control-reproduction check can isolate this function's core
+    weekly-rebalance mechanics from its deliberate execution-fidelity
+    additions (drift band, no-averaging-down) that
+    ``short_capacity_study.build_capacity_stream`` does not model.
     """
     dollar_volume = (close * volume).rolling(20, min_periods=10).mean()
     momentum = close.shift(skip) / close.shift(lookback) - 1.0
@@ -59,7 +78,9 @@ def build_deployable_stream(
         & close.notna()
     )
     daily_returns = close.pct_change(fill_method=None)
-    rebalance_days = set(close.index[lookback + skip :: rebalance])
+    rebalance_days: set = set()
+    for offset in rebalance_offsets:
+        rebalance_days |= set(close.index[lookback + skip + offset :: rebalance])
     equity = (
         pd.Series(float(account_equity), index=close.index)
         if np.isscalar(account_equity)
@@ -77,7 +98,8 @@ def build_deployable_stream(
 
     for date in close.index:
         px = close.loc[date]
-        if date in rebalance_days:
+        is_rebalance_day = date in rebalance_days
+        if is_rebalance_day:
             ranked = momentum.loc[date].where(eligible.loc[date]).dropna()
             ranked = ranked.sort_values(ascending=False)
             if len(ranked) >= long_n + short_n:
@@ -86,6 +108,26 @@ def build_deployable_stream(
 
         if not longs or not shorts:
             weight_rows.append(pd.Series(0.0, index=close.columns, name=date))
+            continue
+
+        if rebalance_only_trading and not is_rebalance_day:
+            # Mark existing shares to today's close but do not trade — the
+            # drift band and no-averaging checks below never fire between
+            # rebalance days under this mode.
+            weights = pd.Series(0.0, index=close.columns, dtype="float64", name=date)
+            eq_mark = float(equity.loc[date])
+            for symbol, qty in shares.items():
+                price = px.get(symbol)
+                if pd.notna(price):
+                    weights.at[symbol] = qty * float(price) / eq_mark / account_multiplier
+            weight_rows.append(weights)
+            logs.append({
+                "date": date,
+                "account_equity": eq_mark,
+                "realized_short_gross": float(-weights.clip(upper=0).sum()),
+                "zero_share_targets": sum(shares.get(s, 0) == 0 for s in shorts),
+                "selected_shorts": len(shorts),
+            })
             continue
 
         eq = float(equity.loc[date])
