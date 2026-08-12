@@ -165,7 +165,15 @@ paper_portfolio:
       max_realized_vol: 0.15
       max_loss_pct: 0.05
     momentum_verticals:
-      mode: "shadow"
+      # Off, not shadow: this applies option leverage to individual MOM_LS
+      # ranks with no options-level return study behind it — the same
+      # move the 1DTE translator was deliberately stood down to avoid
+      # ("without using option leverage to disguise a negative underlying
+      # signal"; reports/intraday_1dte_shadow_launch.json). The nearest
+      # comparable evidence, bull_call_spread_study.json, was rejected (6
+      # completed spreads, 2 winners, -$606 combined). Re-enable only after
+      # a dedicated single-name-vertical study exists.
+      mode: "off"
       target_dte: 60
       long_delta: 0.60
       short_delta: 0.35

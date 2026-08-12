@@ -1,0 +1,36 @@
+{
+  "decision": "collect_shadow",
+  "strategy": "SPY 45-DTE put credit spread, short leg selected by delta rather than fixed moneyness",
+  "pre_registration": {
+    "account_profile": "2x paper",
+    "mode": "read-only shadow",
+    "target_dte": 45,
+    "target_short_delta": 0.20,
+    "strike_width": 5.0,
+    "min_credit_pct_of_width": 0.15,
+    "maximum_loss_pct_of_equity": 0.05,
+    "minimum_observations_before_review": 20,
+    "minimum_independent_expirations_before_review": 3
+  },
+  "relationship_to_bull_put_fixed_width_study": [
+    "Shares scripts/options_shadow.py's Trader/quote-fetch/journal machinery with the fixed-moneyness bull_put_fixed_width candidate, but selects the short strike by delta instead of a fixed 90% moneyness target.",
+    "reports/bull_put_fixed_width_study.json and reports/bull_put_credit_spread_study.json both returned insufficient_evidence with feasibility.structurally_infeasible: true — the fixed $5 width could not clear its own 5% max-loss budget at observed credit levels (median credit far below the ~$0.40 required). A delta-targeted short strike is expected to sit closer to the money and command more credit for the same width, which is the hypothesis this shadow exists to observe live, not a claim it already clears the same budget."
+  ],
+  "cost_alignment": "scripts/options_shadow.py's max-loss calculation for this structure includes the same 4x$0.10 round-trip friction backtest/bull_put_credit_spread_study.py charges (fixed 2026-08-12) — an observation qualifying here uses the same budget definition a promotion study would.",
+  "as_of_2026_08_12": {
+    "observations_recorded": 3,
+    "note": "All three from a single ~17-minute window on one afternoon, one expiration — far short of the review minimum. Not a basis for any conclusion yet."
+  },
+  "promotion_policy": [
+    "A qualified observation authorizes data collection only and can never submit an order.",
+    "Review after at least 20 observations spanning at least three independent expirations, and only against this pre-registered credit/width/loss-budget contract — no threshold may be loosened after seeing results.",
+    "Before paper-active promotion, verify quote freshness, positive displayed size on every leg, atomic multi-leg order construction, exit handling, assignment handling, and account-level annual loss limits.",
+    "Paper-active promotion requires a separate reviewed config and code change; no automatic transition exists."
+  ],
+  "limitations": [
+    "The free indicative options feed modifies quotes and may not represent an executable OPRA market.",
+    "One favorable snapshot is not an expected-return estimate.",
+    "American early assignment and expiration handling are not tested by quote collection.",
+    "Delta-based selection can land on a materially different strike week to week as implied vol moves, so 'nearest 0.20 delta' is not a fixed strike the way the fixed-width candidate is."
+  ]
+}
