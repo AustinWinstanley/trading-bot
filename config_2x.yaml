@@ -128,6 +128,18 @@ paper_portfolio:
   mom_ls_min_dollar_volume: 5000000
   mom_ls_targets_file: state/mom_ls_targets_2x.json
   mom_ls_max_age_days: 10
+  # 14 assets, not config.yaml's 15 — FXE dropped. reports/tsmom_fxe_drop_study.json:
+  # FXE is the ONLY tsmom asset ever rejected in either account's live journal
+  # (8/8 rejections since sleeve tagging began, always the $1M 20d-dollar-volume
+  # floor — FXE trades ~$240k-360k), permanently stranding ~3.5%/7.1% of
+  # equity as idle cash whenever its trend signal is on. Backtest control-
+  # reproduction was exact (0.0 diff vs reports/production_portfolio.json).
+  # Sharpe higher and CAGR not lower in all 4 screening cells; only a
+  # trivial (0.10-0.16pp) drawdown cost in 2 of 4, which the study's own
+  # standalone-sleeve diagnostic attributes to a cross-sleeve timing
+  # coincidence, not FXE removal creating new tail risk. Screening-tier
+  # evidence (pre-2026-08-13), 2x-lab experiment-tier bar, not the hard
+  # promotion gate — config.yaml keeps FXE, unchanged control.
   tsmom_universe:
   - GLD
   - SLV
@@ -142,7 +154,6 @@ paper_portfolio:
   - EMB
   - VNQ
   - UUP
-  - FXE
   - FXY
   trend_symbol: SPY
   trend_ma_days: 200
