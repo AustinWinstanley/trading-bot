@@ -1,0 +1,19 @@
+{
+  "decision": "stand_down_no_qualified_signal",
+  "strategy": "1DTE directional debit spreads translated from intraday ETF signals",
+  "mode": "read-only shadow translator",
+  "research_dependency": "reports/intraday_strategy_study.json advanced_families must be non-empty",
+  "current_qualified_families": [],
+  "behavior": [
+    "The command exits before loading credentials or contacting Alpaca when no family qualified.",
+    "The module contains no order submission, replacement, cancellation, exercise, or account mutation method.",
+    "A qualified family would authorize quote-side collection only; a live intraday signal runner requires a separate reviewed change."
+  ],
+  "translation": {
+    "expiration": "nearest expiration at least one calendar day away",
+    "bullish": "approximately 0.60 delta long call / 0.35 delta short call",
+    "bearish": "approximately 0.60 absolute-delta long put / 0.35 absolute-delta short put",
+    "entry_mark": "long ask minus short bid",
+    "risk": "net debit times 100, one contract only in any initial paper phase"
+  }
+}

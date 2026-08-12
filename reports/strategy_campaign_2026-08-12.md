@@ -135,6 +135,19 @@ from these results.
 
 See `reports/intraday_strategy_study.json`.
 
+### 1DTE directional option translation — built, standing down
+
+The quote-side translator selects the nearest expiration at least one day away
+and constructs approximately 0.60/0.35-delta bull-call or bear-put debit
+spreads at executable ask-minus-bid marks. It contains no broker mutation
+method and checks the committed intraday study before credentials are loaded.
+
+Because no intraday family qualified, the current decision is
+`stand_down_no_qualified_signal`. This preserves the implementation path
+without using option leverage to disguise a negative underlying signal.
+
+See `reports/intraday_1dte_shadow_launch.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse
