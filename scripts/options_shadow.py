@@ -147,6 +147,83 @@ def select_delta_quote_pair(
     }
 
 
+def select_put_broken_wing(
+    snapshots: dict,
+    *,
+    today: dt.date,
+    target_dte: int,
+    target_upper_delta: float,
+    upper_width: float,
+    lower_width: float,
+) -> dict:
+    """Select a 1/-2/1 put butterfly and price it at executable quotes."""
+    rows = []
+    for symbol, snapshot in snapshots.items():
+        parsed = parse_contract(symbol)
+        delta = (snapshot.get("greeks") or {}).get("delta")
+        if not parsed or delta is None or not np.isfinite(float(delta)):
+            continue
+        expiry, strike = parsed
+        if expiry.weekday() != 4 or not 15 <= expiry.day <= 21:
+            continue
+        rows.append((symbol, expiry, strike, snapshot))
+    if not rows:
+        raise ValueError("no standard-monthly puts for broken-wing butterfly")
+    expiry = min({r[1] for r in rows}, key=lambda d: abs((d - today).days - target_dte))
+    same_expiry = [r for r in rows if r[1] == expiry]
+    structures = []
+    for upper in same_expiry:
+        middle = [r for r in same_expiry if np.isclose(r[2], upper[2] - upper_width)]
+        if not middle:
+            continue
+        lower_strike = middle[0][2] - lower_width
+        lower = [r for r in same_expiry if np.isclose(r[2], lower_strike)]
+        if lower:
+            delta = abs(float((upper[3].get("greeks") or {})["delta"]))
+            structures.append((abs(delta - target_upper_delta), upper, middle[0], lower[0]))
+    if not structures:
+        raise ValueError("no exact broken-wing strike geometry")
+    _, upper, middle, lower = min(structures, key=lambda row: row[0])
+
+    def quote(row):
+        return row[3].get("latestQuote") or {}
+
+    upper_ask = float(quote(upper).get("ap") or 0)
+    middle_bid = float(quote(middle).get("bp") or 0)
+    lower_ask = float(quote(lower).get("ap") or 0)
+    net_debit = upper_ask + lower_ask - 2 * middle_bid
+    peak_profit = (upper_width - net_debit) * 100
+    downside_loss = (lower_width - upper_width + net_debit) * 100
+    maximum_loss = max(net_debit * 100, downside_loss, 0.0)
+    return {
+        "expiration_date": expiry.isoformat(),
+        "short_symbol": middle[0],
+        "short_strike": middle[2],
+        "short_bid": middle_bid,
+        "short_ask": float(quote(middle).get("ap") or 0),
+        "short_quote_ts": quote(middle).get("t"),
+        "short_delta": (middle[3].get("greeks") or {}).get("delta"),
+        "short_iv": middle[3].get("impliedVolatility"),
+        "long_symbol": upper[0],
+        "long_strike": upper[2],
+        "long_bid": float(quote(upper).get("bp") or 0),
+        "long_ask": upper_ask,
+        "long_quote_ts": quote(upper).get("t"),
+        "long_delta": (upper[3].get("greeks") or {}).get("delta"),
+        "long_iv": upper[3].get("impliedVolatility"),
+        "lower_long_symbol": lower[0],
+        "lower_long_strike": lower[2],
+        "lower_long_bid": float(quote(lower).get("bp") or 0),
+        "lower_long_ask": lower_ask,
+        "lower_long_delta": (lower[3].get("greeks") or {}).get("delta"),
+        "net_debit": net_debit,
+        # Generic candidate columns use credit; a debit is negative credit.
+        "executable_credit": -net_debit,
+        "maximum_loss": maximum_loss,
+        "peak_profit": peak_profit,
+    }
+
+
 def option_chain(client: Trader, spot: float, today: dt.date) -> dict:
     snapshots = {}
     token = None
@@ -341,6 +418,49 @@ def main() -> None:
             f"credit=${candidate['executable_credit']:.2f} "
             f"credit/width={candidate['credit_pct_of_width']:.1%} "
             f"qualified={candidate['qualified']}"
+        )
+
+    butterfly_cfg = experiments.get("put_broken_wing_butterfly", {})
+    if butterfly_cfg.get("mode", "off") == "shadow":
+        butterfly_pair = select_put_broken_wing(
+            snapshots,
+            today=today,
+            target_dte=int(butterfly_cfg["target_dte"]),
+            target_upper_delta=float(butterfly_cfg["target_upper_delta"]),
+            upper_width=float(butterfly_cfg["upper_width"]),
+            lower_width=float(butterfly_cfg["lower_width"]),
+        )
+        butterfly = {**row, **butterfly_pair}
+        # Retain the common schema; for a debit structure this expresses the
+        # signed net credit relative to the upper profit wing.
+        butterfly["credit_pct_of_width"] = (
+            butterfly["executable_credit"] / float(butterfly_cfg["upper_width"])
+        )
+        butterfly["signal_enabled"] = bool(
+            butterfly["spy_prior_close"] > butterfly["spy_ma_200"]
+            and butterfly["realized_vol_20d"] < float(butterfly_cfg["max_realized_vol"])
+        )
+        butterfly["within_risk_budget"] = bool(
+            butterfly["maximum_loss"]
+            <= equity * float(butterfly_cfg["max_loss_pct"])
+        )
+        butterfly["credit_qualified"] = bool(
+            butterfly["net_debit"] <= float(butterfly_cfg["max_entry_debit"])
+            and butterfly["peak_profit"]
+            >= float(butterfly_cfg["min_peak_profit_dollars"])
+        )
+        butterfly["qualified"] = bool(
+            butterfly["signal_enabled"]
+            and butterfly["within_risk_budget"]
+            and butterfly["credit_qualified"]
+        )
+        record_candidate(out, "put_broken_wing_butterfly", butterfly)
+        print(
+            f"butterfly shadow: upper_delta={butterfly['long_delta']:.3f} "
+            f"debit=${butterfly['net_debit']:.2f} "
+            f"peak=${butterfly['peak_profit']:.0f} "
+            f"max_loss=${butterfly['maximum_loss']:.0f} "
+            f"qualified={butterfly['qualified']}"
         )
 
 

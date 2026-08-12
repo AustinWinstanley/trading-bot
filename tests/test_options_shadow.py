@@ -5,6 +5,7 @@ import pytest
 from scripts.options_shadow import (
     parse_contract,
     select_delta_quote_pair,
+    select_put_broken_wing,
     select_quote_pair,
 )
 
@@ -58,3 +59,24 @@ def test_delta_selection_uses_nearest_delta_with_exact_lower_wing():
     assert row["long_strike"] == 700
     assert row["short_delta"] == -0.20
     assert row["executable_credit"] == pytest.approx(0.4)
+
+
+def test_broken_wing_prices_one_by_two_by_one_at_executable_quotes():
+    snapshots = {
+        "SPY260918P00710000": _snapshot(2.00, 2.10, -0.25),
+        "SPY260918P00708000": _snapshot(1.60, 1.70, -0.22),
+        "SPY260918P00704000": _snapshot(1.00, 1.10, -0.16),
+    }
+    row = select_put_broken_wing(
+        snapshots,
+        today=dt.date(2026, 8, 12),
+        target_dte=45,
+        target_upper_delta=0.25,
+        upper_width=2.0,
+        lower_width=4.0,
+    )
+    # Buy upper ask 2.10 + lower ask 1.10 - 2 * middle bid 1.60.
+    assert row["net_debit"] == pytest.approx(0.0)
+    assert row["peak_profit"] == pytest.approx(200)
+    assert row["maximum_loss"] == pytest.approx(200)
+    assert row["lower_long_strike"] == 704
