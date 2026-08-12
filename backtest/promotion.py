@@ -39,6 +39,18 @@ from dataclasses import dataclass
 
 OBJECTIVE_CLASSES = ("return_enhancer", "risk_reducer", "cost_reducer")
 
+# Below this, d_sharpe/d_cagr/d_max_dd are treated as "the candidate produced
+# no measurable difference from the control" rather than as a genuine, if
+# small, loss. This is not about statistical noise (there is no significance
+# test here) — it catches the specific failure mode of a control and
+# candidate that are numerically IDENTICAL: zero historical events matched a
+# filter, zero trades cleared a feasibility constraint, or any other path
+# where the candidate's logic never actually diverged from the control's.
+# `sharpe_higher: d_sharpe > 0` reads that exactly the same as a real loss —
+# `passed: False` either way — even though "untested" and "tested and lost"
+# are different findings that call for different next steps.
+NO_EFFECT_EPSILON = 1e-9
+
 
 @dataclass(frozen=True)
 class GateResult:
@@ -46,11 +58,24 @@ class GateResult:
     passed: bool
     checks: dict
     inputs: dict
+    no_effect: bool = False
+
+    @property
+    def verdict(self) -> str:
+        """One of "no_effect", "passed", "failed" — the field a report
+        reader should actually branch on. `passed` stays exactly as
+        computed for backward compatibility with any code/report already
+        reading it; `verdict` is the additive, unambiguous signal."""
+        if self.no_effect:
+            return "no_effect"
+        return "passed" if self.passed else "failed"
 
     def to_dict(self) -> dict:
         return {
             "objective_class": self.objective_class,
             "passed": self.passed,
+            "no_effect": self.no_effect,
+            "verdict": self.verdict,
             "checks": self.checks,
             "inputs": self.inputs,
         }
@@ -91,6 +116,11 @@ def passes_gate(
     d_cagr = candidate["cagr"] - control["cagr"]
     # max_dd is <= 0; d_max_dd > 0 means the candidate's drawdown is shallower.
     d_max_dd = candidate["max_dd"] - control["max_dd"]
+    no_effect = (
+        abs(d_sharpe) < NO_EFFECT_EPSILON
+        and abs(d_cagr) < NO_EFFECT_EPSILON
+        and abs(d_max_dd) < NO_EFFECT_EPSILON
+    )
 
     inputs = {
         "control_sharpe": control["sharpe"],
@@ -167,7 +197,9 @@ def passes_gate(
             max_sharpe_cost=max_sharpe_cost,
         )
 
-    return GateResult(objective_class, bool(all(checks.values())), checks, inputs)
+    return GateResult(
+        objective_class, bool(all(checks.values())), checks, inputs, no_effect
+    )
 
 
 def passes_gate_all_cells(
@@ -182,6 +214,12 @@ def passes_gate_all_cells(
     dict with `passed` (True only if every cell passes and at least one cell
     was evaluated) and `cells` (each cell's window/profile tag plus its
     `GateResult`), matching the "both profiles and both windows" convention.
+
+    `any_no_effect` / `all_no_effect` surface the no_effect signal at the
+    aggregate level: a `passed: false` result where `all_no_effect` is true
+    means every cell was a byte-identical control/candidate — the candidate
+    was never actually exercised, not "tested and lost". Check this before
+    reading a `passed: false` verdict as a real rejection.
     """
     results = []
     for window, profile, control, candidate in cells:
@@ -190,5 +228,7 @@ def passes_gate_all_cells(
     return {
         "objective_class": objective_class,
         "passed": bool(results) and all(r["passed"] for r in results),
+        "any_no_effect": any(r["no_effect"] for r in results),
+        "all_no_effect": bool(results) and all(r["no_effect"] for r in results),
         "cells": results,
     }

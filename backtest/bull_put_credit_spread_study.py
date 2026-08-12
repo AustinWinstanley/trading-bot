@@ -56,6 +56,38 @@ def credit_spread_terms(width: float, entry_credit: float, friction_per_leg: flo
     return maximum_profit, maximum_loss
 
 
+def diagnose_budget_feasibility(
+    logs: list[dict],
+    *,
+    budget_rejection_reason: str,
+) -> dict:
+    """Distinguish "this construction is structurally too tight for its own
+    max-loss budget" from "the market rarely offered this setup" — two
+    different findings that a bare `completed_spreads: 0` count collapses
+    into one. Both bull-put studies hit exactly this: every candidate that
+    reached the budget check failed it (0 of N), which reads identically to
+    "signal never fired" in the trade count alone, but is a design bug
+    (width/friction/budget combination), not a market-opportunity finding.
+
+    Reads `logs` as already produced by credit_spread_pnl — every entry that
+    reached the maximum_loss comparison carries `maximum_loss_dollars`
+    regardless of whether it passed, so this needs no re-simulation.
+    """
+    checked = [row for row in logs if "maximum_loss_dollars" in row]
+    rejected_for_budget = [
+        row for row in checked if row.get("rejected") == budget_rejection_reason
+    ]
+    all_budget_rejected = bool(checked) and len(rejected_for_budget) == len(checked)
+    credits = [row["entry_credit"] for row in checked if "entry_credit" in row]
+    return {
+        "candidates_reaching_budget_check": len(checked),
+        "rejected_for_budget": len(rejected_for_budget),
+        "structurally_infeasible": all_budget_rejected,
+        "observed_entry_credit_min": round(min(credits), 4) if credits else None,
+        "observed_entry_credit_max": round(max(credits), 4) if credits else None,
+    }
+
+
 def credit_spread_pnl(
     plans: list[SpreadPlan],
     bars: pd.DataFrame,
@@ -203,6 +235,18 @@ def main() -> None:
     exact_gate = passes_gate_all_cells(cells, "return_enhancer")
     enough = len(completed) >= MINIMUM_COMPLETED_SPREADS
     advance = enough and exact_gate["passed"]
+    feasibility = diagnose_budget_feasibility(
+        logs, budget_rejection_reason="maximum loss exceeds 5% budget"
+    )
+    if feasibility["structurally_infeasible"]:
+        print(
+            "WARNING: every candidate that reached the budget check was "
+            "rejected by it — this width/friction/max-loss combination may "
+            "be structurally too tight for this construction's observed "
+            f"credit range (${feasibility['observed_entry_credit_min']}-"
+            f"${feasibility['observed_entry_credit_max']}), not a market-"
+            "opportunity finding. See payload['feasibility']."
+        )
     payload = {
         "decision": "advance_to_standard_window_proxy" if advance else "insufficient_evidence",
         "pre_registration": {
@@ -218,6 +262,7 @@ def main() -> None:
             "scope": "Passing advances only to a standard 2020-2022/2023+ proxy screen; it cannot activate paper orders.",
         },
         "completed_spreads": len(completed),
+        "feasibility": feasibility,
         "stage_gate": exact_gate,
         "performance": performance,
         "trade_summary": {

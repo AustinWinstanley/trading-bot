@@ -37,7 +37,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "design_2024",
@@ -59,7 +61,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "heldout_2025_plus",
@@ -81,7 +85,9 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       },
       {
         "window": "heldout_2025_plus",
@@ -103,9 +109,13 @@
           "d_sharpe": 0.0,
           "d_cagr": 0.0,
           "d_max_dd": 0.0
-        }
+        },
+        "no_effect": true,
+        "verdict": "no_effect"
       }
-    ]
+    ],
+    "any_no_effect": true,
+    "all_no_effect": true
   },
   "performance": {
     "design_2024": [
