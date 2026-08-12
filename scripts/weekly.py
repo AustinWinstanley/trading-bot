@@ -22,6 +22,7 @@ DB = REPO_ROOT / "state" / "paper.db"
 DB_2X = REPO_ROOT / "state" / "paper_2x.db"
 OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "options_shadow_2x.db"
 MOMENTUM_OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "momentum_options_shadow_2x.db"
+EVENT_VOLATILITY_SHADOW_2X = REPO_ROOT / "state" / "event_volatility_shadow_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
@@ -312,6 +313,24 @@ def summarize_momentum_options_shadow(
     ]
 
 
+def summarize_event_volatility_shadow(
+    db_path: Path = EVENT_VOLATILITY_SHADOW_2X,
+) -> list[str]:
+    if not db_path.exists():
+        return ["event-volatility shadow: no observations yet"]
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT event_name, event_date, COUNT(*), "
+            "AVG(implied_break_even_move_pct) FROM observations "
+            "GROUP BY event_name, event_date ORDER BY event_date"
+        ).fetchall()
+    return [
+        f"event-volatility {name} {date}: {count} observations, "
+        f"average implied break-even move {move:.2%}"
+        for name, date, count, move in rows
+    ] or ["event-volatility shadow: no observations yet"]
+
+
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()
@@ -328,6 +347,7 @@ def main() -> None:
     body += ["", "## Options experiments (read-only shadow)"]
     body += [f"- {l}" for l in summarize_options_shadow()]
     body += [f"- {l}" for l in summarize_momentum_options_shadow()]
+    body += [f"- {l}" for l in summarize_event_volatility_shadow()]
     out = REPORT_DIR / f"weekly-{today}.md"
     out.write_text("\n".join(body) + "\n")
     print(f"wrote {out}")
