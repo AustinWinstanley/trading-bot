@@ -372,6 +372,14 @@ intraday decision before credentials; because no family qualified, it exits
 without contacting Alpaca. It cannot submit orders. A future qualified signal
 could authorize quote collection, not automatic paper activation.
 
+The 2× morning cycle also runs a read-only SPY 0DTE surface collector. It
+records the ATM straddle ask and a defined-risk OTM iron condor priced at short
+bids and long asks, requiring positive displayed size on every leg. Missing or
+after-hours markets produce no observation rather than a synthetic quote.
+Directional 0DTE is disabled because no directional family qualified. Condor
+"qualification" means only that a quote fits the declared credit/loss bounds;
+at least 60 sessions of outcomes are required before designing paper orders.
+
 Those decisions are binding. Check for an existing `decision` before proposing
 a change — several plausible ideas are already tested and rejected, with
 reasons. `AGENTS.md` covers the conventions and the traps.

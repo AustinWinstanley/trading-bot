@@ -148,6 +148,23 @@ without using option leverage to disguise a negative underlying signal.
 
 See `reports/intraday_1dte_shadow_launch.json`.
 
+### 0DTE surface and defined-risk premium selling — collect shadow
+
+The existing 2× morning cycle now collects a read-only SPY 0DTE surface when a
+complete market exists: ATM call-plus-put ask and a four-leg OTM iron condor
+priced conservatively at short bids and protective-wing asks. Every leg must
+have positive displayed bid/ask size. Missing, incomplete, or after-hours
+markets create no observation and do not fail the trading run.
+
+Directional 0DTE remains disabled because the underlying signal screen had no
+qualifier. A condor satisfying credit and maximum-loss bounds is only
+quote-qualified, not expected-return evidence. Review requires at least 60
+sessions spanning quiet, trend, and scheduled-event days before any separate
+paper-active design. No new cron pair is needed and the collector has no
+account mutation method.
+
+See `reports/zero_dte_shadow_launch.json`.
+
 ## Next pre-registered experiment: execution timing
 
 Matched 2026-08-04 onward MOM_LS fills show approximately 0 bp adverse

@@ -72,6 +72,8 @@ esac
           echo "WARNING: read-only momentum-options shadow failed; trading run succeeded"
         timeout 120 .venv/bin/python -m scripts.event_volatility_shadow --profile 2x ||
           echo "WARNING: read-only event-volatility shadow failed; trading run succeeded"
+        timeout 120 .venv/bin/python -m scripts.zero_dte_shadow --profile 2x ||
+          echo "WARNING: read-only 0DTE shadow failed; trading run succeeded"
       fi
       if [ "$daily_rc" -eq 0 ]; then true; else false; fi
       ;;

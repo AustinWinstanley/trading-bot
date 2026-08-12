@@ -183,3 +183,12 @@ paper_portfolio:
       - {name: "CPI", date: "2026-11-10"}
       - {name: "FOMC", date: "2026-12-09"}
       - {name: "CPI", date: "2026-12-10"}
+    zero_dte_surface:
+      # Quote collection only. No strategy in the current intraday screen
+      # qualified, so directional_enabled remains false.
+      mode: "shadow"
+      directional_enabled: false
+      short_distance_pct: 0.005
+      wing_width: 5.0
+      min_credit_pct_of_width: 0.10
+      max_loss_pct: 0.05
