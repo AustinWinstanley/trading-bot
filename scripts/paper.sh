@@ -12,7 +12,10 @@
 # wrong-half-of-the-year copy exit as a no-op, so exactly one runs whatever the
 # offset. Omit $2 to run unconditionally.
 set -u
-BOT=/home/user/trading-bot
+# Production keeps the fixed server path. Tests and one-off validation may
+# point the wrapper at an isolated checkout without writing locks under
+# /home/user; cron never sets this override.
+BOT=${PAPER_BOT_ROOT:-/home/user/trading-bot}
 # Overridable so tests can exercise the slot guard without writing into the
 # production log the weekly report scrapes.
 LOG_DIR=${PAPER_LOG_DIR:-$BOT/logs}
