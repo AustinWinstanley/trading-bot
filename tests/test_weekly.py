@@ -156,3 +156,31 @@ def test_options_shadow_summary_reports_qualification_rate(tmp_path):
     assert len(lines) == 1
     assert "1 observations, 1 risk-on, 1 qualified" in lines[0]
     assert "$0.80 (16.0% of width)" in lines[0]
+
+
+def test_momentum_options_summary_reports_both_rank_sides(tmp_path):
+    db = tmp_path / "momentum-options.db"
+    conn = sqlite3.connect(db)
+    conn.execute("""
+        CREATE TABLE observations(
+            ts, profile, rank_side, rank, underlying, direction,
+            expiration_date, long_symbol, long_strike, long_delta,
+            short_symbol, short_strike, short_delta, net_debit,
+            maximum_profit, maximum_loss, reward_to_risk, qualified,
+            reason, raw, PRIMARY KEY(ts, rank_side))
+    """)
+    now = __import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc
+    ).isoformat()
+    conn.execute(
+        "INSERT INTO observations VALUES (" + ",".join("?" * 20) + ")",
+        (now, "2x", "long", 1, "A", "bull_call", "2026-10-16",
+         "L", 10, .6, "S", 15, .35, 1, 400, 100, 4, 1, "qualified", "{}"),
+    )
+    conn.commit()
+    conn.close()
+    lines = weekly.summarize_momentum_options_shadow(db)
+    assert lines == [
+        "momentum-options long: 1 observations, 1 qualified; "
+        "average max loss $100.00, reward/risk 4.00"
+    ]

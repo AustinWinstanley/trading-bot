@@ -21,6 +21,7 @@ from engine.data import REPO_ROOT
 DB = REPO_ROOT / "state" / "paper.db"
 DB_2X = REPO_ROOT / "state" / "paper_2x.db"
 OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "options_shadow_2x.db"
+MOMENTUM_OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "momentum_options_shadow_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
 
 
@@ -288,6 +289,29 @@ def summarize_options_shadow(db_path: Path = OPTIONS_SHADOW_2X) -> list[str]:
     ]
 
 
+def summarize_momentum_options_shadow(
+    db_path: Path = MOMENTUM_OPTIONS_SHADOW_2X,
+) -> list[str]:
+    if not db_path.exists():
+        return ["momentum-options shadow: no observations yet"]
+    week_ago = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT rank_side, COUNT(*), SUM(qualified), AVG(maximum_loss), "
+            "AVG(reward_to_risk) FROM observations WHERE ts > ? "
+            "GROUP BY rank_side ORDER BY rank_side",
+            (week_ago,),
+        ).fetchall()
+    if not rows:
+        return ["momentum-options shadow: no observations in the last 7 days"]
+    return [
+        f"momentum-options {side}: {count} observations, "
+        f"{int(qualified or 0)} qualified; average max loss "
+        f"${max_loss or 0:,.2f}, reward/risk {reward_risk or 0:.2f}"
+        for side, count, qualified, max_loss, reward_risk in rows
+    ]
+
+
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     today = dt.date.today()
@@ -303,6 +327,7 @@ def main() -> None:
     body += [f"- {l}" for l in summarize_week(DB_2X)]
     body += ["", "## Options experiments (read-only shadow)"]
     body += [f"- {l}" for l in summarize_options_shadow()]
+    body += [f"- {l}" for l in summarize_momentum_options_shadow()]
     out = REPORT_DIR / f"weekly-{today}.md"
     out.write_text("\n".join(body) + "\n")
     print(f"wrote {out}")

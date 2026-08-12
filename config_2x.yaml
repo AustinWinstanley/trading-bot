@@ -164,3 +164,11 @@ paper_portfolio:
       min_peak_profit_dollars: 100.0
       max_realized_vol: 0.15
       max_loss_pct: 0.05
+    momentum_verticals:
+      mode: "shadow"
+      target_dte: 60
+      long_delta: 0.60
+      short_delta: 0.35
+      max_debit_pct: 0.02
+      min_reward_to_risk: 1.50
+      max_rank_attempts_per_side: 3
