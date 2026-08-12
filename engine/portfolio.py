@@ -74,7 +74,23 @@ def tsmom_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     if not signals:
         return {}
     total = sum(signals.values())
-    return {s: sleeve * v / total for s, v in signals.items()}
+    targets = {s: sleeve * v / total for s, v in signals.items()}
+
+    # Apply the same liquidity floor as the risk gate, using completed bars,
+    # after normalization. Dropping after weights are assigned deliberately
+    # leaves the rejected allocation in cash; redistributing it would change
+    # the strategy and has not passed the promotion gate. The risk gate still
+    # rechecks this independently at order time.
+    floor = float(p.get("tsmom_min_dollar_volume", 0.0))
+    for sym in list(targets):
+        df = bars[sym]
+        if "volume" not in df or len(df) < 21:
+            continue
+        completed = df.iloc[:-1].tail(20)
+        avg_dollar_volume = float((completed["close"] * completed["volume"]).mean())
+        if not np.isfinite(avg_dollar_volume) or avg_dollar_volume < floor:
+            targets.pop(sym)
+    return targets
 
 
 def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float]:

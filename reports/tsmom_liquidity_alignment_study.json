@@ -1,0 +1,239 @@
+{
+  "decision": "reject",
+  "pre_registration": {
+    "objective_class": "return_enhancer",
+    "candidate": "Apply the existing $1m 20-day dollar-volume floor before TSMOM normalization using only information available before the trading day.",
+    "promotion_rule": "Higher Sharpe, no lower CAGR and no worse max drawdown in both profiles and both screening windows."
+  },
+  "control_validation_max_abs_daily_return_error": 0.0,
+  "promotion_gate": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.927,
+          "candidate_sharpe": 0.927,
+          "control_cagr": 0.1006,
+          "candidate_cagr": 0.1006,
+          "control_max_dd": -0.0994,
+          "candidate_max_dd": -0.0994,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0,
+          "d_max_dd": 0.0
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 0.699,
+          "candidate_sharpe": 0.699,
+          "control_cagr": 0.1382,
+          "candidate_cagr": 0.1382,
+          "control_max_dd": -0.2144,
+          "candidate_max_dd": -0.2144,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0,
+          "d_max_dd": 0.0
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.255,
+          "candidate_sharpe": 1.255,
+          "control_cagr": 0.1589,
+          "candidate_cagr": 0.1589,
+          "control_max_dd": -0.1383,
+          "candidate_max_dd": -0.1383,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0,
+          "d_max_dd": 0.0
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.054,
+          "candidate_sharpe": 1.054,
+          "control_cagr": 0.2583,
+          "candidate_cagr": 0.2583,
+          "control_max_dd": -0.2682,
+          "candidate_max_dd": -0.2682,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0,
+          "d_max_dd": 0.0
+        }
+      }
+    ]
+  },
+  "performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base \u2014 post-target gate control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1006,
+        "ann_return": 0.1015,
+        "vol": 0.1095,
+        "sharpe": 0.927,
+        "sortino": 1.302,
+        "max_dd": -0.0994,
+        "x_money": 1.262,
+        "profile": "base",
+        "variant": "post-target gate control"
+      },
+      {
+        "portfolio": "base \u2014 pre-target liquidity alignment",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1006,
+        "ann_return": 0.1015,
+        "vol": 0.1095,
+        "sharpe": 0.927,
+        "sortino": 1.302,
+        "max_dd": -0.0994,
+        "x_money": 1.262,
+        "profile": "base",
+        "variant": "pre-target liquidity alignment"
+      },
+      {
+        "portfolio": "2x \u2014 post-target gate control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1382,
+        "ann_return": 0.153,
+        "vol": 0.2191,
+        "sharpe": 0.699,
+        "sortino": 0.981,
+        "max_dd": -0.2144,
+        "x_money": 1.369,
+        "profile": "2x",
+        "variant": "post-target gate control"
+      },
+      {
+        "portfolio": "2x \u2014 pre-target liquidity alignment",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1382,
+        "ann_return": 0.153,
+        "vol": 0.2191,
+        "sharpe": 0.699,
+        "sortino": 0.981,
+        "max_dd": -0.2144,
+        "x_money": 1.369,
+        "profile": "2x",
+        "variant": "pre-target liquidity alignment"
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base \u2014 post-target gate control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1589,
+        "ann_return": 0.1559,
+        "vol": 0.1242,
+        "sharpe": 1.255,
+        "sortino": 1.743,
+        "max_dd": -0.1383,
+        "x_money": 1.688,
+        "profile": "base",
+        "variant": "post-target gate control"
+      },
+      {
+        "portfolio": "base \u2014 pre-target liquidity alignment",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1589,
+        "ann_return": 0.1559,
+        "vol": 0.1242,
+        "sharpe": 1.255,
+        "sortino": 1.743,
+        "max_dd": -0.1383,
+        "x_money": 1.688,
+        "profile": "base",
+        "variant": "pre-target liquidity alignment"
+      },
+      {
+        "portfolio": "2x \u2014 post-target gate control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2583,
+        "ann_return": 0.2618,
+        "vol": 0.2485,
+        "sharpe": 1.054,
+        "sortino": 1.463,
+        "max_dd": -0.2682,
+        "x_money": 2.26,
+        "profile": "2x",
+        "variant": "post-target gate control"
+      },
+      {
+        "portfolio": "2x \u2014 pre-target liquidity alignment",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2583,
+        "ann_return": 0.2618,
+        "vol": 0.2485,
+        "sharpe": 1.054,
+        "sortino": 1.463,
+        "max_dd": -0.2682,
+        "x_money": 2.26,
+        "profile": "2x",
+        "variant": "pre-target liquidity alignment"
+      }
+    ]
+  },
+  "diagnostics": {
+    "liquidity_floor": 1000000.0,
+    "positive_signal_asset_days_removed": {},
+    "total_asset_days_removed": 0
+  },
+  "limitations": [
+    "Tiingo end-of-day volume may differ from Alpaca IEX volume used by the live gate.",
+    "The study treats a rejected allocation as cash in the conceptual control, while the accepted headline backtest historically assumes it fills.",
+    "2026-08-04 onward remains frozen final validation and is not used for tuning."
+  ]
+}
