@@ -1,0 +1,47 @@
+{
+  "decision": "usable_for_screening",
+  "feed": "Alpaca account-configured stock feed (IEX on free tier)",
+  "timeframe": "5Min",
+  "window": {
+    "start": "2024-02-01",
+    "end_exclusive": "2026-08-01"
+  },
+  "coverage": {
+    "SPY": {
+      "bars": 48477,
+      "sessions": 625,
+      "first_bar": "2024-02-01T09:30:00-05:00",
+      "last_bar": "2026-07-31T15:55:00-04:00",
+      "median_bars_per_session": 78.0,
+      "complete_78_bar_sessions": 613
+    },
+    "QQQ": {
+      "bars": 48437,
+      "sessions": 625,
+      "first_bar": "2024-02-01T09:30:00-05:00",
+      "last_bar": "2026-07-31T15:55:00-04:00",
+      "median_bars_per_session": 78.0,
+      "complete_78_bar_sessions": 575
+    },
+    "IWM": {
+      "bars": 48456,
+      "sessions": 625,
+      "first_bar": "2024-02-01T09:30:00-05:00",
+      "last_bar": "2026-07-31T15:55:00-04:00",
+      "median_bars_per_session": 78.0,
+      "complete_78_bar_sessions": 600
+    }
+  },
+  "execution_contract": {
+    "signal": "completed bar only",
+    "entry": "next bar open",
+    "exit": "same regular session",
+    "primary_cost_bps_per_leg": 2.0,
+    "stress_cost_bps_per_leg": 5.0
+  },
+  "limitations": [
+    "Free-tier IEX represents one venue rather than consolidated SIP activity.",
+    "Five-minute bars do not resolve within-bar stop/target ordering.",
+    "The panel starts in 2024 and cannot validate COVID or the 2022 bear market."
+  ]
+}
