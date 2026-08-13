@@ -1,0 +1,21 @@
+{
+  "decision": "continue_timing_experiment",
+  "objective": "Phase 4 follow-up: determine whether order size explains the base-vs-2x adverse slippage gap the execution-timing experiment (engine/execution_timing.py) was set up to investigate — if size alone explains it, that experiment is confounded and not worth continuing to its 100-matched-pair control-complete threshold.",
+  "methodology": "Pooled OLS regression of adverse_slippage_bps on reference_notional (order size) and an is_2x account dummy, run against every mom_ls fill in both journals since 2026-08-04 (not just engine.execution_timing.match_fills's matched pairs). Matched pairs alone cannot separate a size effect from an account effect: by construction, every 2x fill's notional is ~2x its matched base fill's (same signal, same symbol, doubled leverage), so size and account identity are near-perfectly collinear within that subset. Pooling the full, unmatched fill history from each account gives independent within-account variation in notional to regress against instead.",
+  "as_of_2026_08_12": {
+    "base_fills": 27,
+    "leveraged_fills": 39,
+    "total_fills": 66,
+    "base_notional_mean": 66.45,
+    "leveraged_notional_mean": 125.08,
+    "raw_leveraged_minus_base_bps": 9.50,
+    "notional_adjusted_leveraged_minus_base_bps": 4.57,
+    "notional_coef_bps_per_dollar": 0.0841,
+    "pooled_r_squared": 0.071,
+    "size_explained_fraction_of_raw_gap": 0.519
+  },
+  "finding": "Order size explains roughly half (51.9%) of the raw 9.50bps slippage gap between accounts — controlling for notional shrinks the 2x-vs-base gap to 4.57bps. That is a real, non-trivial size contribution, but it is not the majority-or-more result (>=75% threshold, pre-specified before running this) that would justify calling the timing experiment purely confounded and canceling it. A residual ~4.6bps difference remains unexplained by size alone.",
+  "caveat": "Statistical power here is low: pooled R^2 is only 0.071 (the regression explains very little of the trade-to-trade variance — most of it is idiosyncratic per-fill noise, not size or account), and n=66 total fills is a small sample drawn almost entirely from whole-share-slot-clustered order sizes (little independent size variation within either account to regress against). This result should be read as 'inconclusive, size is a real but partial factor,' not as strong evidence either way. Re-run this regression once engine.execution_timing.timing_summary's own 100-matched-pair control-complete threshold is reached — a materially larger sample may sharpen or reverse this reading.",
+  "recommendation": "Do not cancel the timing experiment. Continue it to its existing 100-matched-pair control-complete threshold (engine/execution_timing.py's timing_summary — 21/100 pairs as of 2026-08-12) before making any schedule change decision. Re-run scripts.execution_timing --size-regression alongside that control-complete review, not as a substitute for it.",
+  "reproduction": "python -m scripts.execution_timing --size-regression"
+}

@@ -169,3 +169,98 @@ def timing_summary(
             "submission_or_lock_failures_may_not_increase": True,
         },
     }
+
+
+def size_regression_summary(
+    base_conn: sqlite3.Connection,
+    leveraged_conn: sqlite3.Connection,
+    *,
+    since: str = "2026-08-04",
+    minimum_fills: int = 50,
+    majority_threshold: float = 0.75,
+) -> dict:
+    """Does order size explain the base-vs-2x adverse slippage gap, or does
+    a residual difference persist that timing/schedule could still explain?
+
+    Regressed on the FULL fill history of both journals (not just
+    timing_summary's matched pairs) — a matched pair is ~perfectly
+    collinear in size with account identity by construction (a 2x fill's
+    notional is always ~2x its matched base fill's), so matched pairs alone
+    cannot separate a size effect from an account effect. Pooling every
+    fill in each account gives independent (if still slot-clustered, since
+    both accounts size near a fixed whole-share slot) variation in notional
+    within each account to regress against.
+    """
+    import numpy as np
+
+    base = load_fills(base_conn, since)
+    leveraged = load_fills(leveraged_conn, since)
+    if len(base) + len(leveraged) < 3:
+        return {
+            "decision": "insufficient_data",
+            "since": since, "base_fills": len(base), "leveraged_fills": len(leveraged),
+        }
+
+    base_notional = np.array([f.reference_notional for f in base])
+    base_slip = np.array([f.adverse_slippage_bps for f in base])
+    lev_notional = np.array([f.reference_notional for f in leveraged])
+    lev_slip = np.array([f.adverse_slippage_bps for f in leveraged])
+    all_notional = np.concatenate([base_notional, lev_notional])
+    all_slip = np.concatenate([base_slip, lev_slip])
+    is_2x = np.concatenate([np.zeros(len(base)), np.ones(len(leveraged))])
+
+    # Raw, unadjusted slippage gap (is_2x only).
+    x_raw = np.column_stack([np.ones_like(all_notional), is_2x])
+    coef_raw, *_ = np.linalg.lstsq(x_raw, all_slip, rcond=None)
+    raw_gap_bps = float(coef_raw[1])
+
+    # Pooled regression controlling for notional.
+    x_full = np.column_stack([np.ones_like(all_notional), all_notional, is_2x])
+    coef_full, *_ = np.linalg.lstsq(x_full, all_slip, rcond=None)
+    predicted = x_full @ coef_full
+    ss_res = float(np.sum((all_slip - predicted) ** 2))
+    ss_tot = float(np.sum((all_slip - all_slip.mean()) ** 2))
+    r_squared = (1 - ss_res / ss_tot) if ss_tot > 0 else None
+    adjusted_gap_bps = float(coef_full[2])
+    notional_coef_bps_per_dollar = float(coef_full[1])
+
+    size_explained_fraction = None
+    if raw_gap_bps and abs(raw_gap_bps) > 1e-9:
+        size_explained_fraction = (raw_gap_bps - adjusted_gap_bps) / raw_gap_bps
+
+    total_fills = len(base) + len(leveraged)
+    if total_fills < minimum_fills:
+        recommendation = (
+            f"insufficient data ({total_fills} fills, need >={minimum_fills}) "
+            "to draw a conclusion; continue collecting before deciding whether "
+            "to cancel the timing experiment"
+        )
+    elif size_explained_fraction is not None and size_explained_fraction >= majority_threshold:
+        recommendation = (
+            "order size explains a majority of the raw slippage gap; "
+            "the timing experiment is confounded by size, not schedule — "
+            "consider canceling it"
+        )
+    else:
+        recommendation = (
+            "order size explains only part of the raw slippage gap; a "
+            "residual difference persists that size alone does not account "
+            "for — continue the timing experiment rather than canceling it"
+        )
+
+    return {
+        "since": since,
+        "base_fills": len(base),
+        "leveraged_fills": len(leveraged),
+        "total_fills": total_fills,
+        "base_notional_mean": float(base_notional.mean()) if len(base) else None,
+        "leveraged_notional_mean": float(lev_notional.mean()) if len(leveraged) else None,
+        "raw_leveraged_minus_base_bps": raw_gap_bps,
+        "notional_adjusted_leveraged_minus_base_bps": adjusted_gap_bps,
+        "notional_coef_bps_per_dollar": notional_coef_bps_per_dollar,
+        "pooled_r_squared": r_squared,
+        "size_explained_fraction_of_raw_gap": size_explained_fraction,
+        "minimum_fills_for_conclusion": minimum_fills,
+        "majority_threshold": majority_threshold,
+        "recommendation": recommendation,
+    }
