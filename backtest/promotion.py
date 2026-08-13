@@ -28,6 +28,29 @@ the bound in the pre-registration, not in the writeup after the run:
   give-up (a rank buffer, a slower rebalance). The study must pre-declare
   `min_turnover_reduction_pct` and `max_sharpe_cost` (absolute Sharpe it is
   willing to give up), and pass the two turnover figures being compared.
+- `diversifier` — a NEW return stream added at a small allocation whose
+  case is portfolio improvement through low correlation, not Pareto
+  dominance. Portfolio Sharpe must still improve and CAGR must still not
+  fall (a diversifier earns its place and self-funds — no budgets to
+  spend there), but the drawdown check uses a pre-declared
+  `max_dd_cost_pp` tolerance instead of zero tolerance, and that
+  tolerance must come from `paired_drawdown_noise_pp` below (a paired
+  block-bootstrap noise estimate), not from a hand-picked number. The
+  study must also pre-declare `max_correlation` and pass the candidate
+  stream's measured `stream_correlation` vs the control portfolio.
+
+  This is NOT a loosening of `return_enhancer`, which stays untouched as
+  the zero-tolerance bar for promoting a MODIFICATION to an existing
+  sleeve. It is a different pre-registerable question — "does adding this
+  new, lowly-correlated stream improve the portfolio within drawdown
+  noise?" — the same way `risk_reducer` was a different question when it
+  was added. Max drawdown is the noisiest single-path statistic this
+  module judges (see the 2026-08-12 audit: candidates with 4/4
+  Sharpe+CAGR wins were rejected on 0.2-0.6pp drawdown differences, and
+  one on a single basis point); a class that prices that noise explicitly
+  and pre-registers the tolerance is more honest than one that treats
+  every 1bp path wiggle as a real loss. As with every class here: pick it
+  BEFORE looking at results.
 
 Every input that decided the verdict is echoed back in the result so the
 report JSON is self-auditing — no re-deriving what a study "must have" used.
@@ -37,7 +60,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-OBJECTIVE_CLASSES = ("return_enhancer", "risk_reducer", "cost_reducer")
+OBJECTIVE_CLASSES = ("return_enhancer", "risk_reducer", "cost_reducer", "diversifier")
 
 # Below this, d_sharpe/d_cagr/d_max_dd are treated as "the candidate produced
 # no measurable difference from the control" rather than as a genuine, if
@@ -98,6 +121,9 @@ def passes_gate(
     max_sharpe_cost: float | None = None,
     control_turnover: float | None = None,
     candidate_turnover: float | None = None,
+    max_dd_cost_pp: float | None = None,
+    max_correlation: float | None = None,
+    stream_correlation: float | None = None,
 ) -> GateResult:
     """Evaluate one control/candidate pair from `returns_summary` output.
 
@@ -163,6 +189,31 @@ def passes_gate(
             max_cagr_cost_pp=max_cagr_cost_pp,
             dd_improvement_pct=round(dd_improvement_pct, 4),
             min_dd_improvement_pct=min_dd_improvement_pct,
+        )
+
+    elif objective_class == "diversifier":
+        if (
+            max_dd_cost_pp is None
+            or max_correlation is None
+            or stream_correlation is None
+        ):
+            raise ValueError(
+                "diversifier requires pre-declared max_dd_cost_pp (from "
+                "paired_drawdown_noise_pp) and max_correlation, plus the "
+                "measured stream_correlation"
+            )
+        checks = {
+            "sharpe_higher": d_sharpe > 0,
+            "cagr_not_lower": d_cagr >= 0,
+            # Within the pre-declared paired-bootstrap noise band, a
+            # drawdown difference is a tie, not a loss.
+            "max_dd_within_noise": d_max_dd >= -max_dd_cost_pp / 100,
+            "correlation_low_enough": stream_correlation <= max_correlation,
+        }
+        inputs.update(
+            max_dd_cost_pp=max_dd_cost_pp,
+            max_correlation=max_correlation,
+            stream_correlation=round(stream_correlation, 4),
         )
 
     else:  # cost_reducer
@@ -232,3 +283,64 @@ def passes_gate_all_cells(
         "all_no_effect": bool(results) and all(r["no_effect"] for r in results),
         "cells": results,
     }
+
+
+def paired_drawdown_noise_pp(
+    control_returns,
+    candidate_returns,
+    *,
+    block_size: int = 63,
+    simulations: int = 2000,
+    seed: int = 20260812,
+) -> float:
+    """One standard deviation, in percentage points, of the max-drawdown
+    DIFFERENCE between two return streams under paired block resampling.
+
+    The diversifier class needs a principled `max_dd_cost_pp`, not a
+    hand-picked one. Resampling both streams with the SAME circular block
+    indices (backtest.return_uncertainty_study.circular_block_indices —
+    reused, not reimplemented) cancels shared path luck: what varies across
+    simulations is how the two strategies' drawdowns differ over the same
+    resampled market sequences, which is exactly the noise a zero-tolerance
+    drawdown comparison mistakes for signal. Deterministic for a fixed
+    seed, so a study's declared tolerance is reproducible from its inputs.
+
+    Both inputs must be aligned daily return series of equal length (the
+    caller aligns/dropnas — this function raises on a mismatch rather than
+    silently truncating).
+    """
+    import numpy as np
+
+    from backtest.return_uncertainty_study import circular_block_indices
+
+    control = np.asarray(control_returns, dtype=float)
+    candidate = np.asarray(candidate_returns, dtype=float)
+    if control.shape != candidate.shape or control.ndim != 1:
+        raise ValueError(
+            f"control and candidate must be equal-length 1-D return arrays, "
+            f"got {control.shape} vs {candidate.shape}"
+        )
+    if np.isnan(control).any() or np.isnan(candidate).any():
+        raise ValueError("return arrays must not contain NaNs — align and dropna first")
+    observations = len(control)
+    if observations < block_size:
+        raise ValueError(
+            f"need at least block_size ({block_size}) observations, got {observations}"
+        )
+
+    rng = np.random.default_rng(seed)
+    indices = circular_block_indices(
+        observations, observations, block_size=block_size,
+        simulations=simulations, rng=rng,
+    )
+
+    def max_drawdowns(returns: "np.ndarray") -> "np.ndarray":
+        equity = np.cumprod(1.0 + returns[indices], axis=1)
+        # Include starting capital in the high-water mark — without the 1.0
+        # floor, a first-day loss incorrectly starts at 0% drawdown (same
+        # convention as return_uncertainty_study.bootstrap_outcomes).
+        peaks = np.maximum.accumulate(np.maximum(equity, 1.0), axis=1)
+        return np.min(equity / peaks - 1.0, axis=1)
+
+    differences = max_drawdowns(candidate) - max_drawdowns(control)
+    return float(np.std(differences, ddof=1) * 100)
