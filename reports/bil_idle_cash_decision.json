@@ -1,0 +1,25 @@
+{
+  "decision": "2x_lab_experiment_tier_yes__hard_gate_no",
+  "objective": "Phase 4 follow-up: decide the BIL idle-cash reserve candidate from reports/cash_reserve_study.json, which the pre-registered return_enhancer hard gate rejected by a 1bp drawdown margin despite better Sharpe and CAGR in both windows.",
+  "source_evidence": "reports/cash_reserve_study.json, decision_bil: reject, gates_bil.early_2020_2022.max_drawdown_not_worse: false (all other checks true in both windows).",
+  "numbers": {
+    "early_2020_2022": {
+      "control": {"cagr": 0.0781, "sharpe": 0.728, "max_dd": -0.1253},
+      "bil_candidate": {"cagr": 0.0791, "sharpe": 0.736, "max_dd": -0.1254},
+      "d_cagr": 0.0010, "d_sharpe": 0.008, "d_max_dd": -0.0001
+    },
+    "heldout_2023_plus": {
+      "control": {"cagr": 0.1688, "sharpe": 1.291, "max_dd": -0.1462},
+      "bil_candidate": {"cagr": 0.1694, "sharpe": 1.295, "max_dd": -0.1457},
+      "d_cagr": 0.0006, "d_sharpe": 0.004, "d_max_dd": 0.0005
+    }
+  },
+  "why_not_risk_reducer": "The Phase 4 plan text suggested judging this under the risk_reducer objective class (backtest/promotion.py), but that class is shaped for a candidate trading CAGR away for less drawdown (a hedge, a vol overlay) — it requires pre-declaring max_cagr_cost_pp (a cost the study must be willing to pay). BIL's actual result is the opposite shape: CAGR and Sharpe both improve in both windows; the only failure is a 1bp-worse drawdown in one window. Forcing this into risk_reducer's framework would mean inventing a cost-budget for a candidate that isn't costing anything, which is not what that objective class is for. It also was not the objective class cash_reserve_study.py pre-registered, and retroactively picking a different class after seeing a result that doesn't fit the first one is exactly the after-the-fact conditioning this project's own research-discipline rules (AGENTS.md) exist to prevent.",
+  "reasoning": "This reads as a razor's-edge hard-gate near-miss with genuinely strong other-axis evidence, the same pattern already used to justify three other 2x-lab experiment-tier launches this session (MOM_LS breadth, TSMOM FXE drop, the averaging-down restoration exemption): better Sharpe AND better CAGR in both screening windows, with the only blemish a 1bp drawdown difference (-0.1254 vs -0.1253) in one window that is not economically distinguishable from noise for a near-zero-duration T-bill substitute for idle cash. The pre-registered return_enhancer gate's zero-tolerance rule is doing exactly its job by rejecting this for CORE promotion (config.yaml) — that verdict stands, unchanged, and base config.yaml gets no trend_reserve_symbol. But the lab's lighter experiment-tier bar exists precisely for candidates like this: near the hard bar, positive on the axes that matter most, worth learning from live rather than discarding.",
+  "implementation": "engine/portfolio.py's trend_targets gained an optional trend_reserve_symbol config key (config_2x.yaml sets 'BIL'; config.yaml does not set it at all). When the trend sleeve's signal is off (SPY below its 200-day average) and a reserve symbol is configured with available bars, the sleeve's weight is invested in the reserve symbol instead of sitting idle at 0%. Falls back to idle cash if the reserve symbol's bars are unavailable that day (same no-data-means-no-position discipline as every other sleeve in that file). This is a pure portfolio-construction parameter, not a capped side-bet, so it is NOT wrapped in the experiments: framework (matching how MOM_LS breadth and the TSMOM FXE drop were also handled directly in config_2x.yaml rather than as registered experiments).",
+  "limitations": [
+    "Carried forward from reports/cash_reserve_study.json: does not assume short proceeds or leveraged-account collateral earn any additional return; charges 2bps per one-way allocation change; the trend sleeve is currently off far less often than on in the screened windows, so the reserve's contribution to total portfolio return is small by construction.",
+    "The study's control and candidate differ by less than a full basis point of drawdown in the failing cell — this is very close to the numerical precision floor of the backtest itself; treat the 'BIL wins' framing as directionally plausible, not statistically conclusive.",
+    "Screening-tier evidence (data through 2026-07-22, pre-2026-08-13 frozen window per AGENTS.md)."
+  ]
+}

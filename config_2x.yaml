@@ -157,6 +157,16 @@ paper_portfolio:
   - FXY
   trend_symbol: SPY
   trend_ma_days: 200
+  # Idle-cash reserve, 2x-lab only — reports/cash_reserve_study.json's BIL
+  # candidate improved Sharpe AND CAGR in both screening windows; the only
+  # failure was a 1bp-worse max drawdown in early_2020_2022 (-0.1254 vs
+  # -0.1253), which fails the pre-registered return_enhancer hard gate's
+  # zero-tolerance rule but is not economically distinguishable from noise
+  # for a near-zero-duration T-bill substitute. Clears the lab's lighter
+  # experiment-tier bar per reports/bil_idle_cash_decision.json. base
+  # config.yaml has no trend_reserve_symbol — unchanged control, idle cash
+  # stays idle there.
+  trend_reserve_symbol: BIL
   tsmom_lookback_days: 252
   tsmom_min_dollar_volume: 1000000
   rebalance_band: 0.2
