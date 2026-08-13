@@ -211,7 +211,9 @@ def _positive_number(value, name: str, *, high: float) -> float:
     return value
 
 
-def _parse_experiments(raw: dict) -> dict[str, ExperimentConfig]:
+def _parse_experiments(
+    raw: dict, *, validate_registration: bool = True
+) -> dict[str, ExperimentConfig]:
     """Parse the top-level `experiments:` block (kept separate from the
     existing `paper_portfolio.options_experiments` block deliberately — that
     one is a read-only quote-collection convention that already works;
@@ -221,6 +223,14 @@ def _parse_experiments(raw: dict) -> dict[str, ExperimentConfig]:
     and review bar) is required to exist on disk before `status` may leave
     "off". This is enforced here, at load time, so an experiment can never
     silently start sizing real activity against a promise nobody wrote down.
+
+    validate_registration=False skips only that disk-existence check (every
+    other rule — status enum, allocation caps, a non-empty registration path
+    string — still applies). For load_config(validate_experiments=False)
+    callers only: read-only consumers like the dashboard, whose container
+    doesn't mount `reports/` and whose job is to report state, not gate
+    trading — a missing registration doc there should never turn into a
+    monitoring-page 500.
     """
     block = raw.get("experiments")
     if block is None:
@@ -255,7 +265,11 @@ def _parse_experiments(raw: dict) -> dict[str, ExperimentConfig]:
             raise ConfigError(f"experiments.{name}.registration must be a non-empty path string")
         registration_path = registration_path.strip()
 
-        if status != "off" and not (REPO_ROOT / registration_path).exists():
+        if (
+            validate_registration
+            and status != "off"
+            and not (REPO_ROOT / registration_path).exists()
+        ):
             raise ConfigError(
                 f"experiments.{name}.status is {status!r} but its registration file "
                 f"{registration_path!r} does not exist — write the pre-registration "
@@ -297,7 +311,9 @@ def _parse_time(value, name: str) -> dt.time:
         raise ConfigError(f"{name} must be HH:MM, got {value!r}") from exc
 
 
-def load_config(path: Path | str | None = None) -> Config:
+def load_config(
+    path: Path | str | None = None, *, validate_experiments: bool = True
+) -> Config:
     path = Path(path) if path else DEFAULT_CONFIG_PATH
     if not path.exists():
         raise ConfigError(f"config not found: {path}")
@@ -502,7 +518,7 @@ def load_config(path: Path | str | None = None) -> Config:
                     "becomes the real filter and the weekly one is decorative"
                 )
 
-    experiments = _parse_experiments(raw)
+    experiments = _parse_experiments(raw, validate_registration=validate_experiments)
 
     return Config(
         mode=mode,

@@ -81,10 +81,10 @@ def _base_raw_config() -> dict:
     }
 
 
-def _load(tmp_path, raw: dict) -> Config:
+def _load(tmp_path, raw: dict, **kwargs) -> Config:
     path = tmp_path / "test_config.yaml"
     path.write_text(yaml.dump(raw))
-    return load_config(path)
+    return load_config(path, **kwargs)
 
 
 def test_no_experiments_block_is_empty_dict(tmp_path):
@@ -136,6 +136,31 @@ def test_non_off_experiment_requires_registration_file_to_exist(tmp_path):
     }
     with pytest.raises(ConfigError, match="registration file"):
         _load(tmp_path, raw)
+
+
+def test_validate_experiments_false_skips_only_the_registration_file_check(tmp_path):
+    """Reproduces a 2026-08-13 production incident: the dashboard container
+    doesn't mount reports/, so load_config()'s default registration-file
+    check always fails there even when the file genuinely exists on the
+    host — which took down /summary, /positions, and /equity-curve with a
+    500 for any profile with a non-off experiment. validate_experiments=False
+    is the dashboard's opt-out; every other rule must still apply."""
+    raw = _base_raw_config()
+    raw["experiments"] = {
+        "no_registration": {
+            "status": "paper",
+            "allocation_pct": 0.05,
+            "max_cumulative_loss_pct": 0.02,
+            "registration": "reports/experiments/does_not_exist_yet.json",
+        }
+    }
+    cfg = _load(tmp_path, raw, validate_experiments=False)
+    assert cfg.experiments["no_registration"].status == "paper"
+
+    # Still enforced: a structurally invalid block is not waved through.
+    raw["experiments"]["no_registration"]["max_cumulative_loss_pct"] = 0.5  # > allocation_pct
+    with pytest.raises(ConfigError, match="max_cumulative_loss_pct"):
+        _load(tmp_path, raw, validate_experiments=False)
 
 
 def test_invalid_status_rejected(tmp_path):
