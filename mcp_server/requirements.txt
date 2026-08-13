@@ -1,0 +1,11 @@
+mcp>=2.0,<3
+PyYAML>=6,<7
+# cryptography>=43's Rust/OpenSSL backend crashes with SIGILL on load
+# (`from cryptography.hazmat.primitives import hashes`) under Docker
+# Desktop for Mac's arm64 VM — reproduces even with a vanilla
+# python:3.13-slim + `pip install cryptography`, unrelated to anything
+# else in this image. mcp pulls this in transitively (via pyjwt's auth
+# support, unused here — this server has no auth). Pin below 43 until
+# confirmed fixed upstream or this is deployed to hardware that doesn't
+# hit it.
+cryptography<43

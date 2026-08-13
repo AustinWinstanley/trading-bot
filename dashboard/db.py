@@ -3,12 +3,23 @@
 Every function here either opens a SQLite connection in genuine read-only
 mode or reads a JSON file the cron jobs already write. Nothing in this
 module can write to state/paper*.db, and nothing here calls Alpaca or reads
-.env — see engine/attribution.py (imported, confirmed pure) for the two
-heavier aggregations this module builds on.
+.env — see engine/attribution.py and engine/config.py (imported, confirmed
+pure) for the two heavier building blocks the *_payload functions below
+compose.
+
+The *_payload functions (summary_payload, equity_curve_payload, etc.) are
+the single source of truth for "what each API response means" — both
+dashboard/routes.py (Flask JSON endpoints) and mcp_server/tools.py (MCP
+tools for live agent access to the same server) call these same functions
+rather than each having their own copy of the composition logic. Keeping
+this in one place is deliberate: a fix applied to one caller and not the
+other is exactly the kind of drift that caused a real production incident
+(engine.config.load_config's validate_experiments divergence, 2026-08-13).
 """
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import json
 import re
@@ -16,6 +27,9 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from engine.attribution import execution_summary
+from engine.config import load_config
 
 # Mirrors scripts.run_daily.PROFILES, deliberately not imported from there —
 # importing scripts.run_daily would pull in its module-level mutable globals
@@ -374,3 +388,182 @@ def reconciliation_events(conn: sqlite3.Connection, since: str) -> list[dict]:
         (since,),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+# ---------------------------------------------------------------------
+# Composed payloads — one function per API response shape, shared by
+# dashboard/routes.py and mcp_server/tools.py. See this module's
+# docstring for why these exist as a single source of truth.
+# ---------------------------------------------------------------------
+
+
+def _open_ro_or_none(paths: ProfilePaths) -> sqlite3.Connection | None:
+    try:
+        return open_ro(paths.db_path)
+    except sqlite3.OperationalError:
+        # No journal yet for this profile — a valid, expected state right
+        # after a fresh checkout, not an error.
+        return None
+
+
+def summary_payload(repo_root: Path, profile: str) -> dict:
+    paths = profile_paths(repo_root, profile)
+    # validate_experiments=False: some deployments of this data layer (the
+    # dashboard container) never mount reports/, and a monitoring response
+    # must never fail because a trading-safety business rule (registration
+    # doc must exist) is unmet — that's a real state to report, not a
+    # reason to error out. See engine/config.py's _parse_experiments
+    # docstring.
+    cfg = load_config(paths.config_path, validate_experiments=False)
+    risk_state = load_json(paths.risk_state_path, default={})
+    health = load_json(paths.health_status_path, default=None)
+
+    equity = None
+    last_run_ts = None
+    latest_leverage = None
+    execution = None
+    conn = _open_ro_or_none(paths)
+    if conn is not None:
+        with contextlib.closing(conn):
+            snap = latest_snapshot(conn)
+            if snap:
+                equity = snap["equity"]
+                last_run_ts = snap["ts"]
+            es = execution_summary(conn, EPOCH)
+            latest_leverage = es["latest_leverage_recommendation"]
+            # Computed by the call above since day one and previously
+            # discarded — the whole fill-quality story (fill %, approval %,
+            # adverse slippage bps, overall and per sleeve) for free.
+            execution = {"overall": es["overall"], "by_sleeve": es["by_sleeve"]}
+
+    budget = risk_budget(
+        cfg.risk.daily_loss_limit_pct,
+        cfg.risk.monthly_kill_switch_pct,
+        cfg.risk.peak_drawdown_halt_pct,
+        risk_state,
+        equity,
+    )
+    cooldown = reentry_cooldown(risk_state, cfg.risk.loss_reentry_block_days, dt.date.today())
+    overlay_cfg = cfg.sleeves_paper.get("volatility_overlay", {}) if cfg.sleeves_paper else {}
+
+    return {
+        "profile": profile,
+        "mode": cfg.mode,
+        "gross_leverage": cfg.sleeves_paper.get("gross_leverage") if cfg.sleeves_paper else None,
+        "halted": bool(risk_state.get("halted", False)),
+        "equity": equity,
+        "last_run_ts": last_run_ts,
+        "risk_budget": budget,
+        "reentry_cooldown": cooldown,
+        "volatility_overlay": {
+            "configured_mode": overlay_cfg.get("mode", "off"),
+            "min_observations": overlay_cfg.get("min_observations"),
+            "latest_recommendation": latest_leverage,
+        },
+        "execution": execution,
+        "experiments": experiments_status(risk_state),
+        "health": health,
+    }
+
+
+def equity_curve_payload(repo_root: Path, profile: str, days: int) -> dict:
+    paths = profile_paths(repo_root, profile)
+    cfg = load_config(paths.config_path, validate_experiments=False)
+    risk_state = load_json(paths.risk_state_path, default={})
+
+    points: list[dict] = []
+    conn = _open_ro_or_none(paths)
+    if conn is not None:
+        with contextlib.closing(conn):
+            points = equity_curve(conn, days=days)
+
+    peak = risk_state.get("peak_equity")
+    month_start = risk_state.get("month_start_equity")
+    return {
+        "points": points,
+        "reference_lines": {
+            "peak_drawdown_halt": (
+                round(peak * (1 - cfg.risk.peak_drawdown_halt_pct), 2) if peak else None
+            ),
+            "monthly_kill_switch": (
+                round(month_start * (1 - cfg.risk.monthly_kill_switch_pct), 2)
+                if month_start else None
+            ),
+        },
+    }
+
+
+def orders_payload(repo_root: Path, profile: str, since: str | None, limit: int) -> dict:
+    paths = profile_paths(repo_root, profile)
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"orders": [], "latest_ts": since}
+    with contextlib.closing(conn):
+        return recent_orders(conn, since=since, limit=limit)
+
+
+def positions_payload(repo_root: Path, profile: str) -> dict:
+    paths = profile_paths(repo_root, profile)
+    cfg = load_config(paths.config_path, validate_experiments=False)
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"positions": []}
+    with contextlib.closing(conn):
+        pos = current_positions(conn, cfg.risk.stop_exempt_sleeves)
+    return {"positions": pos}
+
+
+def exposure_payload(repo_root: Path, profile: str) -> dict:
+    paths = profile_paths(repo_root, profile)
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"latest_exposure": None}
+    with contextlib.closing(conn):
+        es = execution_summary(conn, EPOCH)
+    return {"latest_exposure": es["latest_exposure"]}
+
+
+def rejections_payload(
+    repo_root: Path, profile: str, days: int, since: str | None
+) -> dict:
+    paths = profile_paths(repo_root, profile)
+    effective_since = since or (
+        dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+    ).isoformat()
+
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"count": 0, "requested_notional": 0.0,
+                 "whole_share_rounding": 0, "hard_to_borrow": 0,
+                 "top_reasons": [], "by_sleeve_side": []}
+    with contextlib.closing(conn):
+        es = execution_summary(conn, effective_since)
+        top_reasons = top_rejection_reasons(conn, effective_since)
+        by_sleeve_side = rejections_by_sleeve_side(conn, effective_since)
+    return {
+        **es["rejections"],
+        "top_reasons": top_reasons,
+        "by_sleeve_side": by_sleeve_side,
+    }
+
+
+def options_payload(repo_root: Path, profile: str, days: int) -> dict:
+    """Options structures + reconciliation alarms from state/options_*.db.
+
+    The file may be missing (base profile, or a lab that has never run
+    scripts.options_daily), or exist as a 0-byte file with no tables (it
+    was touched but the first run hasn't created the schema) — both are
+    the same valid "nothing yet" state, never an error.
+    """
+    paths = profile_paths(repo_root, profile)
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+
+    empty = {"structures": [], "reconciliation_events": []}
+    try:
+        conn = open_ro(paths.options_db_path)
+    except sqlite3.OperationalError:
+        return empty
+    with contextlib.closing(conn):
+        structures = options_structures(conn)
+        events = reconciliation_events(conn, since)
+    return {"structures": structures, "reconciliation_events": events}

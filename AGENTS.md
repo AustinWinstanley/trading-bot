@@ -642,6 +642,70 @@ for institutional capital silently strangle the book:
 When a gate rejects a lot, check whether it is calibrated to this account
 before assuming the signal is wrong.
 
+## Read-only monitoring & debug surfaces
+
+Two Docker Compose services run alongside the cron jobs, both entirely
+read-only by construction — neither can place an order, touch the Alpaca
+client, or write to a journal, no matter what a bug in either does:
+
+- **`dashboard`** (`dashboard/`, port 8787) — a Flask JSON API + single-page
+  UI (`dashboard/templates/index.html`) showing both profiles' equity,
+  positions, trade feed, exposure, risk budget, and health status. This has
+  existed since early in the project but was never documented here until
+  now.
+- **`mcp-server`** (`mcp_server/`, port 8788) — an MCP (Model Context
+  Protocol) server exposing the same data as live tools an AI assistant can
+  call directly during the trading day, plus capabilities the dashboard
+  doesn't have: ad hoc read-only SQL against the journals
+  (`query_database`), raw `state/`/`config.yaml`/`reports/` file reads,
+  and `logs/paper-*.log` tailing. Built specifically so debugging a live
+  issue (like the 2026-08-13 incident this section indirectly documents —
+  see `dashboard/db.py`'s module docstring) doesn't require manually
+  copying SQLite files off the server.
+
+Both services share one security posture, stated once in
+`deploy/docker-compose.yml`'s `dashboard` block and not repeated per
+service: **LAN-only, zero login/auth by design.** Anyone who can reach the
+server's IP on this network sees live paper-account data with no gate at
+all — deliberate, chosen over Tailscale/SSH-tunnel for same-network access
+without a login. If either service ever needs to be internet-facing, add
+auth first; don't just widen the port mapping.
+
+`mcp_server/` reuses `dashboard/db.py`'s pure functions (including the
+`*_payload` functions both `dashboard/routes.py` and `mcp_server/tools.py`
+call — one definition of what each response means, not two that can
+drift) but never imports `dashboard.routes` or `dashboard.app`, so it
+carries no Flask dependency. Both packages are covered by the same class
+of AST-based safety test (`tests/dashboard/test_safety.py`,
+`tests/mcp_server/test_mcp_safety.py`) that statically bans importing
+`engine.execute`, `engine.data`, `scripts.run_daily`, or
+`scripts.healthcheck` — anything that can reach the Alpaca client.
+
+`mcp_server`'s new primitives layer read-only guarantees rather than
+relying on just one: `query_database` only accepts `SELECT`/`WITH`
+statements (`mcp_server/debug.py:run_select`), on top of the same
+`mode=ro` SQLite connections (`dashboard/db.py:open_ro`) that already
+refuse any write at the VFS level regardless of that check, and on top of
+`sqlite3.Cursor.execute()` itself refusing to run more than one statement
+(so `"SELECT 1; DROP TABLE t"` fails before either guard even matters).
+File reads (`read_state_file`, `read_report`, `tail_trading_log`) are all
+path-traversal-guarded to stay under `state/`/`reports/`/`logs/`
+(`mcp_server/debug.py:_resolve_within`).
+
+Bring both up (from the server checkout):
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+Register the MCP server with Claude Code (user-level, not a
+repo-committed `.mcp.json` — this is a LAN address specific to one
+server, not something to bake into git history):
+
+```bash
+claude mcp add --transport http trading-bot-debug http://<server-ip>:8788/mcp
+```
+
 ## Verification
 
 ```bash
