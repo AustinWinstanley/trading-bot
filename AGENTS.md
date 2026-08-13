@@ -153,6 +153,34 @@ before 2026-08-13. `alpha`/`beta`/`mu0`/`mu1`/`sigma` are fixed by that
 registration document; changing any of them requires a new, separately
 reviewed registration, not an edit to the existing one.
 
+### News headline classifier precision, hand-checked against real data
+
+`reports/news_pead_feasibility.json`'s own limitations flagged "headline
+regex precision must be manually sampled before a return study" — done
+2026-08-12, `reports/news_pead_feasibility_precision_check.json`. A 120
+-headline random sample of `is_earnings_result_headline`'s positives from
+the real cached `state/news/alpaca_news_2026-01-01_2026-07-31.parquet`
+dataset (147,305 articles) was hand-checked one by one; ground truth is in
+`backtest/news_pead_feasibility_precision_labels.py` (kept out of the
+gitignored `state/news/` cache directory since it's a real, reproducible
+research artifact, not a data cache). Baseline precision was
+81.7% (22/120 false positives), concentrated in a recognizable Benzinga
+templated preview-article family ("Earnings Outlook For X", "Insights
+Into X's Earnings", "A Glimpse/Peek/Look Ahead ... Earnings", "... Ahead
+Of Earnings") plus "Price Over Earnings Overview" (P/E-ratio commentary,
+not an earnings report at all). Six new `FORWARD_PATTERNS` entries fixed
+all of them on the same sample (100% precision), at the disclosed cost of
+2 lost true positives whose headlines happen to contain "outlook" in a
+genuine post-release context — an accepted precision-over-recall
+trade-off, matching the module's own "high-precision label" design goal.
+Re-running the full audit against the same 147,305-article cache dropped
+the single-symbol event count from 11,102 to 8,606 (still far above the
+500-event gate) — the feasibility decision itself
+(`proceed_news_conditioned_event_study`) is unchanged, now backed by
+measurably higher-precision data. Not yet done: an independent, freshly
+-drawn out-of-sample precision check (the fix was verified in-sample) —
+flagged in the precision-check report, not treated as settled.
+
 ### The cross-sectional panel has no COVID-crash coverage
 
 `state/xsec/close.parquet` — the panel behind MOM_LS, the retired clone

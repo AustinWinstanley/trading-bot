@@ -43,6 +43,23 @@ FORWARD_PATTERNS = (
     re.compile(r"\bestimates?\b", re.I),
     re.compile(r"\bupcoming\b", re.I),
     re.compile(r"\bscheduled\b", re.I),
+    # Added 2026-08-12 after hand-checking a 120-headline random sample of
+    # is_earnings_result_headline's positives (see
+    # reports/news_pead_feasibility_precision_check.json) — 22/120 were a
+    # recognizable family of templated preview/forecast articles and
+    # valuation-ratio commentary that the patterns above missed:
+    re.compile(r"\bahead of\b", re.I),                              # "... Ahead Of Q4 Earnings"
+    re.compile(r"\boutlook\b", re.I),                                # "Earnings Outlook For X"
+    re.compile(r"\bexpectations?\b", re.I),                          # "Exploring X's Earnings Expectations"
+    re.compile(r"\bprice over earnings\b", re.I),                    # P/E-ratio commentary, not a report
+    re.compile(
+        r"\b(?:insights?|a (?:look ahead|glimpse|peek)|an overview of)\b",
+        re.I,
+    ),                                                                # "Insights Into X's Q4 Earnings",
+                                                                       # "Q4 Earnings Insights", "A Look
+                                                                       # Ahead: ...", "A Glimpse of X's
+                                                                       # Earnings Potential", "An Overview
+                                                                       # of X's Earnings"
     re.compile(r"\bearnings (?:call|date|calendar)\b", re.I),
     re.compile(r"\btranscript\b", re.I),
 )
@@ -170,10 +187,17 @@ def audit(frame: pd.DataFrame, *, start: dt.date, end: dt.date) -> dict:
                 "Do not tune on 2026-08-04-onward data.",
             ],
         },
+        "precision_check": {
+            "status": "done_2026-08-12",
+            "method": "120-headline random sample (random_state=20260812) of is_earnings_result_headline's positive-labeled, single-symbol articles, hand-checked one by one.",
+            "baseline_precision": 0.8167,
+            "post_fix_precision": 1.0,
+            "report": "reports/news_pead_feasibility_precision_check.json",
+        },
         "limitations": [
-            "Headline regex precision must be manually sampled before a return study.",
             "Benzinga coverage is vendor-dependent and does not guarantee a complete earnings universe.",
             "News symbols use current tickers and do not solve delisted-universe survivorship bias.",
+            "The regex fix trades 2 lost true positives (headlines using 'outlook' in a genuine post-release context) for eliminating templated preview/forecast articles and P/E-ratio commentary — a disclosed precision-over-recall choice, not re-measured on a fresh out-of-sample draw.",
         ],
     }
 
