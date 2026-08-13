@@ -29,3 +29,42 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: mcp_server/Dockerfile
+    image: trading-bot-mcp-server:latest
+    container_name: trading-bot-mcp-server
+    restart: unless-stopped
+    ports:
+      # Same LAN-exposed, no-auth posture as `dashboard` above (see that
+      # service's comment) — an already-approved precedent, not a new
+      # decision. This one additionally exposes ad hoc read-only SQL
+      # against the journals (query_database — SELECT/WITH only, see
+      # mcp_server/debug.py) and raw config/state/reports/log reads. If
+      # this ever needs to be internet-facing, add auth first.
+      - "0.0.0.0:8788:8788"
+    volumes:
+      - ../config.yaml:/app/config.yaml:ro
+      - ../config_2x.yaml:/app/config_2x.yaml:ro
+      - ../state:/app/state:ro
+      # New mounts beyond what `dashboard` gets — both read-only, both
+      # exposed only through the path-traversal-guarded helpers in
+      # mcp_server/debug.py, never as raw filesystem access.
+      - ../reports:/app/reports:ro
+      - ../logs:/app/logs:ro
+      # Deliberately nothing else mounted — .env is structurally
+      # unreachable from inside the container, not just unread by
+      # convention (same guarantee as `dashboard`, same reasoning).
+    healthcheck:
+      # A bare TCP connect, not a protocol-aware HTTP GET: the streamable-
+      # http transport expects a JSON-RPC POST body with specific Accept/
+      # Mcp-Session-Id headers, which isn't a one-line CMD to fake
+      # correctly. This only confirms the port is accepting connections.
+      test: ["CMD", "python3", "-c",
+             "import socket; socket.create_connection(('127.0.0.1', 8788), timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

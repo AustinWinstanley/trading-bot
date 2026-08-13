@@ -6,3 +6,4 @@ pytest>=8,<10
 pyarrow>=18,<26
 Flask>=3.0,<4
 gunicorn>=22,<24
+mcp>=2.0,<3
