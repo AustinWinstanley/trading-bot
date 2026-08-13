@@ -74,6 +74,13 @@ RISK_STATE = REPO_ROOT / "state" / "risk_state_2x.json"
 EXPERIMENT_NAME = "bull_put_delta_selected_live"
 STRATEGY_KEY = "bull_put_delta_selected"
 OPEN_STATUSES = ("open_pending", "open", "closing_pending")
+# Consecutive daily misses (pre-flight-caught or Alpaca-rejected) on
+# insufficient options buying power before escalating to a CRITICAL log
+# line — see main()'s entry pass. One miss is unremarkable (margin
+# availability moves day to day with the 2x lab's leveraged core book);
+# a run of these means the experiment has gone quiet and nobody would
+# otherwise notice outside of reading this log by hand.
+BUYING_POWER_MISS_ESCALATION = 3
 
 
 def db() -> sqlite3.Connection:
@@ -369,6 +376,33 @@ def reconcile_pending_orders(conn: sqlite3.Connection, trader: Trader, now: dt.d
 # --------------------------------------------------------------------------
 
 
+def _buying_power_shortfall(options_buying_power: float | None, required: float) -> bool:
+    """True if the account's real options buying power is insufficient
+    for the required margin estimate. None (field absent from the
+    account payload) means "unknown" — defers to Alpaca's own rejection
+    rather than blocking on a guess."""
+    return options_buying_power is not None and options_buying_power < required
+
+
+def _buying_power_miss_message(buying_power_misses: dict, detail: str) -> str:
+    """Increments EXPERIMENT_NAME's consecutive-miss counter in place and
+    returns the line to print for it — plain at first, escalating to
+    CRITICAL (picked up by scripts/weekly.py's log scrape, same mechanism
+    every other CRITICAL in this codebase relies on — no separate alert
+    channel) once BUYING_POWER_MISS_ESCALATION consecutive misses
+    accumulate. A single miss is unremarkable — margin availability moves
+    day to day with the 2x lab's leveraged core book — a run of them
+    means the experiment has gone quiet with nothing else surfacing it."""
+    misses = buying_power_misses.get(EXPERIMENT_NAME, 0) + 1
+    buying_power_misses[EXPERIMENT_NAME] = misses
+    if misses >= BUYING_POWER_MISS_ESCALATION:
+        return (
+            f"CRITICAL: options entry stalled on insufficient buying power "
+            f"for {misses} consecutive day(s) — {detail}"
+        )
+    return f"    {detail} (buying-power miss {misses}/{BUYING_POWER_MISS_ESCALATION})"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=("2x",), default="2x")
@@ -398,6 +432,12 @@ def main() -> None:
         print(f"CRITICAL: options level {level!r} is below the required "
               f"Level {MIN_LEVEL} — standing down, no orders submitted")
         raise SystemExit(1)
+    # No second API call: this is the same account object already fetched
+    # for the level check above. None (field absent) means "unknown" —
+    # the pre-flight check below skips rather than guessing, and Alpaca's
+    # own rejection remains the backstop either way.
+    raw_buying_power = account.get("options_buying_power")
+    options_buying_power = float(raw_buying_power) if raw_buying_power is not None else None
 
     conn = db()
     experiment = cfg.experiments.get(EXPERIMENT_NAME)
@@ -420,6 +460,7 @@ def main() -> None:
 
     equity = float(account["equity"])
     st = json.loads(RISK_STATE.read_text()) if RISK_STATE.exists() else {}
+    buying_power_misses = dict(st.get("experiment_buying_power_misses", {}))
     exp_realized = dict(st.get("experiment_realized_pnl", {}))
     # Refresh MY experiment's realized P&L directly from the journal (the
     # authoritative source) so a fill that just reconciled above is
@@ -541,6 +582,24 @@ def main() -> None:
                     for rej in result.rejected:
                         print(f"  REJECT {rej.underlying}: {rej.reason}")
                     for approved in result.approved:
+                        # Pre-flight: same account object already fetched
+                        # for the options-level check above, no extra API
+                        # call. required_bp is our own risk model's
+                        # maximum_loss, not Alpaca's exact margin formula
+                        # (observed ~10% higher than Alpaca's real
+                        # cost_basis in one case) — that's the safe
+                        # direction to be imprecise in: reject a
+                        # borderline case here rather than let Alpaca's
+                        # 403 do it after the order already left.
+                        required_bp = approved.maximum_loss * approved.contracts
+                        if _buying_power_shortfall(options_buying_power, required_bp):
+                            print(_buying_power_miss_message(
+                                buying_power_misses,
+                                f"REJECT {approved.underlying}: "
+                                f"options_buying_power ${options_buying_power:,.2f} "
+                                f"< required ${required_bp:,.2f}",
+                            ))
+                            continue
                         print(
                             f"  APPROVED open {approved.underlying} "
                             f"{approved.contracts} contract(s) credit=${approved.credit:.2f} "
@@ -559,8 +618,14 @@ def main() -> None:
                                 conn, approved, proposal,
                                 structure_id=structure_id, ts=now.isoformat(), order=order,
                             )
+                            buying_power_misses[EXPERIMENT_NAME] = 0
                         except AlpacaError as exc:
-                            print(f"    open submit FAILED: {exc}")
+                            if "buying power" in str(exc).lower():
+                                print(_buying_power_miss_message(
+                                    buying_power_misses, f"open submit FAILED: {exc}",
+                                ))
+                            else:
+                                print(f"    open submit FAILED: {exc}")
             except ValueError as exc:
                 print(f"  entry pass: no qualifying structure ({exc})")
 
@@ -576,6 +641,7 @@ def main() -> None:
     # authoritative journal state for this run. Persist them as-is.
     st["experiment_realized_pnl"] = exp_realized
     st["experiment_standdowns"] = sorted(experiment_standdowns)
+    st["experiment_buying_power_misses"] = buying_power_misses
     RISK_STATE.write_text(json.dumps(st, indent=2))
     conn.commit()
     print("done")
