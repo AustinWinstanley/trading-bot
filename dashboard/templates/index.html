@@ -16,38 +16,78 @@
     <div class="status-banner" id="status-banner">
       <span class="dot" id="status-dot"></span>
       <span id="status-text">loading…</span>
+      <span id="status-counts" class="status-counts"></span>
     </div>
   </header>
 
+  <!-- Health problems strip: hidden while healthy; each unhealthy problem
+       (and any CRITICAL reconciliation event) gets its own line. -->
+  <div id="problem-strip" class="problem-strip" hidden>
+    <ul id="problem-list"></ul>
+  </div>
+
   <main class="grid">
+    <section class="panel span-2" id="panel-orders">
+      <div class="panel-head">
+        <h2>Trade feed</h2>
+        <div class="toggle" role="tablist" aria-label="feed range">
+          <button class="toggle-btn active" data-feed="today">Today</button>
+          <button class="toggle-btn" data-feed="all">All</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="orders-table">
+          <thead>
+            <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Sleeve</th><th>Qty</th><th>Notional</th><th>Fill</th><th>Slip</th><th>Latency</th><th>Status</th><th>Reason</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="panel span-2" id="panel-equity">
       <h2>Equity</h2>
-      <canvas id="equity-chart" width="900" height="260"></canvas>
+      <div class="chart-wrap">
+        <canvas id="equity-chart"></canvas>
+        <div id="chart-tooltip" class="chart-tooltip" hidden></div>
+      </div>
       <div class="legend">
         <span><i class="swatch equity"></i>equity</span>
+        <span><i class="swatch cash"></i>cash</span>
         <span><i class="swatch halt"></i>peak-drawdown halt</span>
         <span><i class="swatch kill"></i>monthly kill switch</span>
       </div>
     </section>
 
-    <section class="panel" id="panel-budget">
-      <h2>Risk budget</h2>
-      <div id="budget-bars" class="budget-bars"></div>
-    </section>
+    <div class="card-row span-2">
+      <section class="panel" id="panel-budget">
+        <h2>Risk budget</h2>
+        <div id="budget-bars" class="budget-bars"></div>
+      </section>
 
-    <section class="panel" id="panel-overlay">
-      <h2>Volatility overlay</h2>
-      <div id="overlay-card" class="kv"></div>
-    </section>
+      <section class="panel" id="panel-overlay">
+        <h2>Volatility overlay</h2>
+        <dl id="overlay-card" class="kv"></dl>
+        <div id="overlay-progress" class="overlay-progress"></div>
+      </section>
 
-    <section class="panel" id="panel-cooldown">
-      <h2>Re-entry cooldown</h2>
-      <ul id="cooldown-list" class="plain-list"><li class="muted">none</li></ul>
-    </section>
+      <section class="panel" id="panel-cooldown">
+        <h2>Re-entry cooldown</h2>
+        <ul id="cooldown-list" class="plain-list scroll-list"><li class="muted">none</li></ul>
+      </section>
+    </div>
 
-    <section class="panel" id="panel-health">
-      <h2>Health check</h2>
-      <ul id="health-list" class="plain-list"><li class="muted">no data yet</li></ul>
+    <section class="panel span-2" id="panel-experiments">
+      <h2>Experiments &amp; options</h2>
+      <div id="experiments-status" class="experiments-status"></div>
+      <div class="table-wrap">
+        <table id="options-table">
+          <thead>
+            <tr><th>Opened</th><th>Strategy</th><th>Legs</th><th>Expiry</th><th>Qty</th><th>Credit</th><th>Max loss</th><th>Status</th><th>Realized P&amp;L</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="panel span-2" id="panel-positions">
@@ -55,7 +95,19 @@
       <div class="table-wrap">
         <table id="positions-table">
           <thead>
-            <tr><th>Symbol</th><th>Sleeve</th><th>Qty</th><th>Price</th><th>Value</th><th>Stop</th><th>Unrealized P&amp;L</th></tr>
+            <tr><th>Symbol</th><th>Sleeve</th><th>Qty</th><th>Price</th><th>Value</th><th>Entry date</th><th>Stop</th><th>To stop</th><th>Unrealized P&amp;L</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel span-2" id="panel-execution">
+      <h2>Execution quality</h2>
+      <div class="table-wrap">
+        <table id="execution-table">
+          <thead>
+            <tr><th>Sleeve</th><th>Orders</th><th>Filled</th><th>Fill % of approved</th><th>Approval % of requested</th><th>Adverse slippage</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -67,32 +119,30 @@
       <div class="table-wrap">
         <table id="exposure-table">
           <thead>
-            <tr><th>Sleeve</th><th>Target long/short/gross</th><th>Actual long/short/gross</th><th>Unrealized P&amp;L</th></tr>
+            <tr><th>Sleeve</th><th>Target long/short/gross</th><th>Actual long/short/gross</th><th>Gross gap</th><th>Unrealized P&amp;L</th></tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
-    </section>
-
-    <section class="panel span-2" id="panel-orders">
-      <h2>Live trade feed</h2>
-      <div class="table-wrap">
-        <table id="orders-table">
-          <thead>
-            <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Sleeve</th><th>Qty</th><th>Notional</th><th>Status</th><th>Reason</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div id="drift-list" class="drift-list"></div>
     </section>
 
     <section class="panel span-2" id="panel-rejections">
       <h2>Why didn't it trade? (last 7 days)</h2>
-      <div class="table-wrap">
-        <table id="rejections-table">
-          <thead><tr><th>Reason</th><th>Count</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div id="rejections-stats" class="rejections-stats"></div>
+      <div class="rejections-grid">
+        <div class="table-wrap">
+          <table id="rejections-table">
+            <thead><tr><th>Reason</th><th>Count</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table id="rejections-sleeve-table">
+            <thead><tr><th>Sleeve</th><th>Side</th><th>Count</th><th>Blocked notional</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>

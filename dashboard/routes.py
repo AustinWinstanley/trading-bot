@@ -51,6 +51,7 @@ def summary(profile: str):
     equity = None
     last_run_ts = None
     latest_leverage = None
+    execution = None
     conn = _open_or_none(paths)
     if conn is not None:
         with contextlib.closing(conn):
@@ -60,6 +61,10 @@ def summary(profile: str):
                 last_run_ts = snap["ts"]
             es = execution_summary(conn, dashboard_db.EPOCH)
             latest_leverage = es["latest_leverage_recommendation"]
+            # Computed by the call above since day one and previously
+            # discarded — the whole fill-quality story (fill %, approval %,
+            # adverse slippage bps, overall and per sleeve) for free.
+            execution = {"overall": es["overall"], "by_sleeve": es["by_sleeve"]}
 
     budget = dashboard_db.risk_budget(
         cfg.risk.daily_loss_limit_pct,
@@ -84,8 +89,11 @@ def summary(profile: str):
         "reentry_cooldown": cooldown,
         "volatility_overlay": {
             "configured_mode": overlay_cfg.get("mode", "off"),
+            "min_observations": overlay_cfg.get("min_observations"),
             "latest_recommendation": latest_leverage,
         },
+        "execution": execution,
+        "experiments": dashboard_db.experiments_status(risk_state),
         "health": health,
     })
 
@@ -168,8 +176,37 @@ def rejections(profile: str):
     if conn is None:
         return jsonify({"count": 0, "requested_notional": 0.0,
                          "whole_share_rounding": 0, "hard_to_borrow": 0,
-                         "top_reasons": []})
+                         "top_reasons": [], "by_sleeve_side": []})
     with contextlib.closing(conn):
         es = execution_summary(conn, since)
         top_reasons = dashboard_db.top_rejection_reasons(conn, since)
-    return jsonify({**es["rejections"], "top_reasons": top_reasons})
+        by_sleeve_side = dashboard_db.rejections_by_sleeve_side(conn, since)
+    return jsonify({
+        **es["rejections"],
+        "top_reasons": top_reasons,
+        "by_sleeve_side": by_sleeve_side,
+    })
+
+
+@bp.get("/api/<profile:profile>/options")
+def options(profile: str):
+    """Options structures + reconciliation alarms from state/options_*.db.
+
+    The file may be missing (base profile, or a lab that has never run
+    scripts.options_daily), or exist as a 0-byte file with no tables (it
+    was touched but the first run hasn't created the schema) — both are
+    the same valid "nothing yet" state, never an error.
+    """
+    paths = _paths(profile)
+    days = max(1, min(int(request.args.get("days", 7)), 90))
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+
+    empty = {"structures": [], "reconciliation_events": []}
+    try:
+        conn = dashboard_db.open_ro(paths.options_db_path)
+    except sqlite3.OperationalError:
+        return jsonify(empty)
+    with contextlib.closing(conn):
+        structures = dashboard_db.options_structures(conn)
+        events = dashboard_db.reconciliation_events(conn, since)
+    return jsonify({"structures": structures, "reconciliation_events": events})

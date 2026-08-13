@@ -215,6 +215,10 @@ def execution_summary(
                 "actual_short": row["actual_short"],
                 "actual_gross": row["actual_gross"],
                 "by_sleeve": json.loads(row["actual_by_sleeve"]),
+                # Recorded since the table's creation but never forwarded —
+                # the dashboard's "Target" column was permanently blank
+                # because of this omission, not missing data.
+                "target_by_sleeve": json.loads(row["target_by_sleeve"] or "{}"),
                 "largest_symbol_gaps": json.loads(row["largest_symbol_gaps"]),
             }
 
