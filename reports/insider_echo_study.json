@@ -1,0 +1,541 @@
+{
+  "study": "insider_echo_study",
+  "date": "2026-08-12",
+  "reopening_justification": "insider_study.json shelved a statistically significant 1-5d cluster-buy CAR (t=3.79 at 1d) as 'not tradeable at this cadence' when the bot rebalanced weekly. scripts/run_daily.py now proposes trades every trading day. Per AGENTS.md, overriding a decision needs new evidence: the new evidence is the system's own cadence change, which invalidates only the deployment-feasibility conclusion, not the finding.",
+  "deployability_first": {
+    "question": "can fresh Form 4 filings reach the bot within ~1 day of filing, given engine/edgar.py currently uses QUARTERLY bulk zips?",
+    "answer": "yes \u2014 deployable",
+    "mechanism": {
+      "daily_form_index": "https://www.sec.gov/Archives/edgar/daily-index/{YYYY}/QTR{n}/form.{YYYYMMDD}.idx \u2014 one row per filing by form type, published ~10:02 PM ET the same evening",
+      "observed_2026_08_12": "form.20260812.idx last-modified 08/12/2026 10:02:33 PM (same day); form.20260811.idx contains Form 4 rows with accession paths (verified with the repo's 'name email' User-Agent; requests without it get HTTP 403)",
+      "filing_date_semantics": "Form 3/4/5 accepted up to 10 PM ET keep the same-day filing date, so the day-D index is a complete snapshot of FILING_DATE = D \u2014 the same point-in-time key the cluster definition uses",
+      "per_filing_detail": "each accession directory carries the Form 4 XML with owner CIK, relationship, transaction code/shares/price and the 10b5-1 flag \u2014 the same fields engine/edgar.py parses from bulk TSVs; ~1-2k Form 4s/day at the documented 10 req/s limit is a 2-4 minute nightly fetch",
+      "latency_chain": "filing day D complete by ~10:02 PM ET -> nightly fetch -> run_daily proposes on D+1 \u2014 exactly the entry timing this backtest assumes",
+      "fetch_convention": "fits the existing engine/edgar.py session convention (User-Agent 'austin redacted@example.com', gzip)"
+    },
+    "not_needed_but_available": "the getcurrent Atom feed and efts.sec.gov full-text search API are near-real-time; unnecessary for D+1-open entry"
+  },
+  "pre_registration": {
+    "signal": "engine.edgar cluster buys, the accepted insider_study definition: >=3 distinct insiders, 30-day window, open-market non-10b5-1 officer/director purchases $50k-$20M, keyed on FILING_DATE, deduped one signal per symbol per window",
+    "entry": "first panel close strictly after the filing day (D+1 close; the panel has no open column \u2014 deviation from the original study's D+1 open, disclosed in the module docstring)",
+    "holding_period_trading_days": 5,
+    "exit": "close of the 5th trading day after entry",
+    "side": "long-only (the $75-150 short slots cannot fill these names)",
+    "universe_filter": "decision-time (data through filing day D): last close >= $5 and 20-day average dollar volume >= $3M, matching config_2x.yaml's live universe gate",
+    "capacity": "2x-lab scale: sleeve = 5% of ~$10k equity ~= $500 gross; $150 minimum meaningful slot => max 3 concurrent positions, each a fixed 1/3 of sleeve (~$167, fractional longs allowed); when signals exceed free slots, admit by descending cluster total_value; unused slots sit in cash at 0%",
+    "cost_bps_one_way": 15.0,
+    "windows": {
+      "early_2020_2022": "panel start .. 2022-12-31",
+      "heldout_2023_plus": "2023-01-01 .. panel end"
+    },
+    "gate": "backtest.promotion.passes_gate_all_cells, objective_class return_enhancer, candidate = 0.95*production_control + 0.05*leverage*sleeve_net per profile, both windows x both profiles; reported as the hard-gate reference point but the decision is judged at the experiment-tier bar",
+    "decision_rule": "deployability is reported first and independently. Portfolio decision: propose a 2x-lab experiment-tier trial (~5%, shadow first) only if the NET sleeve has positive mean daily return in BOTH screening windows and positive full-period net Sharpe; otherwise reject. Hard-gate pass is not required at this tier but is reported."
+  },
+  "cluster_definition_note": "the task brief paraphrased the existing definition as '>=2 insiders, same filing date'; the definition actually shipped in backtest/insider_study.py and behind the published CARs is >=3 distinct insiders within 30 days keyed on filing_date. This study uses the shipped definition for direct comparability.",
+  "decision": "reject_not_worth_trial",
+  "decision_inputs": {
+    "deployable": true,
+    "net_mean_daily_return_positive_by_window": {
+      "early_2020_2022": false,
+      "heldout_2023_plus": true
+    },
+    "full_period_net_sharpe": 0.094
+  },
+  "control_reproduction": {
+    "published_insider_study": [
+      {
+        "label": "all cluster signals",
+        "horizon_days": 1,
+        "n": 1419,
+        "mean_raw": 0.0078,
+        "mean_car": 0.0074,
+        "median_car": 0.0018,
+        "pct_positive": 0.524,
+        "t_stat": 3.79,
+        "significant": true
+      },
+      {
+        "label": "all cluster signals",
+        "horizon_days": 5,
+        "n": 1418,
+        "mean_raw": 0.0092,
+        "mean_car": 0.0067,
+        "median_car": -0.0014,
+        "pct_positive": 0.491,
+        "t_stat": 2.3,
+        "significant": true
+      },
+      {
+        "label": "price >= $5",
+        "horizon_days": 1,
+        "n": 1208,
+        "mean_raw": 0.0048,
+        "mean_car": 0.0045,
+        "median_car": 0.0013,
+        "pct_positive": 0.518,
+        "t_stat": 2.29,
+        "significant": true
+      },
+      {
+        "label": "price >= $5",
+        "horizon_days": 5,
+        "n": 1208,
+        "mean_raw": 0.0046,
+        "mean_car": 0.0022,
+        "median_car": -0.0024,
+        "pct_positive": 0.478,
+        "t_stat": 0.75,
+        "significant": false
+      }
+    ],
+    "this_study_panel_close_entry": [
+      {
+        "label": "panel close-entry, all signals",
+        "horizon_days": 1,
+        "n": 1104,
+        "mean_raw": 0.0034,
+        "mean_car": 0.0031,
+        "median_car": -0.0012,
+        "pct_positive": 0.477,
+        "t_stat": 1.88,
+        "significant": false
+      },
+      {
+        "label": "panel close-entry, all signals",
+        "horizon_days": 5,
+        "n": 1106,
+        "mean_raw": 0.0049,
+        "mean_car": 0.0023,
+        "median_car": -0.0038,
+        "pct_positive": 0.463,
+        "t_stat": 0.83,
+        "significant": false
+      },
+      {
+        "label": "panel close-entry, price >= $5",
+        "horizon_days": 1,
+        "n": 950,
+        "mean_raw": 0.0024,
+        "mean_car": 0.0023,
+        "median_car": -0.0011,
+        "pct_positive": 0.479,
+        "t_stat": 1.37,
+        "significant": false
+      },
+      {
+        "label": "panel close-entry, price >= $5",
+        "horizon_days": 5,
+        "n": 951,
+        "mean_raw": 0.002,
+        "mean_car": -0.0002,
+        "median_car": -0.0039,
+        "pct_positive": 0.461,
+        "t_stat": -0.08,
+        "significant": false
+      }
+    ],
+    "n_signals_this_run": 2191,
+    "n_events_matched_on_panel": 1111,
+    "reconciliation_note": "entry here is D+1 CLOSE (panel has no open column) vs the published D+1 OPEN, so this run's CARs exclude the day-1 open->close move and sit below the published figures; the panel also covers fewer symbols (6,181 currently-listed) than the original per-event Alpaca fetch, and the missing names skew toward the microcaps where the published edge was largest. The price>=$5 cut isolates the entry-timing effect: published open-entry vs this study's close-entry on the comparable liquid subset differ by roughly 10-30 bps \u2014 the day-1 open capture. Same sign, same day-1 concentration, same decay shape = reconciled with explained attenuation. The attenuation is itself decision-relevant: a real run_daily fill happens intraday on D+1, closer to this study's close entry than to the published open entry, so the published CARs overstate what the live system could capture."
+  },
+  "gated_event_stats": [
+    {
+      "label": "gated (price>=$5, ADV>=$3M)",
+      "horizon_days": 1,
+      "n": 231,
+      "mean_raw": 0.0037,
+      "mean_car": 0.0033,
+      "median_car": -0.0007,
+      "pct_positive": 0.472,
+      "t_stat": 1.41,
+      "significant": false
+    },
+    {
+      "label": "gated (price>=$5, ADV>=$3M)",
+      "horizon_days": 5,
+      "n": 231,
+      "mean_raw": 0.0038,
+      "mean_car": 0.0015,
+      "median_car": -0.0037,
+      "pct_positive": 0.468,
+      "t_stat": 0.39,
+      "significant": false
+    }
+  ],
+  "sleeve_performance": {
+    "early_2020_2022": {
+      "gross": {
+        "portfolio": "sleeve gross",
+        "from": "2020-07-27",
+        "to": "2022-12-30",
+        "years": 2.43,
+        "cagr": -0.0186,
+        "ann_return": -0.0054,
+        "vol": 0.1638,
+        "sharpe": -0.033,
+        "sortino": -0.036,
+        "max_dd": -0.3617,
+        "x_money": 0.956
+      },
+      "net": {
+        "portfolio": "sleeve net 15bps",
+        "from": "2020-07-27",
+        "to": "2022-12-30",
+        "years": 2.43,
+        "cagr": -0.0469,
+        "ann_return": -0.0346,
+        "vol": 0.164,
+        "sharpe": -0.211,
+        "sortino": -0.233,
+        "max_dd": -0.3815,
+        "x_money": 0.89
+      },
+      "trades": 71
+    },
+    "heldout_2023_plus": {
+      "gross": {
+        "portfolio": "sleeve gross",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0766,
+        "ann_return": 0.0872,
+        "vol": 0.1618,
+        "sharpe": 0.539,
+        "sortino": 0.551,
+        "max_dd": -0.1394,
+        "x_money": 1.299
+      },
+      "net": {
+        "portfolio": "sleeve net 15bps",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0373,
+        "ann_return": 0.0498,
+        "vol": 0.1617,
+        "sharpe": 0.308,
+        "sortino": 0.325,
+        "max_dd": -0.1425,
+        "x_money": 1.139
+      },
+      "trades": 132
+    },
+    "full": {
+      "gross": {
+        "portfolio": "sleeve gross",
+        "from": "2020-07-27",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.0368,
+        "ann_return": 0.0494,
+        "vol": 0.1626,
+        "sharpe": 0.304,
+        "sortino": 0.318,
+        "max_dd": -0.3641,
+        "x_money": 1.242
+      },
+      "net": {
+        "portfolio": "sleeve net 15bps",
+        "from": "2020-07-27",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.0022,
+        "ann_return": 0.0153,
+        "vol": 0.1626,
+        "sharpe": 0.094,
+        "sortino": 0.101,
+        "max_dd": -0.3934,
+        "x_money": 1.013
+      },
+      "trades": 203
+    }
+  },
+  "sleeve_diagnostics": {
+    "events_admitted": 203,
+    "events_dropped_for_capacity": 28,
+    "avg_concurrent_positions_all_days": 0.67,
+    "avg_concurrent_positions_active_days": 1.52,
+    "fraction_of_days_with_a_position": 0.443,
+    "annual_one_way_turnover": 22.6,
+    "annual_cost_drag_pp": 3.39
+  },
+  "portfolio_performance": {
+    "early_2020_2022": [
+      {
+        "portfolio": "base control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0781,
+        "ann_return": 0.0812,
+        "vol": 0.1114,
+        "sharpe": 0.728,
+        "sortino": 1.01,
+        "max_dd": -0.1253,
+        "x_money": 1.2
+      },
+      {
+        "portfolio": "base +5% insider echo",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0723,
+        "ann_return": 0.0754,
+        "vol": 0.1082,
+        "sharpe": 0.697,
+        "sortino": 0.96,
+        "max_dd": -0.1305,
+        "x_money": 1.184
+      },
+      {
+        "portfolio": "2x control",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1222,
+        "ann_return": 0.1391,
+        "vol": 0.2198,
+        "sharpe": 0.633,
+        "sortino": 0.885,
+        "max_dd": -0.2334,
+        "x_money": 1.322
+      },
+      {
+        "portfolio": "2x +5% insider echo",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1122,
+        "ann_return": 0.1287,
+        "vol": 0.2131,
+        "sharpe": 0.604,
+        "sortino": 0.839,
+        "max_dd": -0.2425,
+        "x_money": 1.294
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "portfolio": "base control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1688,
+        "ann_return": 0.165,
+        "vol": 0.1278,
+        "sharpe": 1.291,
+        "sortino": 1.799,
+        "max_dd": -0.1462,
+        "x_money": 1.739
+      },
+      {
+        "portfolio": "base +5% insider echo",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1627,
+        "ann_return": 0.1592,
+        "vol": 0.1239,
+        "sharpe": 1.285,
+        "sortino": 1.787,
+        "max_dd": -0.1423,
+        "x_money": 1.707
+      },
+      {
+        "portfolio": "2x control",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2644,
+        "ann_return": 0.2673,
+        "vol": 0.251,
+        "sharpe": 1.065,
+        "sortino": 1.479,
+        "max_dd": -0.2709,
+        "x_money": 2.299
+      },
+      {
+        "portfolio": "2x +5% insider echo",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2563,
+        "ann_return": 0.2589,
+        "vol": 0.2432,
+        "sharpe": 1.064,
+        "sortino": 1.476,
+        "max_dd": -0.2644,
+        "x_money": 2.247
+      }
+    ],
+    "full": [
+      {
+        "portfolio": "base control",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1309,
+        "ann_return": 0.1308,
+        "vol": 0.1214,
+        "sharpe": 1.078,
+        "sortino": 1.5,
+        "max_dd": -0.1462,
+        "x_money": 2.087
+      },
+      {
+        "portfolio": "base +5% insider echo",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1249,
+        "ann_return": 0.125,
+        "vol": 0.1177,
+        "sharpe": 1.062,
+        "sortino": 1.473,
+        "max_dd": -0.1423,
+        "x_money": 2.022
+      },
+      {
+        "portfolio": "2x control",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.2042,
+        "ann_return": 0.215,
+        "vol": 0.2387,
+        "sharpe": 0.901,
+        "sortino": 1.254,
+        "max_dd": -0.2709,
+        "x_money": 3.04
+      },
+      {
+        "portfolio": "2x +5% insider echo",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1953,
+        "ann_return": 0.2058,
+        "vol": 0.2314,
+        "sharpe": 0.889,
+        "sortino": 1.234,
+        "max_dd": -0.2731,
+        "x_money": 2.907
+      }
+    ]
+  },
+  "gate_marginal_5pct": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.728,
+          "candidate_sharpe": 0.697,
+          "control_cagr": 0.0781,
+          "candidate_cagr": 0.0723,
+          "control_max_dd": -0.1253,
+          "candidate_max_dd": -0.1305,
+          "d_sharpe": -0.031,
+          "d_cagr": -0.0058,
+          "d_max_dd": -0.0052
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.291,
+          "candidate_sharpe": 1.285,
+          "control_cagr": 0.1688,
+          "candidate_cagr": 0.1627,
+          "control_max_dd": -0.1462,
+          "candidate_max_dd": -0.1423,
+          "d_sharpe": -0.006,
+          "d_cagr": -0.0061,
+          "d_max_dd": 0.0039
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.633,
+          "candidate_sharpe": 0.604,
+          "control_cagr": 0.1222,
+          "candidate_cagr": 0.1122,
+          "control_max_dd": -0.2334,
+          "candidate_max_dd": -0.2425,
+          "d_sharpe": -0.029,
+          "d_cagr": -0.01,
+          "d_max_dd": -0.0091
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_not_worse": true
+        },
+        "inputs": {
+          "control_sharpe": 1.065,
+          "candidate_sharpe": 1.064,
+          "control_cagr": 0.2644,
+          "candidate_cagr": 0.2563,
+          "control_max_dd": -0.2709,
+          "candidate_max_dd": -0.2644,
+          "d_sharpe": -0.001,
+          "d_cagr": -0.0081,
+          "d_max_dd": 0.0065
+        }
+      }
+    ]
+  },
+  "evidence_tier": "experiment-tier framing: honest numbers, plausible-evidence bar. All data here is screening-tier (pre-2026-08-13); the hard promotion gate on the frozen window is NOT claimed. Any live trial must start as a registered 2x-lab experiment (shadow first) per AGENTS.md's experiment-tier rules.",
+  "limitations": [
+    "survivorship bias: the xsec panel holds currently-listed names only, so positive results are upper bounds (the bias is strongest for exactly the small volatile names insider clusters select)",
+    "entry at D+1 close, not D+1 open: forced by the close-only panel; conservative for capture of the day-1 CAR but means the simulated fill differs from both the original study and a real intraday run_daily fill",
+    "the panel starts 2020-07-27 in practice, so early_2020_2022 is shorter than its name implies and holds no COVID-crash observation (AGENTS.md)",
+    "risk-free rate modeled as 0% everywhere, per the repo-wide open gap",
+    "no borrow/hard-to-borrow modeling needed (long-only), but fills assume fractional longs at the close with 15 bps one-way cost and no market impact beyond it",
+    "screening-tier evidence: pre-2026-08-13 data only; nothing here touches the frozen validation window",
+    "deployment would need a new daily Form 4 fetch path (daily-index + per-accession XML); engine/edgar.py's quarterly bulk path cannot serve a live signal and this study deliberately made no engine changes"
+  ]
+}
