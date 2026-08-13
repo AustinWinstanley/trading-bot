@@ -12,6 +12,12 @@ from zoneinfo import ZoneInfo
 from engine.config import load_config
 from engine.data import REPO_ROOT, load_env
 from engine.execute import Trader
+from scripts.options_daily import (
+    DB as OPTIONS_DB,
+    EXPERIMENT_NAME as OPTIONS_EXPERIMENT_NAME,
+    fetch_open_structures,
+    reconcile_option_structures,
+)
 from scripts.run_daily import PROFILES, is_protective_order
 
 ET = ZoneInfo("America/New_York")
@@ -160,6 +166,17 @@ def main() -> None:
         journal_is_pristine=journal_is_pristine,
         unstopped_symbols=unstopped_symbols,
     )
+
+    # A second daily check on the options structure(s) scripts.options_daily
+    # opens/closes (2x-lab only — base never carries any) — reuses the same
+    # pure reconciliation function that script calls itself, so an
+    # assignment-detection anomaly is caught twice a day, not once, for
+    # free. options_2x.db may not exist yet on a profile that has never run
+    # scripts.options_daily; that is healthy, not a problem.
+    if args.profile == "2x" and OPTIONS_DB.exists():
+        options_conn = sqlite3.connect(OPTIONS_DB)
+        open_structures = fetch_open_structures(options_conn, OPTIONS_EXPERIMENT_NAME)
+        problems += reconcile_option_structures(positions, open_structures)
 
     # Persisted for the read-only dashboard (dashboard/), which must never
     # call Alpaca itself — this is the one place that result reaches disk.

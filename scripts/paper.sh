@@ -54,6 +54,15 @@ case "$JOB" in
   daily2x)   LOCK=daily2x;   TIMEOUT=1500 ;;
   stops)     LOCK=daily;     TIMEOUT=120  ;;
   stops2x)   LOCK=daily2x;   TIMEOUT=120  ;;
+  # Deliberately shares daily2x's lock, NOT its own (unlike shadows2x
+  # below): this job WRITES real orders and read-modify-writes
+  # state/risk_state_2x.json's experiment_realized_pnl/experiment_standdowns
+  # keys — the exact same file scripts.run_daily --profile 2x also owns.
+  # An independent lock would let both race that file and submit orders to
+  # the same paper account at the same instant. shadows2x earned its own
+  # lock BECAUSE it is read-only; this job is the opposite case. See
+  # scripts/options_daily.py's module docstring for the same reasoning.
+  options_daily2x) LOCK=daily2x; TIMEOUT=300 ;;
   # Own lock, deliberately NOT shared with daily2x: these are read-only
   # research collectors, not trading. Sharing daily2x's lock (as they did
   # until 2026-08-12) meant a slow quote fetch extended how long a stops2x
@@ -81,6 +90,7 @@ esac
     daily2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x ;;
     stops)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only ;;
     stops2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only --profile 2x ;;
+    options_daily2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.options_daily --profile 2x ;;
     # Read-only research collectors. Runs independently of daily2x (own lock,
     # own schedule slot) so a hung/slow quote fetch here can never delay or
     # block a trading run or a stops2x check. Each script's own failure is

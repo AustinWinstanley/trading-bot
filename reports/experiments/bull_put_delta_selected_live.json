@@ -1,0 +1,55 @@
+{
+  "decision": "promote_paper_active",
+  "strategy": "SPY 45-DTE put credit spread, short leg selected by delta (~0.20), $5 fixed width",
+  "distinct_from": {
+    "bull_put_fixed_width": "reports/bull_put_fixed_width_study.json returned decision: insufficient_evidence, 0 completed spreads across ~2.5 years — a completed negative verdict, not merely an evidence shortfall. Not a candidate for promotion; this registration is for the delta-selected variant only."
+  },
+  "pre_registration": {
+    "account_profile": "2x paper",
+    "mode": "real (paper-broker) multi-leg order, order_class=mleg",
+    "target_dte": 45,
+    "target_short_delta": 0.20,
+    "strike_width": 5.0,
+    "min_credit_pct_of_width": 0.15,
+    "close_by_dte_trading_days": 5,
+    "max_concurrent_structures": 1,
+    "allocation_pct": 0.06,
+    "max_cumulative_loss_pct": 0.06
+  },
+  "evidence_at_promotion_2026_08_12": {
+    "shadow_observations_recorded": 3,
+    "shadow_review_bar": {
+      "minimum_observations_before_review": 20,
+      "minimum_independent_expirations_before_review": 3
+    },
+    "independent_expirations_observed": 1,
+    "shortfall": "Promoted at 3/20 observations, 1/3 expirations — reports/bull_put_delta_selected_shadow_launch.json's own pre-registered bar was NOT met before this promotion. Deliberate, human-confirmed exception (2026-08-12 session): live paper trading is treated as how the remaining evidence gets collected, consistent with this project's explicit priority that paper-trading learnings matter more than exact backtest results. This is an honest disclosure of a promotion-before-bar decision, not a claim the bar was met."
+  },
+  "sizing_rationale": "allocation_pct (6%) is sized to admit exactly one contract at the structure's live-quoted ~$490/contract maximum_loss (4.8% of ~$10,266 2x-lab equity) with margin, not the smaller 1-2% default first considered — that default cannot afford even one contract, which would leave the experiment registered but structurally unable to ever trade. max_cumulative_loss_pct is set equal to allocation_pct: the maximum any single bad structure (capped at one open structure at a time by engine/options_risk.py) can cost is exactly the full allocation.",
+  "options_level_verified": {
+    "checked_via": "scripts/check_options_level.py, and inline every run in scripts/options_daily.py",
+    "note": "Alpaca requires options trading Level 3 for multi-leg spreads. This has not been verified against the real account from within this development session (no live credentials here) — scripts/check_options_level.py must be run by hand against the real 2x paper account, and scripts/options_daily.py refuses loudly (CRITICAL, no orders) if the level check fails on any given run, whether or not it was checked in advance."
+  },
+  "promotion_policy": [
+    "Quote freshness: engine/options_risk.py rejects any structure with a leg quote older than 120 seconds.",
+    "Positive displayed size on every leg: inherited from scripts/options_shadow.py's select_delta_quote_pair, which already filters for positive bid/ask price and size on every candidate leg before this structure is ever proposed.",
+    "Atomic multi-leg order construction: Alpaca's order_class=mleg semantics submit and fill the whole structure as one broker-side order, not as separate per-leg orders — engine/execute.py's Trader.submit_multi_leg_order issues exactly one POST /v2/orders call per structure (open or close).",
+    "Exit handling: close_by_dte_trading_days=5 forces a close well before expiration; a stand-down also forces an immediate close (close_reason=standdown_flatten).",
+    "Assignment handling: detection, not automatic remediation, for v1 — engine/../scripts/options_daily.py's reconcile_option_structures checks every open structure's legs still match broker positions and that no unexplained equity position exists in the underlying, on every run and a second time daily via scripts/healthcheck.py --profile 2x. Any anomaly is a loud CRITICAL with no automatic trading response, because this repo has never observed whether Alpaca's paper broker simulates early assignment at all or only settles at expiration.",
+    "Account-level loss limits: max_cumulative_loss_pct=0.06 via the same compute_experiment_standdowns machinery engine/risk.py already uses for equity experiments — a breach stands the experiment down and forces an immediate close of any open structure."
+  ],
+  "limitations": [
+    "Carried forward from reports/bull_put_delta_selected_shadow_launch.json: the free indicative options feed modifies quotes and may not represent an executable OPRA market; American early assignment and expiration handling are not backtested; delta-based selection can land on a materially different strike week to week as implied vol moves.",
+    "Realized P&L for the stand-down check is tracked only at structure close (no intra-trade mark-to-market) — acceptable for v1 because a single open structure's worst case is already bounded by its own gate-approved maximum_loss at entry; this only affects how quickly a string of realized losses across multiple round trips is detected, not the bound on any one structure.",
+    "The credit/debit sign-convention negation in Trader.submit_multi_leg_order, and the payload shape itself, have not been confirmed against a real Alpaca fill from within this development session — the first live order is the actual confirmation.",
+    "Whether Alpaca's paper broker simulates early assignment at all is unverified; the assignment-detection backstop's real-world reliability is unproven until observed."
+  ],
+  "human_signoff": {
+    "approved_by": "user, via this session's plan-mode review (2026-08-12)",
+    "decisions_confirmed": [
+      "target structure: bull_put_delta_selected, not bull_put_fixed_width",
+      "allocation_pct: 6%, not a smaller default",
+      "ship status: paper once code is verified, not gated on the shadow's own 20-observation bar"
+    ]
+  }
+}

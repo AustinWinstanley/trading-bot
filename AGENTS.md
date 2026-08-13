@@ -278,9 +278,79 @@ be capped and pre-committed, not open-ended:
   `_sleeve_contains`) — a combined sleeve like `"mom_ls+bull_put_live"` is
   still correctly governed by its experiment part.
 
-As of 2026-08-12 no experiment is registered yet — Phase 1 built the
-framework only; the first `paper`-status entries are a later phase's work,
-each needing its own registration document before it can leave `off`.
+As of 2026-08-12, `bull_put_delta_selected_live` (below) is the first
+`paper`-status entry — registered ahead of its own shadow's declared
+evidence bar, with that gap explicitly disclosed in its registration doc
+rather than silently promoted.
+
+### Real options paper trading: engine/options_risk.py and scripts/options_daily.py
+
+Every options script before 2026-08-12 (`scripts/options_shadow.py` and
+friends) was read-only quote collection — `tests/test_shadow_read_only.py`
+statically enforces that. `scripts/options_daily.py` is the first
+genuinely new order-submission code path in this repo beyond equities: it
+submits real (paper-broker) multi-leg options orders via Alpaca's
+`order_class: "mleg"` endpoint, for the 2x lab's `bull_put_delta_selected_live`
+experiment only. Base account (`config.yaml`) has zero options capability —
+hard-coded in `scripts/options_daily.py`'s `--profile` choices, not a
+config default that could silently drift.
+
+- **A parallel gate, not an extension of the equity one.** `engine/options_risk.py`'s
+  `evaluate_option_structure` is a sibling to `engine/risk.py`'s `evaluate()` —
+  `engine/risk.py` itself has zero lines changed for any of this. It reuses
+  (does not reimplement) `ExperimentConfig`, `_experiment_for_sleeve`, and
+  `compute_experiment_standdowns` from the equity gate. A structure whose
+  sleeve resolves to no registered experiment is rejected outright — there
+  is no "core options allocation" the way there is for equities.
+- **Defined-risk-only is the load-bearing invariant**: `maximum_loss` must
+  be finite and positive or the structure is refused, asserted both inline
+  and again at the end via `_assert_option_gate_invariants` (same
+  belt-and-suspenders pattern as `engine/risk.py`'s own invariant check).
+- **At most one open structure per experiment at a time**
+  (`MAX_CONCURRENT_STRUCTURES_PER_EXPERIMENT`), enforced in the gate. No
+  laddering, no rolling, no profit-target early close in this first version —
+  bounds worst-case loss to exactly one `allocation_pct` by construction and
+  keeps the reconciliation logic below simple (0-or-1 structure, never N).
+- **Exit is close-by-DTE, not backtested.** `options_experiments.bull_put_delta_selected.close_by_dte_trading_days`
+  (5, as of 2026-08-12) forces a close well before expiration — a
+  risk-management convention, not a claimed-optimal number; see
+  `reports/bull_put_fixed_width_study.json`'s own limitations on American
+  early assignment not being reconstructed in this repo's backtests.
+- **Assignment handling is detection, not automatic remediation, in this
+  first version — deliberately.** `scripts/options_daily.py`'s
+  `reconcile_option_structures` (also imported into `scripts/healthcheck.py --profile 2x`
+  for a second daily check) verifies broker positions match the journal's
+  open structures and flags any unexplained equity position in an
+  underlying with an open structure. Any anomaly is a loud `CRITICAL` with
+  no automatic trading response — this repo has never observed whether
+  Alpaca's paper broker simulates early assignment at all or only settles
+  at expiration, and encoding an unverified assumption into autonomous
+  "smart" remediation would be a worse risk than a page a human reviews.
+- **Options-level pre-flight is real, not assumed.** Alpaca requires
+  options trading Level 3 for multi-leg spreads; nothing checked this
+  before `scripts/check_options_level.py` (run by hand once) and the same
+  check running inline in `scripts/options_daily.py` on every single run
+  (defense in depth, not a one-time gate). Confirmed on the real 2x paper
+  account on 2026-08-12: `options_approved_level=3`.
+- **`scripts/paper.sh`'s `options_daily2x` job deliberately shares
+  `daily2x`'s flock lock, not its own** — unlike the read-only `shadows2x`
+  job. It writes real orders and read-modify-writes the same
+  `state/risk_state_2x.json` keys (`experiment_realized_pnl`,
+  `experiment_standdowns`) `scripts/run_daily.py --profile 2x` owns; an
+  independent lock would let the two race that file and submit to the same
+  account concurrently. If a future change gives this job its own lock,
+  re-read this reasoning first — it was a deliberate, not a default, choice.
+- **`bull_put_delta_selected_live` was promoted at 3 of its own declared 20
+  shadow observations (1 of 3 required expirations)** — a disclosed
+  exception, not a claim the bar was met; see
+  `reports/experiments/bull_put_delta_selected_live.json`'s
+  `evidence_at_promotion_2026_08_12` field. Distinct from
+  `bull_put_fixed_width`, whose backtest (`reports/bull_put_fixed_width_study.json`)
+  already returned `insufficient_evidence` with 0 completed spreads — that
+  structure is not a live candidate at all, not merely under-observed.
+- The put broken-wing butterfly, event-vol, and 0DTE shadows are untouched
+  by any of this and stay shadows until their own bars are met.
+  `momentum_verticals` stays `off`.
 
 ### Validate a new study against the accepted one
 

@@ -42,6 +42,7 @@ FORBIDDEN_METHOD_CALLS = frozenset({
     "submit_limit",
     "submit_protected_limit",
     "submit_entry",
+    "submit_multi_leg_order",
 })
 
 
