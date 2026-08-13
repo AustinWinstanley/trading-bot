@@ -1,0 +1,396 @@
+{
+  "conditioning_disclosure": "The FOMC x trend-off cell was discovered as a non-gating diagnostic of backtest/pre_fomc_drift_study.py, i.e. by exploring the same 1994-2026 SPY history this study runs on, after the primary pre-FOMC hypothesis had already failed post-2015. In-sample re-confirmation is therefore nearly worthless. This battery can only REJECT the effect or leave it standing for the one test that counts: live forward performance post-2026-08-13.",
+  "decision": "battery_survived_forward_validation_required",
+  "decision_checks": {
+    "perm_p_unstratified_lt_0_05": true,
+    "perm_p_year_matched_lt_0_05": true,
+    "trend_on_mean_lt_trend_off_mean_full": true,
+    "trend_off_mean_positive_3_of_4_decades": true,
+    "alt_window_mean_positive": true
+  },
+  "decision_meaning": "battery_survived_forward_validation_required does NOT authorize any config change, experiment registration, or paper deployment. Because the hypothesis is data-mined, surviving an in-sample battery only earns the right to be judged on frozen forward data (2026-08-13+) it has never seen -- e.g. a registered forward observation of FOMC x trend-off days as they occur. fails_robustness_battery_reject closes the follow-up flagged by the prior study.",
+  "pre_registration": {
+    "registered_before_results": true,
+    "conditioning_disclosure": "The FOMC x trend-off cell was discovered as a non-gating diagnostic of backtest/pre_fomc_drift_study.py, i.e. by exploring the same 1994-2026 SPY history this study runs on, after the primary pre-FOMC hypothesis had already failed post-2015. In-sample re-confirmation is therefore nearly worthless. This battery can only REJECT the effect or leave it standing for the one test that counts: live forward performance post-2026-08-13.",
+    "hypothesis_under_attack": "SPY close(T-1)->close(T) return on scheduled FOMC announcement days with the engine's trend signal OFF (yesterday's close <= yesterday's 200DMA, per engine/portfolio.py trend_targets, computed via backtest.turn_of_month_study.trend_off_mask) is positive and FOMC-specific, not merely a high-volatility trend-off artifact. Prior-study values to reproduce exactly before any new computation: n=57, mean=+58.45 bps, Welch t=2.29 vs all other days (1994-2026, data to 2026-07-22).",
+    "trend_definition": "trend_off_mask(spy_close): prior close <= 200-day rolling mean of prior closes -- the exact engine construction. No alternative MA lengths, no bands, no variants anywhere in this study.",
+    "battery": {
+      "1_subperiod_stability": "The FOMC x trend-off cell per decade (1990s=1994-99, 2000s, 2010s, 2020s) and pre/post-2015. Per cell: exact n, mean/median bps, hit rate, one-sample t, Welch t vs non-FOMC trend-off days in the same period (the specificity comparison), and Welch t vs all other days (continuity with the prior study). n will be small; reported as-is, no smoothing, no cell dropped.",
+      "2a_placebo_trend_on": "FOMC days with trend ON, full sample and pre/post-2015. If the effect is not specific to trend-off, this cell should look similar; per the prior study it should be ~flat post-2015.",
+      "2b_placebo_random_matched": "Primary test of the battery. Draw 57 days uniformly WITHOUT replacement from non-FOMC trend-off days (1994+), compute the mean return; repeat 10,000 times, seed 20260812. One-sided p = (1 + #{draw mean >= observed mean}) / (10000 + 1). Secondary, stricter variant: year-matched draws -- each draw takes, per calendar year, exactly as many non-FOMC trend-off days as the real cell has FOMC x trend-off days in that year (controls for regime/vol clustering, since trend-off days concentrate in bear markets). Both p-values computed once, before any decision logic runs; no re-draws, no seed changes.",
+      "2c_placebo_cpi": "SKIPPED, with disclosure: no authoritative embedded list of BLS CPI release dates (2000+) exists in this repo, and hand-transcribing ~320 exact release dates from memory has an error risk that would make the placebo itself untrustworthy (the FOMC list was embedded from the Fed's published calendars and calendar-validated; no equivalent verified source is embedded here). The random-matched permutation (2b) addresses the same alternative hypothesis -- 'any trend-off day looks like this' -- more directly.",
+      "3_window_sensitivity_not_tuning": "Primary window: close(T-1)->close(T) (day-T return), trend conditioned at the T-1-close decision point (trend_off_mask at T). ONE pre-registered alternative: close(T-2)->close(T) (two-day compounded return over T-1 and T), trend conditioned at the T-2-close decision point (trend_off_mask at T-1). Divergence between the two is evidence of FRAGILITY and is reported as such; under no circumstances is the better-looking window selected or emphasized.",
+      "4_economic_materiality": "Expected annual contribution at the 2x lab reserve size (0.20 trend sleeve x 2.0 gross leverage = 40% of equity in BIL when trend is off): reserve_weight x realized events/year x net-per-event bps, computed with (a) the full-sample mean and (b) the post-2015 mean, each at 2 bps/leg (4 bps round trip) and at the 5 bps/leg stress, plus an explicit ~2 bps/event reserve-yield-forgone adjustment (BIL at a 5% short rate; the repo's rf=0 convention hides this). Events/year from realized joint frequency, full sample and last 5 years. Stated plainly in bps/yr and dollars on the $10,000 account."
+    },
+    "cost": "2 bps per one-way leg (4 bps per event); 5 bps/leg stress reported.",
+    "data": "state/history_deep/SPY.parquet daily adjusted close via load_spy_deep; returns restricted to 1994-01-01+ (Fed began post-meeting announcements Feb 1994); trend mask computed on the full 1993+ series so the 200DMA has no warm-up gap.",
+    "decision_rule": {
+      "written_before_results": true,
+      "survival_requires_all": [
+        "perm_p_unstratified < 0.05",
+        "perm_p_year_matched < 0.05",
+        "FOMC x trend-ON full-sample mean < FOMC x trend-OFF full-sample mean (specificity)",
+        "FOMC x trend-OFF mean > 0 in at least 3 of 4 decades",
+        "alternative T-2->T window mean > 0 (sign consistency, not magnitude)"
+      ],
+      "mapping": {
+        "all_pass": "battery_survived_forward_validation_required",
+        "any_fail": "fails_robustness_battery_reject"
+      },
+      "meaning": "battery_survived_forward_validation_required does NOT authorize any config change, experiment registration, or paper deployment. Because the hypothesis is data-mined, surviving an in-sample battery only earns the right to be judged on frozen forward data (2026-08-13+) it has never seen -- e.g. a registered forward observation of FOMC x trend-off days as they occur. fails_robustness_battery_reject closes the follow-up flagged by the prior study."
+    }
+  },
+  "date_validation": {
+    "n_embedded": 263,
+    "n_within_sample_span": 259,
+    "n_matched_trading_days": 259,
+    "n_beyond_sample_end": 4,
+    "unmatched_within_span": [],
+    "per_year_counts": {
+      "1994": 8,
+      "1995": 8,
+      "1996": 8,
+      "1997": 8,
+      "1998": 8,
+      "1999": 8,
+      "2000": 8,
+      "2001": 8,
+      "2002": 8,
+      "2003": 8,
+      "2004": 8,
+      "2005": 8,
+      "2006": 8,
+      "2007": 8,
+      "2008": 8,
+      "2009": 8,
+      "2010": 8,
+      "2011": 8,
+      "2012": 8,
+      "2013": 8,
+      "2014": 8,
+      "2015": 8,
+      "2016": 8,
+      "2017": 8,
+      "2018": 8,
+      "2019": 8,
+      "2020": 7,
+      "2021": 8,
+      "2022": 8,
+      "2023": 8,
+      "2024": 8,
+      "2025": 8,
+      "2026": 4
+    },
+    "years_not_eq_8": {
+      "2020": 7,
+      "2026": 4
+    },
+    "day_of_week_distribution": {
+      "Tue": 85,
+      "Wed": 164,
+      "Thu": 9,
+      "Fri": 1
+    }
+  },
+  "excluded_unscheduled_dates": [
+    "1994-04-18",
+    "1998-10-15",
+    "2001-01-03",
+    "2001-04-18",
+    "2001-09-17",
+    "2007-08-17",
+    "2008-01-22",
+    "2008-10-08",
+    "2010-05-09",
+    "2020-03-03",
+    "2020-03-15"
+  ],
+  "control_reproduction": {
+    "note": "The prior study's diagnostic cell rebuilt from the same imports and diffed exactly (AGENTS.md control-reproduction rule); a mismatch aborts the study.",
+    "expected": {
+      "n": 57,
+      "mean_bps": 58.45,
+      "welch_t_vs_all_other_days": 2.29
+    },
+    "reproduced": {
+      "n": 57,
+      "mean_bps": 58.45,
+      "welch_t_vs_all_other_days": 2.29
+    },
+    "exact_match": true
+  },
+  "subperiod_stability": {
+    "note": "Small-n cells reported with their small n, per pre-registration. welch_t_vs_nonfomc_trend_off is the specificity comparison (same-period trend-off days without an FOMC announcement).",
+    "table": [
+      {
+        "period": "full",
+        "from": "1994-01-03",
+        "to": "2026-07-22",
+        "n": 57,
+        "mean_bps": 58.45,
+        "median_bps": 47.26,
+        "std_bps": 177.7,
+        "hit_rate": 0.579,
+        "one_sample_t": 2.48,
+        "welch_t_vs_nonfomc_trend_off": 2.3,
+        "n_nonfomc_trend_off": 1817,
+        "mean_nonfomc_trend_off_bps": 3.46,
+        "welch_t_vs_all_other_days": 2.29
+      },
+      {
+        "period": "1990s",
+        "from": "1994-01-03",
+        "to": "1999-12-31",
+        "n": 3,
+        "mean_bps": 36.55,
+        "median_bps": -13.95,
+        "std_bps": 96.1,
+        "hit_rate": 0.333,
+        "one_sample_t": 0.66,
+        "welch_t_vs_nonfomc_trend_off": 0.33,
+        "n_nonfomc_trend_off": 144,
+        "mean_nonfomc_trend_off_bps": 17.61,
+        "welch_t_vs_all_other_days": 0.5
+      },
+      {
+        "period": "2000s",
+        "from": "2000-01-03",
+        "to": "2009-12-31",
+        "n": 33,
+        "mean_bps": 60.35,
+        "median_bps": 47.26,
+        "std_bps": 175.2,
+        "hit_rate": 0.606,
+        "one_sample_t": 1.98,
+        "welch_t_vs_nonfomc_trend_off": 2.03,
+        "n_nonfomc_trend_off": 1031,
+        "mean_nonfomc_trend_off_bps": -2.81,
+        "welch_t_vs_all_other_days": 1.98
+      },
+      {
+        "period": "2010s",
+        "from": "2010-01-04",
+        "to": "2019-12-31",
+        "n": 10,
+        "mean_bps": 23.32,
+        "median_bps": -26.51,
+        "std_bps": 214.8,
+        "hit_rate": 0.4,
+        "one_sample_t": 0.34,
+        "welch_t_vs_nonfomc_trend_off": 0.13,
+        "n_nonfomc_trend_off": 320,
+        "mean_nonfomc_trend_off_bps": 14.53,
+        "welch_t_vs_all_other_days": 0.26
+      },
+      {
+        "period": "2020s",
+        "from": "2020-01-02",
+        "to": "2026-07-22",
+        "n": 11,
+        "mean_bps": 90.67,
+        "median_bps": 108.91,
+        "std_bps": 180.8,
+        "hit_rate": 0.727,
+        "one_sample_t": 1.66,
+        "welch_t_vs_nonfomc_trend_off": 1.51,
+        "n_nonfomc_trend_off": 322,
+        "mean_nonfomc_trend_off_bps": 6.22,
+        "welch_t_vs_all_other_days": 1.55
+      },
+      {
+        "period": "pre_2015",
+        "from": "1994-01-03",
+        "to": "2014-12-31",
+        "n": 41,
+        "mean_bps": 56.35,
+        "median_bps": 46.25,
+        "std_bps": 182.6,
+        "hit_rate": 0.561,
+        "one_sample_t": 1.98,
+        "welch_t_vs_nonfomc_trend_off": 1.88,
+        "n_nonfomc_trend_off": 1330,
+        "mean_nonfomc_trend_off_bps": 2.01,
+        "welch_t_vs_all_other_days": 1.84
+      },
+      {
+        "period": "post_2015",
+        "from": "2015-01-02",
+        "to": "2026-07-22",
+        "n": 16,
+        "mean_bps": 63.84,
+        "median_bps": 107.78,
+        "std_bps": 170.0,
+        "hit_rate": 0.625,
+        "one_sample_t": 1.5,
+        "welch_t_vs_nonfomc_trend_off": 1.3,
+        "n_nonfomc_trend_off": 487,
+        "mean_nonfomc_trend_off_bps": 7.43,
+        "welch_t_vs_all_other_days": 1.37
+      }
+    ]
+  },
+  "placebo_trend_on": {
+    "full": {
+      "n": 202,
+      "mean_bps": 14.96,
+      "median_bps": 7.41,
+      "std_bps": 90.1,
+      "hit_rate": 0.55,
+      "one_sample_t": 2.36,
+      "welch_t_vs_nonfomc_trend_off": 1.65,
+      "n_nonfomc_trend_off": 6116,
+      "mean_nonfomc_trend_off_bps": 4.35,
+      "welch_t_vs_all_other_days": 1.61
+    },
+    "pre_2015": {
+      "n": 127,
+      "mean_bps": 26.08,
+      "median_bps": 27.99,
+      "std_bps": 90.5,
+      "hit_rate": 0.606,
+      "one_sample_t": 3.25,
+      "welch_t_vs_nonfomc_trend_off": 2.73,
+      "n_nonfomc_trend_off": 3790,
+      "mean_nonfomc_trend_off_bps": 3.78,
+      "welch_t_vs_all_other_days": 2.72
+    },
+    "post_2015": {
+      "n": 75,
+      "mean_bps": -3.87,
+      "median_bps": -1.55,
+      "std_bps": 86.7,
+      "hit_rate": 0.453,
+      "one_sample_t": -0.39,
+      "welch_t_vs_nonfomc_trend_off": -0.9,
+      "n_nonfomc_trend_off": 2326,
+      "mean_nonfomc_trend_off_bps": 5.28,
+      "welch_t_vs_all_other_days": -0.96
+    }
+  },
+  "placebo_random_matched_permutation": {
+    "observed_cell_mean_bps": 58.45,
+    "cell_size": 57,
+    "pool_size": 1817,
+    "pool_definition": "non-FOMC trend-off days, 1994-01-01+",
+    "seed": 20260812,
+    "unstratified_primary": {
+      "n_draws": 10000,
+      "mean_of_draw_means_bps": 3.45,
+      "std_of_draw_means_bps": 24.5,
+      "percentiles_bps": {
+        "p1": -54.86,
+        "p5": -36.77,
+        "p25": -12.99,
+        "p50": 3.61,
+        "p75": 20.2,
+        "p95": 43.64,
+        "p99": 59.83
+      },
+      "min_bps": -101.8,
+      "max_bps": 97.07,
+      "one_sided_p_ge_observed": 0.0123
+    },
+    "year_matched_secondary": {
+      "note": "Each draw matches the real cell's per-year day counts, so regime clustering (bear-market vol) is controlled, not just trend-off membership.",
+      "n_draws": 10000,
+      "mean_of_draw_means_bps": 1.67,
+      "std_of_draw_means_bps": 24.41,
+      "percentiles_bps": {
+        "p1": -55.4,
+        "p5": -38.56,
+        "p25": -14.52,
+        "p50": 1.26,
+        "p75": 17.95,
+        "p95": 42.47,
+        "p99": 59.87
+      },
+      "min_bps": -103.58,
+      "max_bps": 102.2,
+      "one_sided_p_ge_observed": 0.0112
+    }
+  },
+  "placebo_cpi": {
+    "status": "skipped",
+    "reason": "SKIPPED, with disclosure: no authoritative embedded list of BLS CPI release dates (2000+) exists in this repo, and hand-transcribing ~320 exact release dates from memory has an error risk that would make the placebo itself untrustworthy (the FOMC list was embedded from the Fed's published calendars and calendar-validated; no equivalent verified source is embedded here). The random-matched permutation (2b) addresses the same alternative hypothesis -- 'any trend-off day looks like this' -- more directly."
+  },
+  "window_sensitivity": {
+    "note": "Both windows cost one round trip (2 legs). The alternative conditions trend at its own entry decision point (T-2 close), so its event set can differ slightly from the primary's -- that is the honest construction, not a bug.",
+    "primary_T1_close_to_T_close": {
+      "n": 57,
+      "mean_bps": 58.45,
+      "median_bps": 47.26,
+      "one_sample_t": 2.48,
+      "mean_net_2bps_leg_bps": 54.45
+    },
+    "alternative_T2_close_to_T_close": {
+      "n": 57,
+      "mean_bps": 70.31,
+      "median_bps": 62.99,
+      "one_sample_t": 2.1,
+      "mean_net_2bps_leg_bps": 66.31
+    },
+    "n_events_in_both_conditionings": 54,
+    "n_events_in_exactly_one": 6
+  },
+  "economic_materiality": {
+    "reserve_weight_2x": {
+      "trend_sleeve_weight": 0.2,
+      "gross_leverage": 2.0,
+      "reserve_pct_of_equity_when_trend_off": 0.4,
+      "source": "config_2x.yaml paper_portfolio.sleeves.trend x gross_leverage"
+    },
+    "event_frequency": {
+      "trend_off_fraction_full": 0.2288,
+      "trend_off_fraction_post_2015": 0.1732,
+      "fomc_x_trend_off_events_total": 57,
+      "events_per_year_full_sample": 1.75,
+      "events_per_year_last_5y": 2.0,
+      "events_last_5y": 10,
+      "post_2015_span_note": "post-2015 span 2015-01-02 to 2026-07-22"
+    },
+    "scenarios": {
+      "full_sample_mean_2bps_leg_last5y_freq": {
+        "net_per_event_bps": 54.45,
+        "expected_annual_contribution_bps_of_equity": 43.56,
+        "expected_annual_dollars_on_10k": 43.56
+      },
+      "full_sample_mean_2bps_leg_last5y_freq_bil_yield_adjusted": {
+        "net_per_event_bps": 52.45,
+        "expected_annual_contribution_bps_of_equity": 41.96,
+        "expected_annual_dollars_on_10k": 41.96
+      },
+      "post_2015_mean_2bps_leg_last5y_freq": {
+        "net_per_event_bps": 59.84,
+        "expected_annual_contribution_bps_of_equity": 47.87,
+        "expected_annual_dollars_on_10k": 47.87
+      },
+      "post_2015_mean_2bps_leg_last5y_freq_bil_yield_adjusted": {
+        "net_per_event_bps": 57.84,
+        "expected_annual_contribution_bps_of_equity": 46.27,
+        "expected_annual_dollars_on_10k": 46.27
+      },
+      "full_sample_mean_5bps_leg_stress_last5y_freq": {
+        "net_per_event_bps": 48.45,
+        "expected_annual_contribution_bps_of_equity": 38.76,
+        "expected_annual_dollars_on_10k": 38.76
+      },
+      "full_sample_mean_full_history_freq_2bps_leg": {
+        "net_per_event_bps": 54.45,
+        "expected_annual_contribution_bps_of_equity": 38.14,
+        "expected_annual_dollars_on_10k": 38.14
+      }
+    },
+    "plain_statement": "At the 2x lab's actual reserve (40% of equity when trend is off) and the recent event rate (2.0 events/yr over the last 5 years), even taking the in-sample full-history mean at face value the overlay is worth about 44 bps/yr = $44/yr on the $10,000 account (before BIL yield forgone; 42 after). Using the post-2015 mean instead gives $48/yr. 'Minor gains aggregated' is the mandate; this quantifies MINOR."
+  },
+  "limitations": [
+    "THE central limitation: the hypothesis was generated from the same 1994-2026 data every test above runs on. The permutation test measures how unusual the cell is relative to random trend-off day-sets, but it cannot undo the fact that this specific cell was selected for looking good -- among the many diagnostic cells across this repo's studies, some will clear p<0.05 by selection alone. No in-sample number here is confirmation.",
+    "The prior study's non-gating diagnostics contained at least 3 conditional cells (pre/post-2015 split, trend-off conditional, cost/allocation variants) and this repo runs many studies; the effective number of implicit comparisons behind 'the best-looking cell' is unknown and uncorrectable after the fact.",
+    "Close-to-close on day T is the deployable proxy, not the literature's close-to-2pm construction; daily bars cannot resolve the announcement reaction itself.",
+    "Live execution trades ~09:51/10:05 ET, so a real entry would not match the modeled T-1-close entry (same gap as the prior study, disclosed not modeled).",
+    "Trend-off days cluster in 2001-02, 2008-09, 2015-16, 2018, 2020, 2022 bear phases; the year-matched permutation controls calendar-year clustering but not finer within-year regime structure.",
+    "Risk-free rate is zero everywhere in this repo (AGENTS.md); the BIL-yield-forgone adjustment in the materiality section is a stated ~5%-rate assumption, not a modeled series.",
+    "CPI placebo skipped -- see placebo_cpi.reason.",
+    "FOMC dates embedded from the Fed's published calendars, validated only as trading days; an off-by-one-trading-day transcription would not be caught mechanically (inherited from the prior study)."
+  ],
+  "screening_tier_caveat": "All data ends 2026-07-22. early_2020_2022 / heldout_2023_plus are screening windows and the long history is in-sample by construction; nothing here touches or tunes on the frozen 2026-08-13+ final-validation window. If the effect survived this battery, the ONLY real confirmation is live forward performance in that window -- e.g. a registered, observation-only forward log of FOMC x trend-off days as they occur (roughly 2/yr; a Wald-SPRT-style registration as in the IWM compression-breakout precedent would suit the low event rate better than a fixed-N gate)."
+}
