@@ -452,6 +452,34 @@ doesn't settle it. This is explicitly a "learn from live fill quality and
 turnover, not validated by backtest" trial under the experiment-tier bar —
 screening-tier evidence (pre-2026-08-13), not a hard-gate promotion.
 
+### The 2x lab invests idle trend-sleeve cash in BIL; base stays idle
+
+`engine/portfolio.py`'s `trend_targets` gained an optional
+`paper_portfolio.trend_reserve_symbol` config key. When the trend sleeve's
+signal is off (its symbol below its moving average) and a reserve symbol
+is configured with available bars, the sleeve's weight goes into the
+reserve symbol instead of sitting idle at 0% — falling back to idle cash if
+the reserve's own bars are unavailable that day, matching every other
+sleeve's no-data-means-no-position discipline. `config_2x.yaml` sets `BIL`;
+`config.yaml` does not set this key at all — idle cash stays idle there.
+
+Backed by `reports/bil_idle_cash_decision.json`: `reports/cash_reserve_study.json`'s
+BIL candidate beat the control on Sharpe AND CAGR in both screening
+windows, and was rejected by the pre-registered return_enhancer hard gate
+for a single 1bp-worse drawdown in one window (-0.1254 vs -0.1253) — not
+economically distinguishable from noise for a near-zero-duration T-bill
+substitute. Same razor's-edge-near-miss-with-strong-other-axis-evidence
+pattern as the MOM_LS breadth and TSMOM-FXE-drop decisions above; judged
+under the lab's lighter experiment-tier bar, not (as Phase 4's plan text
+first suggested) `backtest/promotion.py`'s `risk_reducer` objective class —
+that class is shaped for a candidate that trades CAGR away for less
+drawdown, and BIL's result is the opposite shape (CAGR improves, not
+costs), so forcing it into that framework would mean inventing a cost
+budget for a candidate that isn't paying one. This is a pure
+portfolio-construction parameter, like MOM_LS breadth and the TSMOM
+universe change — not a capped side-bet, so it is not wrapped in the
+`experiments:` framework.
+
 ### `equity_core` + `trend` silently capped at a quarter of their target
 
 Found in a 2026-08-03 review of the server journal: `max_position_pct` (15%

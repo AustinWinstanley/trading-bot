@@ -113,6 +113,14 @@ def tsmom_targets(
 
 
 def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float]:
+    """Trend-following weight in trend_symbol when it's above its moving
+    average; otherwise idle cash, UNLESS trend_reserve_symbol is configured
+    (2x-lab only, see reports/cash_reserve_study.json) — then the reserve
+    is invested in that near-zero-duration instrument instead of sitting
+    at 0%. Falls back to idle cash (not the reserve) if the reserve
+    symbol's own bars are unavailable, matching the same
+    no-data-means-no-position discipline as everywhere else in this file.
+    """
     p = cfg.sleeves_paper
     sym = p["trend_symbol"]
     ma_days = int(p["trend_ma_days"])
@@ -122,7 +130,13 @@ def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     close = df["close"]
     ma = float(sma(close, ma_days).iloc[-2])          # yesterday's MA, no peeking
     last = float(close.iloc[-2])
-    return {sym: p["sleeves"]["trend"]} if last > ma else {}
+    weight = p["sleeves"]["trend"]
+    if last > ma:
+        return {sym: weight}
+    reserve_symbol = p.get("trend_reserve_symbol")
+    if reserve_symbol and bars.get(reserve_symbol) is not None:
+        return {reserve_symbol: weight}
+    return {}
 
 
 def mom_ls_targets(cfg: Config) -> dict[str, float]:
@@ -171,7 +185,10 @@ def build_targets(
     """
     p = cfg.sleeves_paper
     lookback = int(p["tsmom_lookback_days"])
-    need = sorted(set(p["tsmom_universe"]) | {p["trend_symbol"]})
+    need = set(p["tsmom_universe"]) | {p["trend_symbol"]}
+    if p.get("trend_reserve_symbol"):
+        need.add(p["trend_reserve_symbol"])
+    need = sorted(need)
     start = dt.date.today() - dt.timedelta(days=int(lookback * 1.9) + 30)
     bars = client.get_bars(need, start, dt.date.today())
 
