@@ -23,6 +23,7 @@ state/xsec/
 state/xsec_delisted/
 state/universe_*.json
 state/cboe/
+state/crypto/
 state/fundamentals/
 state/thirteenf/*.zip
 state/earnings_llm/
