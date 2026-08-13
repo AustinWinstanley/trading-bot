@@ -64,8 +64,65 @@ hand-rolling the comparison — seven studies each did that differently before
 this module existed, so "passed the gate" didn't mean the same thing across
 `reports/`. Not every candidate is a straightforward return enhancer; pick
 the closest `objective_class` (`return_enhancer`, `risk_reducer`,
-`cost_reducer`) and pre-declare its bounds before looking at results — see
-the module docstring.
+`cost_reducer`, `diversifier`) and pre-declare its bounds before looking at
+results — see the module docstring. The `diversifier` class exists because
+max drawdown is the noisiest single-path statistic the gate judges and
+zero tolerance on it systematically rejects new lowly-correlated streams;
+its drawdown tolerance must come from
+`backtest.promotion.paired_drawdown_noise_pp` (a paired block-bootstrap
+noise band), never a hand-picked number, and its Sharpe/CAGR checks stay
+strict.
+
+### Why externally-sourced strategies keep failing here — four filters
+
+The 2026-08-12/13 new-strategy campaign studied four externally-motivated
+directions and rejected or deferred all of them, prompting the fair
+question "are we testing wrong?" Mostly no — the failures decompose into
+four recurring causes, each now demonstrated by this repo's own reports.
+Before proposing an external strategy, state which of these it must
+survive and which objective class it will be judged under:
+
+1. **Selection bias and post-publication decay.** Strategies you hear
+   about are the survivors, and published anomalies decay. Own evidence:
+   pre-FOMC drift ran t=3.21 pre-2015 and t=0.21 after
+   (`pre_fomc_drift_study.json`); turn-of-month never cleared t=1.15 in
+   any decade (`turn_of_month_study.json`). Filter: demand the effect
+   exist in the RECENT subperiod, not just the long average.
+2. **Beta mistaken for alpha.** "People make money trading X" usually
+   means X went up. Own evidence: the crypto trend sleeve MADE money
+   (+12.7% CAGR, 0.49 Sharpe standalone) and was still correctly rejected
+   as a portfolio addition (`crypto_trend_study.json`,
+   `crypto_diversifier_study.json`) — the question this repo asks is
+   never "does it make money" but "does adding it improve THIS
+   portfolio." Filter: judge the marginal portfolio effect, not the
+   standalone stream.
+3. **Constraint mismatch.** Edges that are real for someone else can be
+   unharvestable here: $10k account, whole-share shorts, universe
+   filters, ~09:51/10:05 ET fills, honest costs. Own evidence: insider
+   echo reproduced the published +74bps effect and showed the tradeable
+   subset (price >=$5, ADV >=$3M) captures -2bps of it against 30bps of
+   costs (`insider_echo_study.json`); overnight drift's break-even is
+   ~2bps/leg (`overnight_cost_study`). Filter: simulate under the LIVE
+   gate's universe/fill/cost constraints before believing any number.
+4. **Pareto-gate strictness on noisy statistics.** The one cause that was
+   ours: `return_enhancer` demands strict improvement on 12 simultaneous
+   conditions including zero-tolerance max drawdown — BIL failed by 1bp,
+   target restoration failed on 0.2-0.6pp despite 4/4 Sharpe+CAGR wins.
+   The fix is the `diversifier` class above, NOT loosening
+   `return_enhancer` (which remains the bar for modifying existing
+   sleeves). Post-fix evidence that the diagnosis was right and bounded:
+   re-judged as a diversifier, crypto's drawdown objection fully
+   dissolved into noise (4/4 cells within band) and the remaining
+   rejection is a real early-window return drag — a genuine finding, not
+   an artifact (`crypto_diversifier_study.json`).
+
+A hypothesis that was FOUND by mining this repo's own history gets one
+extra requirement: a placebo/permutation battery and a forward-only
+confirmation path, never in-sample re-confirmation — see
+`fomc_trend_off_study.json` (survived a 10,000-draw permutation placebo
+at p=0.011-0.012, worth ~$44/yr at realized event rates, and still
+authorizes nothing but an observation-only forward log on post-2026-08-13
+data it has never seen).
 
 ### `heldout_2023_plus` is no longer a clean hold-out
 
