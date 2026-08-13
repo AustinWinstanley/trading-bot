@@ -1,0 +1,730 @@
+{
+  "decision": "diversifier_screening_fail_do_not_scope_execution_phase",
+  "decision_meaning": "Screening-tier evidence only, under the diversifier objective class. A pass means the evidence justifies SCOPING the (separately planned) 24/7 execution-design phase. It does not authorize any config change, order path, or allocation \u2014 deployment requires a separate decision plus an execution build that is explicitly out of scope, and the prior return_enhancer verdict in reports/crypto_trend_study.json stands unedited as the answer to its own, different question.",
+  "go_no_go": "Diversifier gate at primary 25bps: 2/4 cells passed (overall FAIL); stress 50bps: 2/4 (overall FAIL). max_dd_within_noise passed in 4/4 primary cells. Per cell (primary): early_2020_2022/base: FAIL on sharpe_higher+cagr_not_lower (d_sharpe -0.02, d_cagr -0.33pp, dd -0.76pp vs a \u00b10.92pp 1-sigma paired-bootstrap band = 0.8 bands worse, corr 0.1901) | early_2020_2022/2x: FAIL on sharpe_higher+cagr_not_lower (d_sharpe -0.001, d_cagr -0.34pp, dd -0.34pp vs a \u00b10.83pp 1-sigma paired-bootstrap band = 0.4 bands worse, corr 0.1901) | heldout_2023_plus/base: PASS (d_sharpe +0.039, d_cagr +0.96pp, dd -0.48pp vs a \u00b10.69pp 1-sigma paired-bootstrap band = 0.7 bands worse, corr 0.3088) | heldout_2023_plus/2x: PASS (d_sharpe +0.032, d_cagr +0.55pp, dd +0.18pp vs a \u00b10.76pp 1-sigma paired-bootstrap band = 0.2 bands better, corr 0.3088)",
+  "conditioning_disclosure": "PROMINENT CONDITIONING DISCLOSURE: this re-ask exists because the prior study's results were already SEEN \u2014 the candidate was picked for re-judging precisely because it passed the heldout-2x cell cleanly, improved Sharpe AND CAGR in both heldout cells, measured 0.28 correlation to the production portfolio, and failed the return_enhancer gate only on 0.34-0.76pp drawdown adds. The diversifier objective class itself was added to backtest/promotion.py after, and partly because, results of exactly this shape were being rejected on drawdown noise; this study is that class's first user. The pre-registration is honest about its parameters (this block and the pre_registration block were written to this report file BEFORE any gate result was computed, and max_correlation was declared above the already-observed 0.28), but no pre-registration can undo candidate selection conditioned on observed outcomes. A pass here is therefore screening-tier evidence at its weakest: the real test remains the experiment tier plus live forward performance on the frozen 2026-08-13+ validation window, which this study does not touch and cannot substitute for. No config, engine, or execution change follows from this report.",
+  "pre_registration": {
+    "re_ask_of": "reports/crypto_trend_study.json",
+    "objective_class": "diversifier",
+    "primary_candidate": "Byte-identical to crypto_trend_study's PRIMARY: TSMOM long/flat on BTC/USD + ETH/USD, long iff trailing 252-row return > 0 on completed UTC-daily bars, inverse-vol weighted (63-row vol, floor 0.04), weights lagged one day, unlit = cash \u2014 built by IMPORTING that study's functions, not reimplementing them. 90/180-row lookbacks are not re-litigated.",
+    "marginal_test": "5% allocation funded pro-rata from all sleeves (candidate = 0.95*control + 0.05*crypto per profile), crypto returns compounded onto the equity trading calendar; candidate == control before the crypto stream exists \u2014 same convention as the prior study.",
+    "allocation": 0.05,
+    "primary_lookback": 252,
+    "costs_bps_one_way": {
+      "primary": 25.0,
+      "stress": 50.0
+    },
+    "cost_caveat": "Planning figures only \u2014 Alpaca crypto spreads are much wider than equities and neither number has been verified against real paper fills; that verification is a hard precondition to any deployment.",
+    "max_correlation": 0.4,
+    "max_correlation_note": "The prior study observed stream correlation 0.28 vs the production base portfolio. 0.40 is deliberately declared ABOVE that already-seen value \u2014 the declaration is the bar, and the freshly measured per-cell correlation enters the gate as stream_correlation. Declaring a bound above an observed value is part of the conditioning this report discloses; it is tight enough to fail if the measured correlation regime shifts materially, but it was not chosen blind.",
+    "max_dd_cost_pp": "Per cell: the value returned by backtest.promotion.paired_drawdown_noise_pp(control_daily, candidate_daily) on that cell's aligned daily returns, module defaults (block_size=63, simulations=2000, seed=20260812). Not a hand-picked number; every computed band is echoed in the gate inputs and diagnostics.",
+    "noise_band_params": {
+      "block_size": 63,
+      "simulations": 2000,
+      "seed": 20260812
+    },
+    "promotion_rule": "Per cell: backtest.promotion.passes_gate(control, candidate, 'diversifier', max_dd_cost_pp=<that cell's band>, max_correlation=0.40, stream_correlation=<that cell's measured correlation>). All 4 standard cells (early_2020_2022, heldout_2023_plus) x (base, 2x) must pass at primary cost; the stress-cost gate is reported alongside. Aggregated manually in passes_gate_all_cells's exact output shape because the per-cell max_dd_cost_pp differs and that helper only supports one uniform kwarg set across cells. Screening only \u2014 never a direct promotion.",
+    "correlation_convention": "Daily correlation of the aligned crypto stream vs that cell's control, on the equity trading calendar, restricted to days on or after the 252-row signal is first defined (~2021-09) so warm-up zeros do not dilute the estimate \u2014 the prior study's convention, applied per cell.",
+    "daily_close_convention": "Alpaca crypto 1Day bars, stamped at UTC midnight, covering the UTC calendar day; still-forming current UTC day dropped; data capped at 2026-08-12 (frozen 2026-08-13+ window untouched).",
+    "annualization": "Raw crypto streams annualized at 365 periods/year; portfolio-aligned streams keep the repo's 252 convention."
+  },
+  "pre_registration_protocol": "This report file was first written with ONLY the decision placeholder, conditioning_disclosure, pre_registration, and control_reproduction blocks \u2014 before any gate result, noise band, or per-cell correlation was computed \u2014 then extended with results. The pre_registration block is byte-identical between the two writes (same in-memory object serialized twice).",
+  "control_reproduction": {
+    "equity_tsmom": {
+      "method": "Recompute the equity TSMOM sleeve with this study's parameterized tsmom_stream_from_closes(lookback=252, cost_bps=8) and diff daily returns against production_portfolio.tsmom_stream().",
+      "n_days_compared": 6035,
+      "max_abs_daily_return_diff": 0.0,
+      "reproduced": true
+    },
+    "crypto_stream_vs_prior_study": {
+      "method": "Stream construction is IMPORTED from backtest/crypto_trend_study.py (tsmom_stream_from_closes + load_crypto_closes), so the daily-return difference vs that study's own stream is 0.0 by shared code path. The informative check: rebuild the primary and stress streams on the current cache and require every rounded standalone summary field to EQUAL the committed reports/crypto_trend_study.json values, and the data span/row-count to equal that report's data block.",
+      "max_abs_daily_return_diff_vs_prior_construction": 0.0,
+      "data_span_matches_prior_report": true,
+      "summary_field_mismatches": {},
+      "reproduced": true
+    },
+    "production_baseline_vs_report": {
+      "method": "Rebuild both profiles' control streams (build_streams + the exact production sleeve weights and cost/borrow/margin adjustments) and require every rounded returns_summary field to EQUAL the committed reports/production_portfolio.json results rows.",
+      "per_profile": {
+        "base": {
+          "label": "production SPY-core base (1.15x gross)",
+          "mismatched_fields": {},
+          "matched": true,
+          "summary": {
+            "portfolio": "production SPY-core base (1.15x gross)",
+            "from": "2020-07-28",
+            "to": "2026-07-22",
+            "years": 5.98,
+            "cagr": 0.1346,
+            "ann_return": 0.1337,
+            "vol": 0.1184,
+            "sharpe": 1.129,
+            "sortino": 1.575,
+            "max_dd": -0.1383,
+            "x_money": 2.129
+          }
+        },
+        "2x": {
+          "label": "production SPY-core 2x (2.30x gross)",
+          "mismatched_fields": {},
+          "matched": true,
+          "summary": {
+            "portfolio": "production SPY-core 2x (2.30x gross)",
+            "from": "2020-07-28",
+            "to": "2026-07-22",
+            "years": 5.98,
+            "cagr": 0.2077,
+            "ann_return": 0.2175,
+            "vol": 0.2369,
+            "sharpe": 0.918,
+            "sortino": 1.28,
+            "max_dd": -0.2682,
+            "x_money": 3.093
+          }
+        }
+      },
+      "reproduced": true
+    },
+    "cell_controls_vs_prior_study": {
+      "mismatches": {},
+      "reproduced": true
+    }
+  },
+  "cell_coverage": {
+    "early_2020_2022": {
+      "portfolio_window": [
+        "2020-07-28",
+        "2022-12-30"
+      ],
+      "crypto_stream_overlap": [
+        "2021-01-05",
+        "2022-12-30"
+      ],
+      "crypto_signal_defined_from": "2021-09-10",
+      "note": "Candidate is identical to control on portfolio days before the crypto stream exists; between crypto data start and signal-defined date the 5% sleeve sits in modeled-0 cash (warm-up). The early cell is PARTIAL for crypto."
+    },
+    "heldout_2023_plus": {
+      "portfolio_window": [
+        "2023-01-03",
+        "2026-07-22"
+      ],
+      "crypto_stream_overlap": [
+        "2023-01-03",
+        "2026-07-22"
+      ],
+      "crypto_signal_defined_from": "2021-09-10",
+      "note": "Candidate is identical to control on portfolio days before the crypto stream exists; between crypto data start and signal-defined date the 5% sleeve sits in modeled-0 cash (warm-up). The early cell is PARTIAL for crypto."
+    }
+  },
+  "performance": {
+    "primary_25bps": {
+      "early_2020_2022": [
+        {
+          "variant": "control",
+          "profile": "base",
+          "portfolio": "base control (no crypto)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1006,
+          "ann_return": 0.1015,
+          "vol": 0.1095,
+          "sharpe": 0.927,
+          "sortino": 1.302,
+          "max_dd": -0.0994,
+          "x_money": 1.262
+        },
+        {
+          "variant": "candidate",
+          "profile": "base",
+          "portfolio": "base +5% crypto trend (primary_25bps)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.0973,
+          "ann_return": 0.0984,
+          "vol": 0.1085,
+          "sharpe": 0.907,
+          "sortino": 1.259,
+          "max_dd": -0.107,
+          "x_money": 1.252
+        },
+        {
+          "variant": "control",
+          "profile": "2x",
+          "portfolio": "2x control (no crypto)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1382,
+          "ann_return": 0.153,
+          "vol": 0.2191,
+          "sharpe": 0.699,
+          "sortino": 0.981,
+          "max_dd": -0.2144,
+          "x_money": 1.369
+        },
+        {
+          "variant": "candidate",
+          "profile": "2x",
+          "portfolio": "2x +5% crypto trend (primary_25bps)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1348,
+          "ann_return": 0.1487,
+          "vol": 0.213,
+          "sharpe": 0.698,
+          "sortino": 0.973,
+          "max_dd": -0.2178,
+          "x_money": 1.359
+        }
+      ],
+      "heldout_2023_plus": [
+        {
+          "variant": "control",
+          "profile": "base",
+          "portfolio": "base control (no crypto)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1589,
+          "ann_return": 0.1559,
+          "vol": 0.1242,
+          "sharpe": 1.255,
+          "sortino": 1.743,
+          "max_dd": -0.1383,
+          "x_money": 1.688
+        },
+        {
+          "variant": "candidate",
+          "profile": "base",
+          "portfolio": "base +5% crypto trend (primary_25bps)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1685,
+          "ann_return": 0.1645,
+          "vol": 0.1272,
+          "sharpe": 1.294,
+          "sortino": 1.817,
+          "max_dd": -0.1431,
+          "x_money": 1.737
+        },
+        {
+          "variant": "control",
+          "profile": "2x",
+          "portfolio": "2x control (no crypto)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2583,
+          "ann_return": 0.2618,
+          "vol": 0.2485,
+          "sharpe": 1.054,
+          "sortino": 1.463,
+          "max_dd": -0.2682,
+          "x_money": 2.26
+        },
+        {
+          "variant": "candidate",
+          "profile": "2x",
+          "portfolio": "2x +5% crypto trend (primary_25bps)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2638,
+          "ann_return": 0.2652,
+          "vol": 0.2443,
+          "sharpe": 1.086,
+          "sortino": 1.51,
+          "max_dd": -0.2664,
+          "x_money": 2.295
+        }
+      ]
+    },
+    "stress_50bps": {
+      "early_2020_2022": [
+        {
+          "variant": "control",
+          "profile": "base",
+          "portfolio": "base control (no crypto)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1006,
+          "ann_return": 0.1015,
+          "vol": 0.1095,
+          "sharpe": 0.927,
+          "sortino": 1.302,
+          "max_dd": -0.0994,
+          "x_money": 1.262
+        },
+        {
+          "variant": "candidate",
+          "profile": "base",
+          "portfolio": "base +5% crypto trend (stress_50bps)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.0958,
+          "ann_return": 0.0971,
+          "vol": 0.1085,
+          "sharpe": 0.895,
+          "sortino": 1.241,
+          "max_dd": -0.1097,
+          "x_money": 1.248
+        },
+        {
+          "variant": "control",
+          "profile": "2x",
+          "portfolio": "2x control (no crypto)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1382,
+          "ann_return": 0.153,
+          "vol": 0.2191,
+          "sharpe": 0.699,
+          "sortino": 0.981,
+          "max_dd": -0.2144,
+          "x_money": 1.369
+        },
+        {
+          "variant": "candidate",
+          "profile": "2x",
+          "portfolio": "2x +5% crypto trend (stress_50bps)",
+          "from": "2020-07-28",
+          "to": "2022-12-30",
+          "years": 2.42,
+          "cagr": 0.1333,
+          "ann_return": 0.1474,
+          "vol": 0.213,
+          "sharpe": 0.692,
+          "sortino": 0.964,
+          "max_dd": -0.2202,
+          "x_money": 1.354
+        }
+      ],
+      "heldout_2023_plus": [
+        {
+          "variant": "control",
+          "profile": "base",
+          "portfolio": "base control (no crypto)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1589,
+          "ann_return": 0.1559,
+          "vol": 0.1242,
+          "sharpe": 1.255,
+          "sortino": 1.743,
+          "max_dd": -0.1383,
+          "x_money": 1.688
+        },
+        {
+          "variant": "candidate",
+          "profile": "base",
+          "portfolio": "base +5% crypto trend (stress_50bps)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.1671,
+          "ann_return": 0.1633,
+          "vol": 0.1271,
+          "sharpe": 1.285,
+          "sortino": 1.804,
+          "max_dd": -0.1432,
+          "x_money": 1.73
+        },
+        {
+          "variant": "control",
+          "profile": "2x",
+          "portfolio": "2x control (no crypto)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2583,
+          "ann_return": 0.2618,
+          "vol": 0.2485,
+          "sharpe": 1.054,
+          "sortino": 1.463,
+          "max_dd": -0.2682,
+          "x_money": 2.26
+        },
+        {
+          "variant": "candidate",
+          "profile": "2x",
+          "portfolio": "2x +5% crypto trend (stress_50bps)",
+          "from": "2023-01-03",
+          "to": "2026-07-22",
+          "years": 3.55,
+          "cagr": 0.2623,
+          "ann_return": 0.264,
+          "vol": 0.2442,
+          "sharpe": 1.081,
+          "sortino": 1.504,
+          "max_dd": -0.2665,
+          "x_money": 2.285
+        }
+      ]
+    }
+  },
+  "gate_primary_25bps": {
+    "objective_class": "diversifier",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "diversifier",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 0.927,
+          "candidate_sharpe": 0.907,
+          "control_cagr": 0.1006,
+          "candidate_cagr": 0.0973,
+          "control_max_dd": -0.0994,
+          "candidate_max_dd": -0.107,
+          "d_sharpe": -0.02,
+          "d_cagr": -0.0033,
+          "d_max_dd": -0.0076,
+          "max_dd_cost_pp": 0.9196728062559728,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.1901
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "diversifier",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 0.699,
+          "candidate_sharpe": 0.698,
+          "control_cagr": 0.1382,
+          "candidate_cagr": 0.1348,
+          "control_max_dd": -0.2144,
+          "candidate_max_dd": -0.2178,
+          "d_sharpe": -0.001,
+          "d_cagr": -0.0034,
+          "d_max_dd": -0.0034,
+          "max_dd_cost_pp": 0.8339668272156462,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.1901
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "diversifier",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 1.255,
+          "candidate_sharpe": 1.294,
+          "control_cagr": 0.1589,
+          "candidate_cagr": 0.1685,
+          "control_max_dd": -0.1383,
+          "candidate_max_dd": -0.1431,
+          "d_sharpe": 0.039,
+          "d_cagr": 0.0096,
+          "d_max_dd": -0.0048,
+          "max_dd_cost_pp": 0.688911277903814,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.3088
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "diversifier",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 1.054,
+          "candidate_sharpe": 1.086,
+          "control_cagr": 0.2583,
+          "candidate_cagr": 0.2638,
+          "control_max_dd": -0.2682,
+          "candidate_max_dd": -0.2664,
+          "d_sharpe": 0.032,
+          "d_cagr": 0.0055,
+          "d_max_dd": 0.0018,
+          "max_dd_cost_pp": 0.7619538286679619,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.3088
+        }
+      }
+    ],
+    "aggregation_note": "Aggregated manually (same shape and all-cells-must-pass rule as passes_gate_all_cells) because max_dd_cost_pp is a per-cell paired-bootstrap band and that helper only supports one uniform kwarg set across cells. Each cell's band is echoed in its gate inputs."
+  },
+  "gate_stress_50bps": {
+    "objective_class": "diversifier",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "diversifier",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_within_noise": false,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 0.927,
+          "candidate_sharpe": 0.895,
+          "control_cagr": 0.1006,
+          "candidate_cagr": 0.0958,
+          "control_max_dd": -0.0994,
+          "candidate_max_dd": -0.1097,
+          "d_sharpe": -0.032,
+          "d_cagr": -0.0048,
+          "d_max_dd": -0.0103,
+          "max_dd_cost_pp": 0.9958654834363675,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.19
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "diversifier",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": false,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 0.699,
+          "candidate_sharpe": 0.692,
+          "control_cagr": 0.1382,
+          "candidate_cagr": 0.1333,
+          "control_max_dd": -0.2144,
+          "candidate_max_dd": -0.2202,
+          "d_sharpe": -0.007,
+          "d_cagr": -0.0049,
+          "d_max_dd": -0.0058,
+          "max_dd_cost_pp": 0.8962210484635084,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.19
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "diversifier",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 1.255,
+          "candidate_sharpe": 1.285,
+          "control_cagr": 0.1589,
+          "candidate_cagr": 0.1671,
+          "control_max_dd": -0.1383,
+          "candidate_max_dd": -0.1432,
+          "d_sharpe": 0.03,
+          "d_cagr": 0.0082,
+          "d_max_dd": -0.0049,
+          "max_dd_cost_pp": 0.6934678599144,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.3083
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "diversifier",
+        "passed": true,
+        "no_effect": false,
+        "verdict": "passed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_within_noise": true,
+          "correlation_low_enough": true
+        },
+        "inputs": {
+          "control_sharpe": 1.054,
+          "candidate_sharpe": 1.081,
+          "control_cagr": 0.2583,
+          "candidate_cagr": 0.2623,
+          "control_max_dd": -0.2682,
+          "candidate_max_dd": -0.2665,
+          "d_sharpe": 0.027,
+          "d_cagr": 0.004,
+          "d_max_dd": 0.0017,
+          "max_dd_cost_pp": 0.7580219381282649,
+          "max_correlation": 0.4,
+          "stream_correlation": 0.3083
+        }
+      }
+    ],
+    "aggregation_note": "Aggregated manually (same shape and all-cells-must-pass rule as passes_gate_all_cells) because max_dd_cost_pp is a per-cell paired-bootstrap band and that helper only supports one uniform kwarg set across cells. Each cell's band is echoed in its gate inputs."
+  },
+  "diagnostics": {
+    "note": "Non-gating legibility aids: each cell's paired-bootstrap 1-sigma noise band (pp of max drawdown difference), the actual drawdown difference in pp and in units of that band, the measured per-cell stream correlation, and the Sharpe/CAGR deltas.",
+    "primary_25bps": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "noise_band_pp": 0.9197,
+        "d_max_dd_pp": -0.76,
+        "dd_diff_in_bands": -0.83,
+        "dd_reading": "-0.76pp vs a \u00b10.92pp 1-sigma paired-bootstrap band = 0.8 bands worse",
+        "stream_correlation": 0.1901,
+        "correlation_n_days": 330,
+        "d_sharpe": -0.02,
+        "d_cagr_pp": -0.33
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "noise_band_pp": 0.834,
+        "d_max_dd_pp": -0.34,
+        "dd_diff_in_bands": -0.41,
+        "dd_reading": "-0.34pp vs a \u00b10.83pp 1-sigma paired-bootstrap band = 0.4 bands worse",
+        "stream_correlation": 0.1901,
+        "correlation_n_days": 330,
+        "d_sharpe": -0.001,
+        "d_cagr_pp": -0.34
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "noise_band_pp": 0.6889,
+        "d_max_dd_pp": -0.48,
+        "dd_diff_in_bands": -0.7,
+        "dd_reading": "-0.48pp vs a \u00b10.69pp 1-sigma paired-bootstrap band = 0.7 bands worse",
+        "stream_correlation": 0.3088,
+        "correlation_n_days": 890,
+        "d_sharpe": 0.039,
+        "d_cagr_pp": 0.96
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "noise_band_pp": 0.762,
+        "d_max_dd_pp": 0.18,
+        "dd_diff_in_bands": 0.24,
+        "dd_reading": "+0.18pp vs a \u00b10.76pp 1-sigma paired-bootstrap band = 0.2 bands better",
+        "stream_correlation": 0.3088,
+        "correlation_n_days": 890,
+        "d_sharpe": 0.032,
+        "d_cagr_pp": 0.55
+      }
+    ],
+    "stress_50bps": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "noise_band_pp": 0.9959,
+        "d_max_dd_pp": -1.03,
+        "dd_diff_in_bands": -1.03,
+        "dd_reading": "-1.03pp vs a \u00b11.00pp 1-sigma paired-bootstrap band = 1.0 bands worse",
+        "stream_correlation": 0.19,
+        "correlation_n_days": 330,
+        "d_sharpe": -0.032,
+        "d_cagr_pp": -0.48
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "noise_band_pp": 0.8962,
+        "d_max_dd_pp": -0.58,
+        "dd_diff_in_bands": -0.65,
+        "dd_reading": "-0.58pp vs a \u00b10.90pp 1-sigma paired-bootstrap band = 0.6 bands worse",
+        "stream_correlation": 0.19,
+        "correlation_n_days": 330,
+        "d_sharpe": -0.007,
+        "d_cagr_pp": -0.49
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "noise_band_pp": 0.6935,
+        "d_max_dd_pp": -0.49,
+        "dd_diff_in_bands": -0.71,
+        "dd_reading": "-0.49pp vs a \u00b10.69pp 1-sigma paired-bootstrap band = 0.7 bands worse",
+        "stream_correlation": 0.3083,
+        "correlation_n_days": 890,
+        "d_sharpe": 0.03,
+        "d_cagr_pp": 0.82
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "noise_band_pp": 0.758,
+        "d_max_dd_pp": 0.17,
+        "dd_diff_in_bands": 0.22,
+        "dd_reading": "+0.17pp vs a \u00b10.76pp 1-sigma paired-bootstrap band = 0.2 bands better",
+        "stream_correlation": 0.3083,
+        "correlation_n_days": 890,
+        "d_sharpe": 0.027,
+        "d_cagr_pp": 0.4
+      }
+    ]
+  },
+  "limitations": [
+    "Only ~5.5 years of crypto history (2021-01-01 floor at Alpaca) \u2014 three regimes but a single full trend cycle; far short of the multi-decade evidence behind the equity TSMOM sleeve.",
+    "The early_2020_2022 gate cell is PARTIAL for crypto: the portfolio window starts 2020-07-28 but crypto data starts 2021-01-01 and the 252-row signal is first defined ~2021-09; see cell_coverage for exact spans.",
+    "25/50 bps costs are pre-registered planning figures; Alpaca paper crypto fill quality is UNVERIFIED \u2014 real paper fills must validate them before any deployment.",
+    "Crypto trades 24/7 while the bot's cron runs on equity market hours; execution design is an open question deferred to a separately planned phase, and this study models UTC-midnight rebalances the current infrastructure cannot place. Even a gate pass here authorizes at most scoping that phase \u2014 deployment is a separate decision plus a 24/7 execution build, both out of scope.",
+    "252-row lookback on a 24/7 market is ~8.3 calendar months, not 12 \u2014 kept deliberately to mirror the accepted implementation.",
+    "Risk-free rate modeled as zero throughout (AGENTS.md open gap); identical on both sides of every comparison here.",
+    "Long/flat only, no shorting, no intra-day stops; weekend crypto returns are compounded into the next equity trading day, which slightly smooths measured correlation vs a true 24/7 accounting.",
+    "Screening-tier evidence only (windows predate the frozen 2026-08-13+ validation window, and heldout_2023_plus has arbitrated many prior candidates \u2014 see AGENTS.md on its multiplicity). Nothing here is evidence from the frozen window.",
+    "Conditioning: candidate selection and the existence of the objective class it is judged under were both informed by the prior study's observed results \u2014 see conditioning_disclosure. max_correlation=0.40 was declared above an already-observed 0.28.",
+    "The per-cell noise band is estimated by paired block bootstrap from the SAME cell sample it is then used to judge \u2014 a mild in-sample dependence that is inherent to the paired_drawdown_noise_pp design and disclosed rather than resolved. The seed/block/simulation parameters are the module defaults, fixed before any band was computed."
+  ]
+}
