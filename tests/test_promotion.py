@@ -1,6 +1,11 @@
+import numpy as np
 import pytest
 
-from backtest.promotion import passes_gate, passes_gate_all_cells
+from backtest.promotion import (
+    paired_drawdown_noise_pp,
+    passes_gate,
+    passes_gate_all_cells,
+)
 
 
 def summary(sharpe, cagr, max_dd):
@@ -210,3 +215,96 @@ class TestNoEffect:
         result = passes_gate_all_cells(cells, "return_enhancer")
         assert result["any_no_effect"] is True
         assert result["all_no_effect"] is False
+
+
+class TestDiversifier:
+    CONTROL = {"sharpe": 1.0, "cagr": 0.10, "max_dd": -0.15}
+
+    def kwargs(self, **overrides):
+        base = {"max_dd_cost_pp": 0.8, "max_correlation": 0.40, "stream_correlation": 0.28}
+        base.update(overrides)
+        return base
+
+    def test_requires_all_three_declared_parameters(self):
+        candidate = summary(1.05, 0.11, -0.15)
+        for missing in ("max_dd_cost_pp", "max_correlation", "stream_correlation"):
+            kwargs = self.kwargs()
+            kwargs.pop(missing)
+            with pytest.raises(ValueError, match="diversifier requires"):
+                passes_gate(self.CONTROL, candidate, "diversifier", **kwargs)
+
+    def test_passes_with_dd_cost_inside_the_noise_band(self):
+        # 0.5pp worse drawdown, inside the 0.8pp declared band -> a tie.
+        candidate = summary(1.05, 0.11, -0.155)
+        result = passes_gate(self.CONTROL, candidate, "diversifier", **self.kwargs())
+        assert result.passed is True
+        assert result.checks["max_dd_within_noise"] is True
+
+    def test_fails_when_dd_cost_exceeds_the_band(self):
+        # 1.0pp worse drawdown against a 0.8pp band -> a real loss.
+        candidate = summary(1.05, 0.11, -0.16)
+        result = passes_gate(self.CONTROL, candidate, "diversifier", **self.kwargs())
+        assert result.passed is False
+        assert result.checks["max_dd_within_noise"] is False
+
+    def test_sharpe_and_cagr_remain_strict(self):
+        flat_sharpe = summary(1.0, 0.11, -0.15)
+        assert passes_gate(self.CONTROL, flat_sharpe, "diversifier", **self.kwargs()).passed is False
+        lower_cagr = summary(1.05, 0.09, -0.15)
+        assert passes_gate(self.CONTROL, lower_cagr, "diversifier", **self.kwargs()).passed is False
+
+    def test_high_correlation_fails(self):
+        candidate = summary(1.05, 0.11, -0.15)
+        result = passes_gate(
+            self.CONTROL, candidate, "diversifier",
+            **self.kwargs(stream_correlation=0.55),
+        )
+        assert result.passed is False
+        assert result.checks["correlation_low_enough"] is False
+
+    def test_inputs_echo_the_declared_parameters(self):
+        candidate = summary(1.05, 0.11, -0.15)
+        result = passes_gate(self.CONTROL, candidate, "diversifier", **self.kwargs())
+        assert result.inputs["max_dd_cost_pp"] == 0.8
+        assert result.inputs["max_correlation"] == 0.40
+        assert result.inputs["stream_correlation"] == 0.28
+
+
+class TestPairedDrawdownNoise:
+    def test_identical_streams_have_zero_band(self):
+        rng = np.random.default_rng(1)
+        returns = rng.normal(0.0005, 0.01, 400)
+        assert paired_drawdown_noise_pp(returns, returns.copy()) == 0.0
+
+    def test_deterministic_for_a_fixed_seed(self):
+        rng = np.random.default_rng(2)
+        a = rng.normal(0.0005, 0.01, 400)
+        b = rng.normal(0.0005, 0.012, 400)
+        assert paired_drawdown_noise_pp(a, b) == paired_drawdown_noise_pp(a, b)
+
+    def test_nearly_identical_streams_have_a_small_band(self):
+        """The realistic case: control vs control + a tiny sleeve. The band
+        should be far smaller than for independent streams."""
+        rng = np.random.default_rng(3)
+        control = rng.normal(0.0005, 0.01, 600)
+        tiny_sleeve = rng.normal(0.0004, 0.02, 600)
+        candidate = 0.95 * control + 0.05 * tiny_sleeve
+        near_band = paired_drawdown_noise_pp(control, candidate)
+        independent = rng.normal(0.0005, 0.01, 600)
+        far_band = paired_drawdown_noise_pp(control, independent)
+        assert 0 < near_band < far_band
+
+    def test_rejects_mismatched_lengths(self):
+        with pytest.raises(ValueError, match="equal-length"):
+            paired_drawdown_noise_pp(np.zeros(100), np.zeros(101))
+
+    def test_rejects_nans(self):
+        a = np.zeros(100)
+        b = np.zeros(100)
+        b[5] = np.nan
+        with pytest.raises(ValueError, match="NaN"):
+            paired_drawdown_noise_pp(a, b)
+
+    def test_rejects_too_short_series(self):
+        with pytest.raises(ValueError, match="block_size"):
+            paired_drawdown_noise_pp(np.zeros(10), np.zeros(10), block_size=63)
