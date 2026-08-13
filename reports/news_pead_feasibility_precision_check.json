@@ -1,0 +1,26 @@
+{
+  "decision": "regex_improved_precision_verified",
+  "objective": "Phase 4 follow-up: reports/news_pead_feasibility.json's own limitations flagged 'Headline regex precision must be manually sampled before a return study' as a blocker before proceeding to a real news-conditioned return study. This resolves that blocker with a real, hand-checked sample against the live cached dataset.",
+  "data_source": "state/news/alpaca_news_2026-01-01_2026-07-31.parquet (147,305 real Alpaca/Benzinga news articles, already cached from the original feasibility audit).",
+  "method": "Drew a reproducible 120-headline random sample (pandas random_state=20260812) from every article backtest.news_pead_feasibility.is_earnings_result_headline() labeled a positive single-symbol earnings-result event, before any regex change. Hand-checked each headline: is it reporting an already-released earnings-related event (actual reported figures, or guidance issued/affirmed/revised as part of an earnings release, or commentary published in clear reaction to an already-released result) versus a forward-looking preview/forecast article or unrelated valuation commentary that merely contains a result-shaped word. Ground truth recorded in backtest/news_pead_feasibility_precision_labels.py (22 false-positive indices out of 120).",
+  "baseline_finding": {
+    "sample_size": 120,
+    "false_positives": 22,
+    "precision": 0.8167,
+    "false_positive_pattern": "A recognizable templated family of Benzinga-style pre-earnings preview/forecast articles the original FORWARD_PATTERNS regex missed: 'Earnings Outlook For X' / \"X's Earnings Outlook\" (6 of 22), 'Insights Into X's [Q4] Earnings' (4 of 22), 'A Glimpse/Peek/Look Ahead ... Earnings [Potential/Forecast/Future]' (4 of 22), '... Ahead Of [Q4] Earnings' (3 of 22), 'Price Over Earnings Overview' (a P/E-ratio commentary template with no earnings-release content at all, 3 of 22), 'Exploring X's Earnings Expectations' (1 of 22), 'An Overview of X's Earnings' (1 of 22)."
+  },
+  "fix": "Added six new FORWARD_PATTERNS entries to backtest/news_pead_feasibility.py: 'ahead of', 'outlook', 'expectations?', 'price over earnings', and a combined pattern for 'insights?' / 'a look ahead|glimpse|peek' / 'an overview of'.",
+  "post_fix_finding": {
+    "sample_size_after_filtering": 97,
+    "remaining_false_positives": 0,
+    "precision": 1.0,
+    "recall_cost": "2 of the original 98 true positives were also filtered out by the new 'outlook' pattern (ADP's '... Up From Prior Outlook of 6%' and Qorvo's 'Q3 Earnings As Outlook Disappoints' -- both genuine post-release headlines that happen to mention outlook/guidance language). This is a disclosed precision-over-recall trade-off: the module's own docstring states its goal is a HIGH-PRECISION label, not a high-recall one, so losing a small number of genuine events to eliminate a much larger, structurally recognizable false-positive family is the correct trade for this study's purpose."
+  },
+  "full_dataset_effect": {
+    "before": {"earnings_labeled_articles": 11766, "single_symbol_earnings_events": 11102, "unique_event_symbols": 3766},
+    "after": {"earnings_labeled_articles": 9192, "single_symbol_earnings_events": 8606, "unique_event_symbols": 3261},
+    "note": "Removed roughly 2,500 single-symbol events (~22%, consistent with the sampled false-positive rate). Still comfortably clears the pre-registered gate (>=500 single-symbol events, >=95% timestamp coverage) -- the feasibility decision itself (proceed_news_conditioned_event_study) is unchanged, now backed by measurably higher-precision data."
+  },
+  "not_measured": "This was re-verified only on the SAME sample the regex was tuned against (in-sample), not a fresh, independently-drawn out-of-sample batch. A held-out precision check on a newly-drawn sample (e.g. after 2026-08-13 news accrues, matching the repo's frozen-window discipline) would be a stronger confirmation before ever running the pre-registered return study on this event set -- flagged, not done here, given the improvement's mechanism (removing a structurally distinct, easily-recognizable template family) is unlikely to be an artifact of this specific sample, but this has not been independently confirmed.",
+  "reproduction": "python -m backtest.news_pead_feasibility"
+}
