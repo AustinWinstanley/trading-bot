@@ -12,8 +12,56 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+from dataclasses import dataclass
+from typing import Sequence
 
 from engine.data import AlpacaClient, AlpacaError
+
+# Alpaca-imposed limit on multi-leg option orders.
+MAX_OPTION_LEGS = 4
+_OPENING_INTENTS = frozenset({"buy_to_open", "sell_to_open"})
+_CLOSING_INTENTS = frozenset({"buy_to_close", "sell_to_close"})
+# opening intent -> (closing intent, closing side), the exact reversal
+# needed to flatten a leg opened with that intent.
+_CLOSING_MIRROR = {
+    "buy_to_open": ("sell_to_close", "sell"),
+    "sell_to_open": ("buy_to_close", "buy"),
+}
+
+
+@dataclass(frozen=True)
+class OptionLeg:
+    """One leg of a multi-leg options order.
+
+    ``symbol`` is the OCC contract symbol. ``position_intent`` is Alpaca's
+    own vocabulary (buy_to_open/sell_to_open/buy_to_close/sell_to_close) —
+    ``side`` is the plain buy/sell Alpaca also requires alongside it.
+    """
+
+    symbol: str
+    side: str
+    position_intent: str
+    ratio_qty: int = 1
+
+
+def mirror_closing_legs(legs: Sequence[OptionLeg]) -> list[OptionLeg]:
+    """The exact opposite legs that flatten an opened structure.
+
+    buy_to_open -> sell_to_close (side buy -> sell); sell_to_open ->
+    buy_to_close (side sell -> buy). Every leg passed in must be an opening
+    leg — mirroring an already-closing leg is a caller bug, not a case to
+    silently handle.
+    """
+    out = []
+    for leg in legs:
+        if leg.position_intent not in _CLOSING_MIRROR:
+            raise AlpacaError(
+                f"{leg.symbol}: cannot mirror a non-opening leg "
+                f"(position_intent={leg.position_intent!r})"
+            )
+        intent, side = _CLOSING_MIRROR[leg.position_intent]
+        out.append(OptionLeg(leg.symbol, side, intent, leg.ratio_qty))
+    return out
 
 
 class Trader(AlpacaClient):
@@ -169,3 +217,66 @@ class Trader(AlpacaClient):
             ),
             False,
         )
+
+    def submit_multi_leg_order(
+        self,
+        legs: Sequence[OptionLeg],
+        qty: int,
+        credit: float,
+        *,
+        client_order_id: str | None = None,
+    ) -> dict:
+        """Submit a multi-leg (``order_class: "mleg"``) options order.
+
+        ``credit`` uses scripts/options_shadow.py's sign convention:
+        positive = net credit received, negative = net debit paid. Alpaca's
+        own convention for ``limit_price`` is the OPPOSITE (positive =
+        debit, negative = credit) — negated here so every call site can
+        keep using the one convention the existing quote selectors already
+        return.
+
+        Rounds toward whichever cent value is strictly more conservative
+        than what was computed — never demand less credit, or offer to pay
+        more debit, than the value the risk gate actually approved. Never a
+        market order, for the same reason no order anywhere in this repo
+        is: config.execution.order_type forbids it for equities, and a
+        multi-leg options order needs a bounded price even more, since an
+        unbounded fill could exceed the structure's approved maximum loss.
+        """
+        if not (2 <= len(legs) <= MAX_OPTION_LEGS):
+            raise AlpacaError(f"mleg order must have 2-{MAX_OPTION_LEGS} legs, got {len(legs)}")
+        intents = {leg.position_intent for leg in legs}
+        if not (intents <= _OPENING_INTENTS or intents <= _CLOSING_INTENTS):
+            raise AlpacaError(
+                f"mleg legs must be uniformly opening or uniformly closing, got {intents}"
+            )
+        for leg in legs:
+            if leg.side not in ("buy", "sell"):
+                raise AlpacaError(f"{leg.symbol}: side must be buy/sell, got {leg.side!r}")
+            if not (isinstance(leg.ratio_qty, int) and leg.ratio_qty > 0):
+                raise AlpacaError(
+                    f"{leg.symbol}: ratio_qty must be a positive int, got {leg.ratio_qty!r}"
+                )
+        qty = math.floor(qty)
+        if qty < 1:
+            raise AlpacaError("mleg order: qty rounds to zero")
+        limit_price = math.floor(-credit * 100) / 100
+        payload = {
+            "type": "limit",
+            "time_in_force": "day",
+            "order_class": "mleg",
+            "qty": str(qty),
+            "limit_price": str(round(limit_price, 2)),
+            "legs": [
+                {
+                    "symbol": leg.symbol,
+                    "side": leg.side,
+                    "position_intent": leg.position_intent,
+                    "ratio_qty": str(leg.ratio_qty),
+                }
+                for leg in legs
+            ],
+        }
+        if client_order_id:
+            payload["client_order_id"] = client_order_id[:48]
+        return self._post("/v2/orders", payload)
