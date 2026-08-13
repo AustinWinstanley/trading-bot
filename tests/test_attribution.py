@@ -87,7 +87,7 @@ def test_execution_summary_reports_fill_shrink_and_adverse_slippage():
         "INSERT INTO attribution_snapshots VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             "2026-07-23", 10_000, 0.85, 0.15, 1.0, 0.80, 0.09, 0.89,
-            "{}", json.dumps(attribution), "{}", "{}", "[]",
+            '{"mom_ls": {"gross": 0.30}}', json.dumps(attribution), "{}", "{}", "[]",
         ),
     )
     conn.execute(
@@ -104,6 +104,9 @@ def test_execution_summary_reports_fill_shrink_and_adverse_slippage():
     assert result["rejections"]["whole_share_rounding"] == 1
     assert result["rejections"]["requested_notional"] == 75
     assert result["latest_exposure"]["actual_short"] == 0.09
+    # Recorded since the table's creation, forwarded since 2026-08-13 —
+    # the dashboard's "Target" column reads this.
+    assert result["latest_exposure"]["target_by_sleeve"] == {"mom_ls": {"gross": 0.30}}
     assert result["latest_leverage_recommendation"][
         "recommended_leverage"
     ] == 1.20

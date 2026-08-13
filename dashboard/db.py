@@ -38,6 +38,7 @@ class ProfilePaths:
     db_path: Path
     risk_state_path: Path
     health_status_path: Path
+    options_db_path: Path
 
 
 def profile_paths(repo_root: Path, profile: str) -> ProfilePaths:
@@ -49,6 +50,10 @@ def profile_paths(repo_root: Path, profile: str) -> ProfilePaths:
         db_path=state / f"paper{state_suffix}.db",
         risk_state_path=state / f"risk_state{state_suffix}.json",
         health_status_path=state / f"health_status{state_suffix}.json",
+        # Written by scripts/options_daily.py (2x lab only today; the suffix
+        # keeps this correct if base ever gets one). May be absent or a
+        # 0-byte file — callers must tolerate both.
+        options_db_path=state / f"options{state_suffix}.db",
     )
 
 
@@ -203,6 +208,7 @@ def current_positions(conn: sqlite3.Connection, stop_exempt_sleeves: frozenset[s
             "sleeve": sleeve,
             "stop_price": float(stop["stop_price"]) if stop else None,
             "entry_price": entry_price,
+            "entry_date": str(stop["entry_date"]) if stop and stop["entry_date"] else None,
             "unrealized_pl": round(unrealized_pl, 2) if unrealized_pl is not None else None,
             "cost_basis_available": entry_price is not None,
             "stop_exempt_sleeve": exempt,
@@ -277,3 +283,94 @@ def top_rejection_reasons(conn: sqlite3.Connection, since: str, limit: int = 10)
         counts[template] = counts.get(template, 0) + 1
     ranked = sorted(counts.items(), key=lambda item: -item[1])[:limit]
     return [{"reason": reason, "count": count} for reason, count in ranked]
+
+
+def rejections_by_sleeve_side(conn: sqlite3.Connection, since: str) -> list[dict]:
+    """Which sleeve/side combinations the gate is blocking, and how much
+    notional it blocked. Pre-migration rows carry NULL sleeve/side (the
+    majority of historical rows) — grouped as "untagged" rather than
+    silently dropped, so the skew itself stays visible."""
+    cols = table_columns(conn, "rejections")
+    if not {"ts", "reason"}.issubset(cols):
+        return []
+    has_sleeve = "sleeve" in cols
+    has_side = "side" in cols
+    has_notional = "requested_notional" in cols
+    sleeve_expr = "COALESCE(sleeve, '(untagged)')" if has_sleeve else "'(untagged)'"
+    side_expr = "COALESCE(side, '')" if has_side else "''"
+    notional_expr = "COALESCE(SUM(requested_notional), 0)" if has_notional else "0"
+    rows = conn.execute(
+        f"SELECT {sleeve_expr} AS sleeve, {side_expr} AS side, "
+        f"COUNT(*) AS count, {notional_expr} AS blocked_notional "
+        "FROM rejections WHERE ts > ? GROUP BY 1, 2 ORDER BY count DESC",
+        (since,),
+    ).fetchall()
+    return [
+        {
+            "sleeve": str(row["sleeve"]),
+            "side": str(row["side"]),
+            "count": int(row["count"]),
+            "blocked_notional": round(float(row["blocked_notional"]), 2),
+        }
+        for row in rows
+    ]
+
+
+def experiments_status(risk_state: dict) -> dict:
+    """Experiment-tier status from risk_state*.json — the stand-down set
+    and per-experiment realized P&L the daily runners persist. A stood-down
+    experiment is a loud, human-actionable state that was previously
+    invisible in the UI."""
+    return {
+        "standdowns": sorted(risk_state.get("experiment_standdowns", []) or []),
+        "realized_pnl": risk_state.get("experiment_realized_pnl", {}) or {},
+    }
+
+
+_STRUCTURE_COLUMNS = (
+    "structure_id", "experiment", "strategy", "underlying", "expiration_date",
+    "contracts", "requested_contracts", "credit", "maximum_loss",
+    "opened_ts", "open_status", "open_filled_at", "close_reason", "closed_ts",
+    "close_status", "realized_pnl", "status",
+)
+
+
+def options_structures(conn: sqlite3.Connection, limit: int = 20) -> list[dict]:
+    """Recent multi-leg options structures from state/options_*.db, with
+    their legs attached. Tolerates a 0-byte or pre-migration database
+    (scripts/options_daily.py creates tables lazily on its first run)."""
+    cols = table_columns(conn, "structures")
+    if not cols:
+        return []
+    select_cols = [c for c in _STRUCTURE_COLUMNS if c in cols]
+    rows = conn.execute(
+        f"SELECT {', '.join(select_cols)} FROM structures "
+        "ORDER BY opened_ts DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    structures = [dict(row) for row in rows]
+    leg_cols = table_columns(conn, "structure_legs")
+    if {"structure_id", "symbol", "side", "position_intent"}.issubset(leg_cols):
+        for structure in structures:
+            legs = conn.execute(
+                "SELECT symbol, side, position_intent, ratio_qty "
+                "FROM structure_legs WHERE structure_id = ?",
+                (structure["structure_id"],),
+            ).fetchall()
+            structure["legs"] = [dict(leg) for leg in legs]
+    return structures
+
+
+def reconciliation_events(conn: sqlite3.Connection, since: str) -> list[dict]:
+    """Broker-vs-journal mismatch alarms from scripts/options_daily.py's
+    assignment-detection backstop — including possible early assignment.
+    Anything here is a page, not a curiosity."""
+    cols = table_columns(conn, "reconciliation_events")
+    if not {"ts", "severity", "detail"}.issubset(cols):
+        return []
+    rows = conn.execute(
+        "SELECT ts, severity, structure_id, symbol, detail "
+        "FROM reconciliation_events WHERE ts > ? ORDER BY ts DESC LIMIT 50",
+        (since,),
+    ).fetchall()
+    return [dict(row) for row in rows]

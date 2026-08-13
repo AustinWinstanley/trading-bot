@@ -44,6 +44,61 @@ CREATE TABLE leverage_recommendations(
     recommended_leverage REAL, ready INTEGER, reason TEXT);
 """
 
+# Mirrors scripts/options_daily.py::db()'s schema (structures +
+# structure_legs + reconciliation_events) — keep in sync with that module.
+OPTIONS_SCHEMA = """
+CREATE TABLE structures(
+    structure_id TEXT PRIMARY KEY, experiment TEXT NOT NULL,
+    strategy TEXT NOT NULL, underlying TEXT NOT NULL,
+    expiration_date TEXT NOT NULL, contracts INTEGER NOT NULL,
+    requested_contracts INTEGER NOT NULL, credit REAL NOT NULL,
+    maximum_loss REAL NOT NULL, adjustments TEXT, opened_ts TEXT NOT NULL,
+    open_client_order_id TEXT, open_alpaca_order_id TEXT,
+    open_status TEXT, open_filled_at TEXT, open_filled_avg_price REAL,
+    close_reason TEXT, closed_ts TEXT,
+    close_client_order_id TEXT, close_alpaca_order_id TEXT,
+    close_status TEXT, close_filled_at TEXT, close_filled_avg_price REAL,
+    realized_pnl REAL, status TEXT NOT NULL);
+CREATE TABLE structure_legs(
+    structure_id TEXT NOT NULL, symbol TEXT NOT NULL, side TEXT NOT NULL,
+    position_intent TEXT NOT NULL, ratio_qty INTEGER NOT NULL,
+    quote_bid REAL, quote_ask REAL, quote_ts TEXT,
+    PRIMARY KEY (structure_id, symbol));
+CREATE TABLE reconciliation_events(
+    ts TEXT NOT NULL, severity TEXT NOT NULL, structure_id TEXT,
+    symbol TEXT, detail TEXT);
+"""
+
+
+def build_options_db(db_path):
+    today = dt.date.today()
+    ts = f"{today.isoformat()}T10:05:00-04:00"
+    conn = sqlite3.connect(db_path)
+    conn.executescript(OPTIONS_SCHEMA)
+    conn.execute(
+        "INSERT INTO structures(structure_id, experiment, strategy, underlying, "
+        "expiration_date, contracts, requested_contracts, credit, maximum_loss, "
+        "adjustments, opened_ts, open_status, status) "
+        "VALUES ('abc123', 'bull_put_delta_selected_live', 'bull_put_delta_selected', "
+        "'SPY', '2026-09-18', 1, 1, 0.67, 473.0, '[]', ?, 'accepted', 'open')",
+        (ts,),
+    )
+    conn.executemany(
+        "INSERT INTO structure_legs(structure_id, symbol, side, position_intent, "
+        "ratio_qty) VALUES (?,?,?,?,?)",
+        [
+            ("abc123", "SPY260918P00744000", "sell", "sell_to_open", 1),
+            ("abc123", "SPY260918P00739000", "buy", "buy_to_open", 1),
+        ],
+    )
+    conn.execute(
+        "INSERT INTO reconciliation_events VALUES (?,?,?,?,?)",
+        (ts, "CRITICAL", "abc123", "SPY",
+         "unexpected equity position in SPY while an options structure is open"),
+    )
+    conn.commit()
+    conn.close()
+
 def _build_journal(db_path: Path) -> None:
     today = dt.date.today()
     dates = [(today - dt.timedelta(days=offset)).isoformat() for offset in (2, 1, 0)]
@@ -96,11 +151,13 @@ def _build_journal(db_path: Path) -> None:
         (
             f"{dates[2]}T09:47:07-04:00", 10500.0,
             0.6, 0.15, 0.75, 0.58, 0.10, 0.68,
-            "{}",
+            '{"equity_core+trend": {"long": 0.60, "short": 0.0, "net": 0.60, '
+            '"gross": 0.60}, "mom_ls": {"long": 0.15, "short": 0.15, "net": 0.0, '
+            '"gross": 0.30}}',
             '{"equity_core+trend": {"long": 0.58, "short": 0.0, "net": 0.58, '
             '"gross": 0.58, "unrealized_pl": 300.0}, "mom_ls": {"long": 0.10, '
             '"short": 0.10, "net": 0.0, "gross": 0.20, "unrealized_pl": 20.0}}',
-            "{}", "{}", "[]",
+            "{}", "{}", '[{"symbol": "FXE", "gap": -0.0354}]',
         ),
     )
     conn.execute(
@@ -132,8 +189,14 @@ def repo_root(tmp_path: Path) -> Path:
     (state / "risk_state.json").write_text(
         '{"peak_equity": 10500.0, "month": "2026-08", "month_start_equity": 10000.0, '
         f'"day": "{today.isoformat()}", "day_start_equity": 10400.0, '
-        f'"recent_losses": {{"XYZ": "{loss_date}"}}, "halted": false}}'
+        f'"recent_losses": {{"XYZ": "{loss_date}"}}, "halted": false, '
+        '"experiment_realized_pnl": {"bull_put_delta_selected_live": -12.5}, '
+        '"experiment_standdowns": ["stood_down_exp"]}'
     )
+    # The base profile gets an options DB in tests even though production's
+    # lives only in the 2x lab today — the endpoint is profile-generic and
+    # the seeded-base/empty-2x split already covers both data states.
+    build_options_db(state / "options.db")
     (state / "health_status.json").write_text(
         f'{{"ts": "{today.isoformat()}T09:47:08-04:00", "healthy": true, "problems": [], '
         '"equity": 10500.0, "positions": 2, "open_orders": 0}'

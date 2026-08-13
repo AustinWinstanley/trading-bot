@@ -98,6 +98,86 @@ def test_rejections_groups_numerically_templated_reasons(client):
     assert reasons.get("short notional # rounds below # whole share") == 1
 
 
+def test_rejections_breaks_down_by_sleeve_and_side(client):
+    data = client.get("/api/base/rejections?days=7").get_json()
+    rows = {(r["sleeve"], r["side"]): r for r in data["by_sleeve_side"]}
+    assert rows[("mom_ls", "buy")]["count"] == 2
+    assert rows[("mom_ls", "buy")]["blocked_notional"] == 150.0
+    assert rows[("mom_ls", "short")]["count"] == 1
+
+
+def test_summary_surfaces_execution_quality_and_experiments(client):
+    data = client.get("/api/base/summary").get_json()
+    execution = data["execution"]
+    assert execution is not None
+    assert execution["overall"]["orders"] == 2
+    assert execution["overall"]["filled_orders"] == 2
+    assert "mom_ls" in execution["by_sleeve"]
+
+    experiments = data["experiments"]
+    assert experiments["standdowns"] == ["stood_down_exp"]
+    assert experiments["realized_pnl"]["bull_put_delta_selected_live"] == -12.5
+
+
+def test_summary_overlay_includes_min_observations(client):
+    data = client.get("/api/base/summary").get_json()
+    overlay = data["volatility_overlay"]
+    # config.yaml's base overlay block may be mode: off with no
+    # min_observations — the key must exist either way (None is fine).
+    assert "min_observations" in overlay
+
+
+def test_exposure_forwards_target_by_sleeve(client):
+    data = client.get("/api/base/exposure").get_json()["latest_exposure"]
+    assert data["target_by_sleeve"]["mom_ls"]["gross"] == 0.30
+    assert data["largest_symbol_gaps"] == [{"symbol": "FXE", "gap": -0.0354}]
+
+
+def test_positions_include_entry_date(client):
+    positions = {p["symbol"]: p for p in client.get("/api/base/positions").get_json()["positions"]}
+    assert positions["SPY"]["entry_date"] is not None
+
+
+def test_options_returns_structures_with_legs_and_events(client):
+    data = client.get("/api/base/options").get_json()
+    assert len(data["structures"]) == 1
+    structure = data["structures"][0]
+    assert structure["strategy"] == "bull_put_delta_selected"
+    assert structure["maximum_loss"] == 473.0
+    assert len(structure["legs"]) == 2
+    intents = {leg["position_intent"] for leg in structure["legs"]}
+    assert intents == {"sell_to_open", "buy_to_open"}
+    assert len(data["reconciliation_events"]) == 1
+    assert data["reconciliation_events"][0]["severity"] == "CRITICAL"
+
+
+def test_options_missing_file_returns_empty_shape(client):
+    """The 2x fixture profile has no options DB — same valid empty state."""
+    data = client.get("/api/2x/options").get_json()
+    assert data == {"structures": [], "reconciliation_events": []}
+
+
+def test_options_zero_byte_file_returns_empty_shape(tmp_path: Path):
+    """scripts/options_daily.py can leave a 0-byte file before its first
+    real run creates the schema (observed live) — must not 500."""
+    import shutil
+
+    from engine.config import REPO_ROOT as REAL_REPO_ROOT
+
+    shutil.copy(REAL_REPO_ROOT / "config.yaml", tmp_path / "config.yaml")
+    shutil.copy(REAL_REPO_ROOT / "config_2x.yaml", tmp_path / "config_2x.yaml")
+    state = tmp_path / "state"
+    state.mkdir()
+    (state / "options.db").touch()
+
+    app = create_app(repo_root=tmp_path)
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        resp = c.get("/api/base/options")
+        assert resp.status_code == 200
+        assert resp.get_json() == {"structures": [], "reconciliation_events": []}
+
+
 def test_unconfigured_profile_returns_empty_data_not_an_error(client):
     """The 2x fixture profile has a config but no journal yet."""
     resp = client.get("/api/2x/summary")
@@ -156,6 +236,7 @@ def test_routes_tolerate_an_unmigrated_database_without_500ing(tmp_path: Path):
         for path in (
             "/api/base/summary", "/api/base/equity-curve", "/api/base/orders",
             "/api/base/positions", "/api/base/exposure", "/api/base/rejections",
+            "/api/base/options",
         ):
             resp = c.get(path)
             assert resp.status_code == 200, f"{path} returned {resp.status_code}"
