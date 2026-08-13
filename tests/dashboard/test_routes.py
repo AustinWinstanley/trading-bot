@@ -198,6 +198,45 @@ def test_unknown_profile_404s_at_the_routing_layer(client):
     assert resp.status_code == 404
 
 
+def test_routes_tolerate_a_config_experiment_with_no_mounted_registration_file(
+    tmp_path: Path,
+):
+    """Reproduces a 2026-08-13 production incident: the dashboard's Docker
+    container never mounts reports/ (deploy/docker-compose.yml), so
+    engine.config.load_config()'s default registration-file-exists check
+    fails for any non-off experiment even though the file is real on the
+    host. That took /summary, /positions, and /equity-curve down with a
+    500 for the 2x profile the moment bull_put_delta_selected_live went
+    live. dashboard/routes.py must load config with
+    validate_experiments=False — this asserts that stays true even when
+    the registration path genuinely doesn't resolve."""
+    import shutil
+
+    import yaml
+
+    from engine.config import REPO_ROOT as REAL_REPO_ROOT
+
+    shutil.copy(REAL_REPO_ROOT / "config.yaml", tmp_path / "config.yaml")
+    raw = yaml.safe_load((REAL_REPO_ROOT / "config_2x.yaml").read_text())
+    raw.setdefault("experiments", {})["no_registration"] = {
+        "status": "paper",
+        "allocation_pct": 0.05,
+        "max_cumulative_loss_pct": 0.02,
+        "registration": "reports/experiments/does_not_exist_yet.json",
+    }
+    (tmp_path / "config_2x.yaml").write_text(yaml.dump(raw))
+
+    state = tmp_path / "state"
+    state.mkdir()
+
+    app = create_app(repo_root=tmp_path)
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        for path in ("/api/2x/summary", "/api/2x/positions", "/api/2x/equity-curve"):
+            resp = c.get(path)
+            assert resp.status_code == 200, f"{path} returned {resp.status_code}"
+
+
 def test_routes_tolerate_an_unmigrated_database_without_500ing(tmp_path: Path):
     """Mirrors engine/attribution.py's own PRAGMA-driven tolerance: a
     deployment that hasn't run current code yet lacks several newer

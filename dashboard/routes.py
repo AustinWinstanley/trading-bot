@@ -44,7 +44,13 @@ def index():
 @bp.get("/api/<profile:profile>/summary")
 def summary(profile: str):
     paths = _paths(profile)
-    cfg = load_config(paths.config_path)
+    # validate_experiments=False: this container never mounts reports/
+    # (docker-compose.yml intentionally keeps the image minimal), and a
+    # monitoring page must never 500 because a trading-safety business
+    # rule (registration doc must exist) is unmet — that's a real state
+    # to report, not a reason to go dark. See engine/config.py's
+    # _parse_experiments docstring.
+    cfg = load_config(paths.config_path, validate_experiments=False)
     risk_state = dashboard_db.load_json(paths.risk_state_path, default={})
     health = dashboard_db.load_json(paths.health_status_path, default=None)
 
@@ -101,7 +107,13 @@ def summary(profile: str):
 @bp.get("/api/<profile:profile>/equity-curve")
 def equity_curve(profile: str):
     paths = _paths(profile)
-    cfg = load_config(paths.config_path)
+    # validate_experiments=False: this container never mounts reports/
+    # (docker-compose.yml intentionally keeps the image minimal), and a
+    # monitoring page must never 500 because a trading-safety business
+    # rule (registration doc must exist) is unmet — that's a real state
+    # to report, not a reason to go dark. See engine/config.py's
+    # _parse_experiments docstring.
+    cfg = load_config(paths.config_path, validate_experiments=False)
     risk_state = dashboard_db.load_json(paths.risk_state_path, default={})
     days = max(1, min(int(request.args.get("days", 90)), 365))
 
@@ -144,7 +156,13 @@ def orders(profile: str):
 @bp.get("/api/<profile:profile>/positions")
 def positions(profile: str):
     paths = _paths(profile)
-    cfg = load_config(paths.config_path)
+    # validate_experiments=False: this container never mounts reports/
+    # (docker-compose.yml intentionally keeps the image minimal), and a
+    # monitoring page must never 500 because a trading-safety business
+    # rule (registration doc must exist) is unmet — that's a real state
+    # to report, not a reason to go dark. See engine/config.py's
+    # _parse_experiments docstring.
+    cfg = load_config(paths.config_path, validate_experiments=False)
     conn = _open_or_none(paths)
     if conn is None:
         return jsonify({"positions": []})
