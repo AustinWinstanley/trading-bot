@@ -1,0 +1,34 @@
+{
+  "decision": "pre_registered_not_yet_running",
+  "objective": "Phase 4 follow-up: reports/intraday_strategy_study.json rejected IWM compression_breakout on trade count alone (18 and 24 trades against a >=30 fixed-N gate), despite being profitable in BOTH windows at the 5bp/leg stress cost (profit_factor 1.085 design, 1.375 screen). At ~1.5 trades/month, a fixed N=30 threshold needs ~20 months to ever resolve either way — the wrong tool for a low-frequency signal. This registers a sequential test instead, so the study can conclude as soon as the evidence actually warrants it, without an arbitrary trade-count floor.",
+  "source_evidence": "reports/intraday_strategy_study.json, results.compression_breakout, symbol=IWM, cost=stress_5bp_per_leg rows.",
+  "method": "Wald Sequential Probability Ratio Test (SPRT) on cumulative per-trade net returns, implemented in backtest/iwm_compression_breakout_forward_test.py.",
+  "hypotheses": {
+    "h0": "true mean per-trade return (net of 5bp/leg stress cost) <= 0",
+    "h1": "true mean per-trade return = 0.00052, the screen window's observed effect (the larger, more recent of the two historical estimates — chosen as the pre-registered alternative so the test is not tuned to whichever historical number is easiest to accept)"
+  },
+  "error_rates": {
+    "alpha_false_positive": 0.05,
+    "beta_false_negative": 0.20,
+    "note": "standard defaults (80% power), not tuned after seeing forward data"
+  },
+  "variance_estimate": {
+    "sigma": 0.0024,
+    "provenance": "back-solved from the design window's summary statistics (18 trades, mean_return=9.8e-05, profit_factor=1.085, win_rate=0.50 at 5bp/leg) under a simple two-point win/loss model — see backtest/iwm_compression_breakout_forward_test.py's SIGMA_ESTIMATE comment for the derivation.",
+    "caveat": "This is a planning estimate from pre-2026-08-13 data, not a measured value from the forward sample this test monitors. It must not be refit from forward (post-2026-08-13) trades once monitoring begins — doing so mid-test would invalidate the pre-declared error rates."
+  },
+  "monitoring": {
+    "trigger": "IWM compression_breakout must first exist as a live signal generator before any trades can be observed — this pre-registration does not itself build that signal-generation code; it only specifies how the resulting trades will be judged once they exist.",
+    "update_cadence": "Run backtest.iwm_compression_breakout_forward_test.monitor() after every new completed trade, or in a monthly batch — the SPRT's cumulative log-likelihood ratio is exactly additive across trades either way (tests/test_iwm_compression_breakout_forward_test.py confirms this), so cadence choice does not affect the result, only how often the decision is checked.",
+    "stopping_rule": "Stop and promote to a read-only shadow (not directly to paper-active — same two-step discipline as every other candidate in this repo) the first time the cumulative LLR crosses the upper boundary (log((1-beta)/alpha) ~= 2.77). Stop and reject the first time it crosses the lower boundary (log(beta/(1-alpha)) ~= -1.56). Otherwise continue.",
+    "expected_horizon": "Simulating trades drawn from the true H1 effect size against these parameters typically resolves (either direction) within roughly 60-100 simulated trades — at the historical ~1.5 trades/month firing rate, that is a multi-year horizon (very roughly 3-5 years). This is an honest consequence of the effect being small relative to per-trade noise (effect/sigma ~= 0.22), not a flaw in the test; a fixed-N=30 gate was reaching the wrong kind of conclusion faster, not a right conclusion faster.",
+    "review_checkpoints": "Reassess DESIGN ASSUMPTIONS ONLY (is IWM's compression-breakout firing rate still ~1.5/month, has the underlying data source changed) at 24 and 48 months of monitoring — these checkpoints may not adjust alpha, beta, mu0, mu1, or sigma, nor stop the test early on their own; only an actual boundary crossing does that."
+  },
+  "no_parameter_changes": "alpha, beta, mu0, mu1, and sigma are fixed by this document once committed. Any change requires a new, separately reviewed registration — not an edit to this one.",
+  "limitations": [
+    "Carried forward from reports/intraday_strategy_study.json: IEX five-minute bars are not consolidated SIP data; fixed-horizon exits do not model intrabar stops or targets; the historical windows used to derive mu1/sigma include no 2020 or 2022 stress regime.",
+    "The signal-generation code to actually produce live IWM compression-breakout trades for this monitor to consume does not exist yet — this registration is the methodology commitment, not the build.",
+    "sigma is estimated, not measured, from limited (18-trade) summary statistics — the true forward-sample variance could differ meaningfully, which would shift the actual false-positive/false-negative rates away from their nominal 5%/20% values. This is disclosed, not hidden, and is an inherent limitation of registering a test before enough raw trade-level data exists to estimate variance precisely."
+  ],
+  "reproduction": "python -m backtest.iwm_compression_breakout_forward_test"
+}

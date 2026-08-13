@@ -135,6 +135,24 @@ shows before it accrues meaningfully, not reverse-engineered from it.
 
 Campaigns are summarized in `reports/strategy_campaign_YYYY-MM-DD.md`.
 
+### A fixed-N gate is the wrong tool for a low-frequency signal
+
+`reports/intraday_strategy_study.json` rejected IWM compression breakout on
+trade count alone (18 and 24 trades against a `>=30` fixed gate) despite
+positive profit factor in both windows — at its ~1.5 trades/month firing
+rate, a fixed N=30 threshold needs ~20 months to ever resolve either way.
+`reports/iwm_compression_breakout_forward_test_registration.json` +
+`backtest/iwm_compression_breakout_forward_test.py` register a Sequential
+Probability Ratio Test (Wald SPRT) instead, on IWM compression breakout's
+post-2026-08-13 forward trades specifically — it can stop earlier if the
+effect is strong, and never needs an arbitrary trade-count floor if it's
+weak, while keeping pre-declared, honest false-positive/false-negative
+rates. Nothing runs yet: the signal-generation code to actually produce
+live trades for it to monitor does not exist, and no forward data exists
+before 2026-08-13. `alpha`/`beta`/`mu0`/`mu1`/`sigma` are fixed by that
+registration document; changing any of them requires a new, separately
+reviewed registration, not an edit to the existing one.
+
 ### The cross-sectional panel has no COVID-crash coverage
 
 `state/xsec/close.parquet` — the panel behind MOM_LS, the retired clone
