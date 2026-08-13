@@ -1,0 +1,686 @@
+{
+  "decision": "reject",
+  "decision_meaning": "Screening-tier evidence for the config_2x.yaml experiment tier (AGENTS.md lighter bar), NOT a hard-gate core promotion. All data ends 2026-07-22; the 2026-08-13+ frozen final-validation window is untouched.",
+  "pre_registration": {
+    "registered_before_results": true,
+    "candidate": "Hold SPY from the close before the last trading day of each month through the close of the third trading day of the next month (in-window days: last trading day T-1 plus first three trading days T+1..T+3; 4 trading days per month boundary), cash otherwise.",
+    "window_definition": "A trading day is in-window iff it is the last trading day of its calendar month OR one of the first three trading days of its calendar month. Deterministic calendar rule, no lookahead: the position for day t is established at the close of t-1.",
+    "cost": "2 bps per one-way leg; 5 bps/leg reported as stress. ~2 legs/month = ~24 legs/year.",
+    "data": "state/history_deep/SPY.parquet daily adjusted close, 1993-01-29 onward.",
+    "measures": [
+      "mean/median daily SPY return inside vs outside the window, per decade and full-sample, with Welch t-stats",
+      "standalone net-of-cost overlay stream CAGR/Sharpe/max-DD, full-sample and per decade",
+      "marginal addition to the production portfolio at 5% base / 10% 2x (primary) and 10%/20% (sensitivity)",
+      "honest comparison: in-window days vs simply holding SPY all month (share of days vs share of cumulative log return)"
+    ],
+    "marginal_construction": "candidate[profile] = production control[profile] + allocation * overlay_stream. No incremental margin financing is charged at 2x: the overlay is framed as redeploying the trend sleeve's existing reserve capital, not new borrowing (see limitations for the trend-on caveat and the negligible ~1bp/yr financing bound).",
+    "objective_class": "return_enhancer",
+    "screening_gate": "backtest.promotion.passes_gate_all_cells, return_enhancer, at the primary allocation, over early_2020_2022 x heldout_2023_plus x base x 2x (4 cells).",
+    "decision_rule": {
+      "long_history_support_all_required": [
+        "full-sample Welch t-stat (inside vs outside daily mean) >= 2.0",
+        "inside mean > outside mean in at least 3 of 4 decades",
+        "2020s inside mean >= 2020s outside mean (anomaly not fully decayed)",
+        "standalone net-of-cost CAGR > 0 over the full sample at 2 bps/leg"
+      ],
+      "mapping": {
+        "long_history_support and gate passed": "adopt_experiment_tier_candidate",
+        "long_history_support and gate failed": "defer_long_history_supports_screen_failed",
+        "no long_history_support": "reject"
+      }
+    },
+    "non_gating_diagnostics": [
+      "conditional variant (in-window AND trend off, i.e. SPY under its 200DMA) -- the days the BIL reserve actually exists",
+      "5 bps/leg cost stress",
+      "10%/20% allocation sensitivity"
+    ]
+  },
+  "control_reproduction": {
+    "note": "Unmodified production control rebuilt and diffed against reports/production_portfolio.json per AGENTS.md's control-reproduction rule.",
+    "result": {
+      "base": {
+        "max_abs_diff": 0.0,
+        "abs_diffs": {
+          "sharpe": 0.0,
+          "cagr": 0.0,
+          "max_dd": 0.0,
+          "ann_return": 0.0,
+          "vol": 0.0
+        }
+      },
+      "2x": {
+        "max_abs_diff": 0.0,
+        "abs_diffs": {
+          "sharpe": 0.0,
+          "cagr": 0.0,
+          "max_dd": 0.0,
+          "ann_return": 0.0,
+          "vol": 0.0
+        }
+      }
+    }
+  },
+  "long_history_evidence": {
+    "note": "The whole point of this study: 1993-2026 daily SPY, per-decade so anomaly decay is visible. The screening windows (2020+) below are exactly where calendar anomalies are weakest.",
+    "inside_vs_outside": [
+      {
+        "period": "full",
+        "from": "1993-02-01",
+        "to": "2026-07-22",
+        "n_inside": 1607,
+        "n_outside": 6818,
+        "mean_inside_bps": 7.72,
+        "mean_outside_bps": 4.06,
+        "mean_all_days_bps": 4.76,
+        "median_inside_bps": 8.75,
+        "median_outside_bps": 6.65,
+        "std_inside_bps": 113.6,
+        "std_outside_bps": 117.7,
+        "welch_t_inside_vs_outside": 1.15,
+        "share_of_days": 0.1907,
+        "share_of_cum_log_return": 0.3308
+      },
+      {
+        "period": "1990s",
+        "from": "1993-02-01",
+        "to": "1999-12-31",
+        "n_inside": 332,
+        "n_outside": 1416,
+        "mean_inside_bps": 13.16,
+        "mean_outside_bps": 6.96,
+        "mean_all_days_bps": 8.14,
+        "median_inside_bps": 12.77,
+        "median_outside_bps": 6.16,
+        "std_inside_bps": 106.1,
+        "std_outside_bps": 95.2,
+        "welch_t_inside_vs_outside": 0.98,
+        "share_of_days": 0.1899,
+        "share_of_cum_log_return": 0.3122
+      },
+      {
+        "period": "2000s",
+        "from": "2000-01-03",
+        "to": "2009-12-31",
+        "n_inside": 480,
+        "n_outside": 2035,
+        "mean_inside_bps": 5.07,
+        "mean_outside_bps": -0.46,
+        "mean_all_days_bps": 0.59,
+        "median_inside_bps": 8.66,
+        "median_outside_bps": 5.56,
+        "std_inside_bps": 131.4,
+        "std_outside_bps": 143.6,
+        "welch_t_inside_vs_outside": 0.82,
+        "share_of_days": 0.1909,
+        "share_of_cum_log_return": -1.9922
+      },
+      {
+        "period": "2010s",
+        "from": "2010-01-04",
+        "to": "2019-12-31",
+        "n_inside": 480,
+        "n_outside": 2036,
+        "mean_inside_bps": 6.15,
+        "mean_outside_bps": 5.28,
+        "mean_all_days_bps": 5.44,
+        "median_inside_bps": 5.06,
+        "median_outside_bps": 6.69,
+        "std_inside_bps": 96.4,
+        "std_outside_bps": 91.7,
+        "welch_t_inside_vs_outside": 0.18,
+        "share_of_days": 0.1908,
+        "share_of_cum_log_return": 0.2163
+      },
+      {
+        "period": "2020s",
+        "from": "2020-01-02",
+        "to": "2026-07-22",
+        "n_inside": 315,
+        "n_outside": 1331,
+        "mean_inside_bps": 8.41,
+        "mean_outside_bps": 6.05,
+        "mean_all_days_bps": 6.5,
+        "median_inside_bps": 13.58,
+        "median_outside_bps": 9.0,
+        "std_inside_bps": 116.7,
+        "std_outside_bps": 130.0,
+        "welch_t_inside_vs_outside": 0.32,
+        "share_of_days": 0.1914,
+        "share_of_cum_log_return": 0.2601
+      }
+    ],
+    "long_history_support_checks": {
+      "welch_t_full_ge_2": false,
+      "inside_beats_outside_3_of_4_decades": true,
+      "2020s_not_fully_decayed": true,
+      "standalone_net_cagr_positive": true
+    },
+    "legs_per_year_observed": 24.0
+  },
+  "honest_comparison_vs_holding_all_month": {
+    "note": "The anomaly only matters if in-window returns are disproportionate, not merely positive. share_of_days vs share_of_cum_log_return is the direct test.",
+    "share_of_days_full": 0.1907,
+    "share_of_cum_log_return_full": 0.3308,
+    "mean_inside_bps": 7.72,
+    "mean_all_days_bps": 4.76,
+    "excess_vs_all_days_bps_per_window_day": 2.96,
+    "spy_buy_and_hold_full": {
+      "portfolio": "SPY buy & hold (full)",
+      "from": "1993-02-01",
+      "to": "2026-07-22",
+      "years": 33.47,
+      "cagr": 0.1081,
+      "ann_return": 0.12,
+      "vol": 0.1856,
+      "sharpe": 0.646,
+      "sortino": 0.825,
+      "max_dd": -0.552,
+      "x_money": 31.012
+    },
+    "standalone_sleeve_full": {
+      "portfolio": "turn-of-month sleeve net 2bps (full)",
+      "from": "1993-02-01",
+      "to": "2026-07-22",
+      "years": 33.47,
+      "cagr": 0.0296,
+      "ann_return": 0.0323,
+      "vol": 0.0789,
+      "sharpe": 0.409,
+      "sortino": 0.251,
+      "max_dd": -0.1856,
+      "x_money": 2.651
+    }
+  },
+  "standalone_overlay": {
+    "net_2bps_per_leg": [
+      {
+        "portfolio": "turn-of-month sleeve net 2bps (full)",
+        "from": "1993-02-01",
+        "to": "2026-07-22",
+        "years": 33.47,
+        "cagr": 0.0296,
+        "ann_return": 0.0323,
+        "vol": 0.0789,
+        "sharpe": 0.409,
+        "sortino": 0.251,
+        "max_dd": -0.1856,
+        "x_money": 2.651
+      },
+      {
+        "portfolio": "turn-of-month sleeve net 2bps (1990s)",
+        "from": "1993-02-01",
+        "to": "1999-12-31",
+        "years": 6.91,
+        "cagr": 0.0572,
+        "ann_return": 0.0582,
+        "vol": 0.0738,
+        "sharpe": 0.788,
+        "sortino": 0.474,
+        "max_dd": -0.1727,
+        "x_money": 1.469
+      },
+      {
+        "portfolio": "turn-of-month sleeve net 2bps (2000s)",
+        "from": "2000-01-03",
+        "to": "2009-12-31",
+        "years": 9.99,
+        "cagr": 0.0155,
+        "ann_return": 0.0196,
+        "vol": 0.0911,
+        "sharpe": 0.215,
+        "sortino": 0.129,
+        "max_dd": -0.1856,
+        "x_money": 1.166
+      },
+      {
+        "portfolio": "turn-of-month sleeve net 2bps (2010s)",
+        "from": "2010-01-04",
+        "to": "2019-12-31",
+        "years": 9.99,
+        "cagr": 0.0228,
+        "ann_return": 0.0247,
+        "vol": 0.0669,
+        "sharpe": 0.37,
+        "sortino": 0.237,
+        "max_dd": -0.14,
+        "x_money": 1.252
+      },
+      {
+        "portfolio": "turn-of-month sleeve net 2bps (2020s)",
+        "from": "2020-01-02",
+        "to": "2026-07-22",
+        "years": 6.55,
+        "cagr": 0.0329,
+        "ann_return": 0.0358,
+        "vol": 0.0811,
+        "sharpe": 0.441,
+        "sortino": 0.283,
+        "max_dd": -0.1012,
+        "x_money": 1.236
+      }
+    ],
+    "net_5bps_per_leg_stress_full": {
+      "portfolio": "turn-of-month sleeve net 5bps stress (full)",
+      "from": "1993-02-01",
+      "to": "2026-07-22",
+      "years": 33.47,
+      "cagr": 0.0222,
+      "ann_return": 0.0251,
+      "vol": 0.079,
+      "sharpe": 0.317,
+      "sortino": 0.197,
+      "max_dd": -0.1927,
+      "x_money": 2.083
+    }
+  },
+  "conditional_trend_off_diagnostic": {
+    "n_window_days_trend_off": 345,
+    "fraction_of_window_days_trend_off": 0.2147,
+    "mean_bps_window_and_trend_off": 8.5,
+    "welch_t_vs_all_other_days": 0.41,
+    "standalone": {
+      "portfolio": "conditional (window & trend off) net 2bps",
+      "from": "1993-02-01",
+      "to": "2026-07-22",
+      "years": 33.47,
+      "cagr": 0.006,
+      "ann_return": 0.0076,
+      "vol": 0.0566,
+      "sharpe": 0.134,
+      "sortino": 0.039,
+      "max_dd": -0.2387,
+      "x_money": 1.22
+    }
+  },
+  "screening_windows_performance": {
+    "early_2020_2022": [
+      {
+        "variant": "control",
+        "portfolio": "base control (production)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1006,
+        "ann_return": 0.1015,
+        "vol": 0.1095,
+        "sharpe": 0.927,
+        "sortino": 1.302,
+        "max_dd": -0.0994,
+        "x_money": 1.262
+      },
+      {
+        "variant": "candidate_primary",
+        "portfolio": "base + 5% turn-of-month overlay",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1022,
+        "ann_return": 0.1031,
+        "vol": 0.1112,
+        "sharpe": 0.927,
+        "sortino": 1.302,
+        "max_dd": -0.0997,
+        "x_money": 1.266
+      },
+      {
+        "variant": "candidate_sensitivity",
+        "portfolio": "base + 10% turn-of-month overlay",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1037,
+        "ann_return": 0.1047,
+        "vol": 0.113,
+        "sharpe": 0.926,
+        "sortino": 1.298,
+        "max_dd": -0.1002,
+        "x_money": 1.27
+      },
+      {
+        "variant": "control",
+        "portfolio": "2x control (production)",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1382,
+        "ann_return": 0.153,
+        "vol": 0.2191,
+        "sharpe": 0.699,
+        "sortino": 0.981,
+        "max_dd": -0.2144,
+        "x_money": 1.369
+      },
+      {
+        "variant": "candidate_primary",
+        "portfolio": "2x + 10% turn-of-month overlay",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.141,
+        "ann_return": 0.1562,
+        "vol": 0.2224,
+        "sharpe": 0.702,
+        "sortino": 0.985,
+        "max_dd": -0.2193,
+        "x_money": 1.377
+      },
+      {
+        "variant": "candidate_sensitivity",
+        "portfolio": "2x + 20% turn-of-month overlay",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1437,
+        "ann_return": 0.1594,
+        "vol": 0.2261,
+        "sharpe": 0.705,
+        "sortino": 0.988,
+        "max_dd": -0.2242,
+        "x_money": 1.384
+      }
+    ],
+    "heldout_2023_plus": [
+      {
+        "variant": "control",
+        "portfolio": "base control (production)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1589,
+        "ann_return": 0.1559,
+        "vol": 0.1242,
+        "sharpe": 1.255,
+        "sortino": 1.743,
+        "max_dd": -0.1383,
+        "x_money": 1.688
+      },
+      {
+        "variant": "candidate_primary",
+        "portfolio": "base + 5% turn-of-month overlay",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1602,
+        "ann_return": 0.1572,
+        "vol": 0.1254,
+        "sharpe": 1.254,
+        "sortino": 1.74,
+        "max_dd": -0.14,
+        "x_money": 1.694
+      },
+      {
+        "variant": "candidate_sensitivity",
+        "portfolio": "base + 10% turn-of-month overlay",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.1615,
+        "ann_return": 0.1584,
+        "vol": 0.1266,
+        "sharpe": 1.252,
+        "sortino": 1.735,
+        "max_dd": -0.1417,
+        "x_money": 1.701
+      },
+      {
+        "variant": "control",
+        "portfolio": "2x control (production)",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2583,
+        "ann_return": 0.2618,
+        "vol": 0.2485,
+        "sharpe": 1.054,
+        "sortino": 1.463,
+        "max_dd": -0.2682,
+        "x_money": 2.26
+      },
+      {
+        "variant": "candidate_primary",
+        "portfolio": "2x + 10% turn-of-month overlay",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2608,
+        "ann_return": 0.2644,
+        "vol": 0.2508,
+        "sharpe": 1.054,
+        "sortino": 1.463,
+        "max_dd": -0.2711,
+        "x_money": 2.276
+      },
+      {
+        "variant": "candidate_sensitivity",
+        "portfolio": "2x + 20% turn-of-month overlay",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.2632,
+        "ann_return": 0.2669,
+        "vol": 0.2532,
+        "sharpe": 1.054,
+        "sortino": 1.46,
+        "max_dd": -0.2741,
+        "x_money": 2.291
+      }
+    ]
+  },
+  "gate_primary_allocation": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.927,
+          "candidate_sharpe": 0.927,
+          "control_cagr": 0.1006,
+          "candidate_cagr": 0.1022,
+          "control_max_dd": -0.0994,
+          "candidate_max_dd": -0.0997,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0016,
+          "d_max_dd": -0.0003
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.699,
+          "candidate_sharpe": 0.702,
+          "control_cagr": 0.1382,
+          "candidate_cagr": 0.141,
+          "control_max_dd": -0.2144,
+          "candidate_max_dd": -0.2193,
+          "d_sharpe": 0.003,
+          "d_cagr": 0.0028,
+          "d_max_dd": -0.0049
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.255,
+          "candidate_sharpe": 1.254,
+          "control_cagr": 0.1589,
+          "candidate_cagr": 0.1602,
+          "control_max_dd": -0.1383,
+          "candidate_max_dd": -0.14,
+          "d_sharpe": -0.001,
+          "d_cagr": 0.0013,
+          "d_max_dd": -0.0017
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.054,
+          "candidate_sharpe": 1.054,
+          "control_cagr": 0.2583,
+          "candidate_cagr": 0.2608,
+          "control_max_dd": -0.2682,
+          "candidate_max_dd": -0.2711,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0025,
+          "d_max_dd": -0.0029
+        }
+      }
+    ]
+  },
+  "gate_sensitivity_allocation": {
+    "objective_class": "return_enhancer",
+    "passed": false,
+    "any_no_effect": false,
+    "all_no_effect": false,
+    "cells": [
+      {
+        "window": "early_2020_2022",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.927,
+          "candidate_sharpe": 0.926,
+          "control_cagr": 0.1006,
+          "candidate_cagr": 0.1037,
+          "control_max_dd": -0.0994,
+          "candidate_max_dd": -0.1002,
+          "d_sharpe": -0.001,
+          "d_cagr": 0.0031,
+          "d_max_dd": -0.0008
+        }
+      },
+      {
+        "window": "early_2020_2022",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": true,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 0.699,
+          "candidate_sharpe": 0.705,
+          "control_cagr": 0.1382,
+          "candidate_cagr": 0.1437,
+          "control_max_dd": -0.2144,
+          "candidate_max_dd": -0.2242,
+          "d_sharpe": 0.006,
+          "d_cagr": 0.0055,
+          "d_max_dd": -0.0098
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "base",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.255,
+          "candidate_sharpe": 1.252,
+          "control_cagr": 0.1589,
+          "candidate_cagr": 0.1615,
+          "control_max_dd": -0.1383,
+          "candidate_max_dd": -0.1417,
+          "d_sharpe": -0.003,
+          "d_cagr": 0.0026,
+          "d_max_dd": -0.0034
+        }
+      },
+      {
+        "window": "heldout_2023_plus",
+        "profile": "2x",
+        "objective_class": "return_enhancer",
+        "passed": false,
+        "no_effect": false,
+        "verdict": "failed",
+        "checks": {
+          "sharpe_higher": false,
+          "cagr_not_lower": true,
+          "max_dd_not_worse": false
+        },
+        "inputs": {
+          "control_sharpe": 1.054,
+          "candidate_sharpe": 1.054,
+          "control_cagr": 0.2583,
+          "candidate_cagr": 0.2632,
+          "control_max_dd": -0.2682,
+          "candidate_max_dd": -0.2741,
+          "d_sharpe": 0.0,
+          "d_cagr": 0.0049,
+          "d_max_dd": -0.0059
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "Close-to-close daily bars; production trades at ~09:51/10:05 ET, so live entries lag the modeled close by ~16 hours of overnight return on entry days.",
+    "The candidate is unconditional (every month), but the deployment context (BIL trend reserve) only has free capital when trend is OFF; on trend-ON days a live overlay would be incremental leverage instead. The conditional diagnostic reports the reserve-only capture; the unconditional stream is the exposure upper bound.",
+    "No incremental 2x margin financing charged on the overlay (~5% * 10% * ~19% of days = ~1bp/yr if it were all new borrowing).",
+    "Risk-free rate is zero everywhere in this repo (AGENTS.md): the sleeve's cash days earn 0%, understating standalone Sharpe in high-rate eras; in deployment the reserve earns BIL instead.",
+    "Calendar anomalies are heavily data-mined territory; a 4-day window choice is standard in the literature (Lakonishok-Smidt style) but not the only possible one, and no multiple-testing correction is applied.",
+    "SPY adjusted close embeds dividends at the ex-date; fine for return measurement, but the sleeve would sometimes hold over ex-dates and sometimes not."
+  ],
+  "screening_tier_caveat": "early_2020_2022 and heldout_2023_plus are screening windows (heldout is no longer clean out-of-sample per AGENTS.md), and the long history is in-sample by construction. Nothing here touches or tunes on 2026-08-13+ data."
+}
