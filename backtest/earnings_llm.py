@@ -46,11 +46,10 @@ import requests
 
 from backtest.drift_study import event_mask
 from backtest.xsec_data import load as xload
-from engine.data import REPO_ROOT
+from engine.data import REPO_ROOT, user_agent
 from engine.fundamentals import cik_map
 
 STATE = REPO_ROOT / "state" / "earnings_llm"
-UA = {"User-Agent": "austin austinwinstanley@hey.com"}
 HORIZONS = (5, 20, 60)
 
 PROMPT = """You are analysing a company's earnings press release. Judge ONLY what this text says — do not use any outside knowledge about the company or what happened later.
@@ -79,7 +78,7 @@ Respond with ONLY a JSON object, no other text:
 def _sec_get(url: str, *, tries: int = 3) -> requests.Response | None:
     for i in range(tries):
         try:
-            r = requests.get(url, headers=UA, timeout=60)
+            r = requests.get(url, headers={"User-Agent": user_agent()}, timeout=60)
             if r.status_code == 200:
                 return r
             if r.status_code in (403, 429):

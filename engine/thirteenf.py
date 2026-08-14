@@ -27,10 +27,9 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from engine.data import REPO_ROOT
+from engine.data import REPO_ROOT, user_agent
 
 CACHE_DIR = REPO_ROOT / "state" / "thirteenf"
-USER_AGENT = "austin austinwinstanley@hey.com"
 LIST_URL = "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets"
 
 # Concentrated, fundamental, long-horizon managers — the profile the research
@@ -57,7 +56,7 @@ FUNDS = {
 
 def _session() -> requests.Session:
     s = requests.Session()
-    s.headers.update({"User-Agent": USER_AGENT, "Accept-Encoding": "gzip, deflate"})
+    s.headers.update({"User-Agent": user_agent(), "Accept-Encoding": "gzip, deflate"})
     return s
 
 

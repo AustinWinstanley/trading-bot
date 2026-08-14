@@ -11,7 +11,7 @@
       "filing_date_semantics": "Form 3/4/5 accepted up to 10 PM ET keep the same-day filing date, so the day-D index is a complete snapshot of FILING_DATE = D \u2014 the same point-in-time key the cluster definition uses",
       "per_filing_detail": "each accession directory carries the Form 4 XML with owner CIK, relationship, transaction code/shares/price and the 10b5-1 flag \u2014 the same fields engine/edgar.py parses from bulk TSVs; ~1-2k Form 4s/day at the documented 10 req/s limit is a 2-4 minute nightly fetch",
       "latency_chain": "filing day D complete by ~10:02 PM ET -> nightly fetch -> run_daily proposes on D+1 \u2014 exactly the entry timing this backtest assumes",
-      "fetch_convention": "fits the existing engine/edgar.py session convention (User-Agent 'austin austinwinstanley@hey.com', gzip)"
+      "fetch_convention": "fits the existing engine/edgar.py session convention (SEC_USER_AGENT env var, gzip)"
     },
     "not_needed_but_available": "the getcurrent Atom feed and efts.sec.gov full-text search API are near-real-time; unnecessary for D+1-open entry"
   },

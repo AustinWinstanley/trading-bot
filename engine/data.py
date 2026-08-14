@@ -46,6 +46,17 @@ def load_env(path: Path | None = None) -> None:
     _ENV_LOADED = True
 
 
+def user_agent() -> str:
+    """SEC EDGAR requires a contact-identifying User-Agent on every request
+    (https://www.sec.gov/os/webmaster-faq#developers) or it 403s. Read lazily
+    at call time, not as a module-level constant, since load_env() may not
+    have run yet at import time of a caller module."""
+    load_env()
+    return os.environ.get(
+        "SEC_USER_AGENT", "trading-bot (set SEC_USER_AGENT in .env)"
+    )
+
+
 class RateLimiter:
     """Token-bucket-ish limiter. Alpaca's free tier allows 200 req/min."""
 

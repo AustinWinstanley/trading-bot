@@ -28,11 +28,10 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from engine.data import REPO_ROOT
+from engine.data import REPO_ROOT, user_agent
 
 URL = "https://www.sec.gov/files/dera/data/financial-statement-data-sets/{year}q{q}.zip"
 CACHE_DIR = REPO_ROOT / "state" / "fundamentals"
-USER_AGENT = "austin austinwinstanley@hey.com"
 
 # Only the facts the signals need. Anything else is discarded during the
 # streaming pass so num.txt never lands in memory.
@@ -62,7 +61,7 @@ def download_quarter(year: int, quarter: int) -> Path | None:
         return dest
     r = requests.get(
         URL.format(year=year, q=quarter),
-        headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip, deflate"},
+        headers={"User-Agent": user_agent(), "Accept-Encoding": "gzip, deflate"},
         timeout=600,
     )
     if r.status_code == 404:
@@ -172,7 +171,7 @@ def cik_map() -> pd.DataFrame:
     """
     r = requests.get(
         "https://www.sec.gov/files/company_tickers.json",
-        headers={"User-Agent": USER_AGENT}, timeout=120,
+        headers={"User-Agent": user_agent()}, timeout=120,
     )
     r.raise_for_status()
     rows = [

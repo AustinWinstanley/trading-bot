@@ -33,14 +33,13 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from engine.data import REPO_ROOT
+from engine.data import REPO_ROOT, user_agent
 
 BULK_URL = (
     "https://www.sec.gov/files/structureddata/data/"
     "insider-transactions-data-sets/{year}q{q}_form345.zip"
 )
 CACHE_DIR = REPO_ROOT / "state" / "edgar"
-USER_AGENT = "austin austinwinstanley@hey.com"
 
 BUY_CODE = "P"
 SELL_CODE = "S"
@@ -48,7 +47,7 @@ SELL_CODE = "S"
 
 def _session() -> requests.Session:
     s = requests.Session()
-    s.headers.update({"User-Agent": USER_AGENT, "Accept-Encoding": "gzip, deflate"})
+    s.headers.update({"User-Agent": user_agent(), "Accept-Encoding": "gzip, deflate"})
     return s
 
 
