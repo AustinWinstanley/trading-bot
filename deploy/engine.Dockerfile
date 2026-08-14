@@ -69,6 +69,12 @@ COPY scripts/ ./scripts/
 COPY tests/ ./tests/
 COPY config.yaml config_2x.yaml pytest.ini ./
 COPY deploy/crontab ./deploy/crontab
+# tests/test_compose_invariants.py reads this file straight off disk (it
+# statically enforces the trust-tier boundaries the compose file documents
+# in prose) — without it baked in, every in-image `deploy/upgrade.sh` test
+# run would fail collection on that file's absence and abort every future
+# upgrade. Confirmed by actually running pytest inside this image.
+COPY deploy/docker-compose.yml ./deploy/docker-compose.yml
 
 RUN groupadd --system --gid 10003 engine \
     && useradd --system --uid 10003 --gid engine --no-create-home engine \
