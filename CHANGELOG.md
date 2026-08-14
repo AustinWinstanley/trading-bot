@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.1...v1.0.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* two options-experiment health-check false positives ([#26](https://github.com/AustinWinstanley/trading-bot/issues/26)) ([b7e2113](https://github.com/AustinWinstanley/trading-bot/commit/b7e21132ddc78296033aff550be0a76fa5d0e0b9))
+
 ## [1.0.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.0...v1.0.1) (2026-08-14)
 
 
