@@ -52,7 +52,7 @@ click==8.4.2
     # via
     #   flask
     #   uvicorn
-cryptography==42.0.8
+cryptography==50.0.0
     # via
     #   -r /tmp/combined-v3.in
     #   pyjwt
@@ -114,7 +114,7 @@ pydantic==2.13.4
     # via
     #   mcp
     #   mcp-types
-pydantic-core==2.46.4
+pydantic-core==2.48.0
     # via pydantic
 pygments==2.20.0
     # via pytest
