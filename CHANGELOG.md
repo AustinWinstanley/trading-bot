@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.2...v1.0.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* docker deploy audit findings (compose file baked in, upgrade verifies before switching) ([#28](https://github.com/AustinWinstanley/trading-bot/issues/28)) ([46c6790](https://github.com/AustinWinstanley/trading-bot/commit/46c67909fb617e49ea2367447cc0596cfb69220c))
+
 ## [1.0.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.1...v1.0.2) (2026-08-14)
 
 
