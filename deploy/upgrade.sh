@@ -114,8 +114,43 @@ sed -i.bak "s/^ENGINE_TAG=.*/ENGINE_TAG=$CANDIDATE_TAG/" "$ENV_FILE"
 rm -f "$ENV_FILE.bak"
 "${COMPOSE[@]}" up -d engine
 
+# `up -d` returns as soon as the container starts, not once it's actually
+# healthy — the pytest/dry-run/healthcheck battery above all ran via
+# `compose run`, a separate one-off container, so it cannot catch a
+# candidate that only fails once running as the real supercronic PID 1
+# under the real compose `user:`/volumes contract (e.g. a bad CMD, a
+# missing runtime file, a crash-loop). Poll the engine service's own
+# healthcheck (pgrep supercronic; see docker-compose.yml) before declaring
+# victory, and auto-rollback to $PREVIOUS_TAG if it never goes healthy —
+# otherwise this script would print "VERIFIED AND SWITCHED" with the live
+# engine actually down and the previous, working image already stopped.
+echo "==> Waiting for the switched engine service to report healthy"
+HEALTHY=0
+for _ in $(seq 1 24); do  # up to ~4min: start_period 10s + 3 retries * 60s interval, plus slack
+  STATUS="$(docker inspect --format '{{.State.Health.Status}}' trading-bot-engine 2>/dev/null || echo "unknown")"
+  if [[ "$STATUS" == "healthy" ]]; then
+    HEALTHY=1
+    break
+  fi
+  if [[ "$STATUS" == "unhealthy" ]]; then
+    break
+  fi
+  sleep 10
+done
+
+if [[ "$HEALTHY" -ne 1 ]]; then
+  echo "Candidate $CANDIDATE_TAG never reported healthy (status: $STATUS) — rolling back." >&2
+  "${COMPOSE[@]}" stop engine
+  sed -i.bak "s/^ENGINE_TAG=.*/ENGINE_TAG=$PREVIOUS_TAG/" "$ENV_FILE"
+  rm -f "$ENV_FILE.bak"
+  "${COMPOSE[@]}" up -d engine
+  echo "Rolled back to $PREVIOUS_TAG. Inspect the candidate before retrying:" >&2
+  echo "  docker logs trading-bot-engine" >&2
+  exit 1
+fi
+
 UPGRADE_SUCCEEDED=1
 echo
 echo "UPGRADE VERIFIED AND SWITCHED."
-echo "engine is now running $CANDIDATE_TAG (was $PREVIOUS_TAG)."
+echo "engine is now running $CANDIDATE_TAG (was $PREVIOUS_TAG), confirmed healthy."
 echo "Rollback if needed:  ENGINE_TAG=$PREVIOUS_TAG ${COMPOSE[*]} up -d engine"
