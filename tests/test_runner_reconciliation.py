@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 
+import datetime as dt
+
 from engine.risk import Position
 import scripts.run_daily as runner
 from scripts.run_daily import (
@@ -11,6 +13,7 @@ from scripts.run_daily import (
     marketable_limit,
     is_protective_order,
     reconcile_journal_orders,
+    stale_pending_orders,
     sync_broker_stops,
 )
 
@@ -38,6 +41,40 @@ def test_only_dedicated_flatten_client_ids_are_liquidations():
     assert is_liquidation_order({"client_order_id": "bot-20260723-XLK-flatten"})
     assert not is_liquidation_order({"client_order_id": "bot-20260723-XLK-sell"})
     assert not is_liquidation_order({"client_order_id": "manual-flatten"})
+
+
+NOW = dt.datetime(2026, 8, 13, 18, 0, tzinfo=dt.timezone.utc)
+
+
+def test_stale_pending_orders_flags_old_nonprotective_orders():
+    """The BE/HUT 2026-08-13 case: a limit that went non-marketable right
+    after the open run must be flagged for cancel-and-reprice once past
+    the threshold."""
+    orders = [
+        {"id": "a", "symbol": "BE", "type": "limit", "side": "sell",
+         "submitted_at": "2026-08-13T13:51:02Z"},          # 4h old -> stale
+        {"id": "b", "symbol": "SPY", "type": "limit", "side": "buy",
+         "submitted_at": "2026-08-13T17:45:00Z"},          # 15m old -> fresh
+        {"id": "c", "symbol": "HYG", "type": "stop", "side": "sell",
+         "submitted_at": "2026-07-23T13:00:00Z"},          # protective, never stale
+    ]
+    stale = stale_pending_orders(orders, NOW)
+    assert [(o["symbol"], round(age)) for o, age in stale] == [("BE", 249)]
+
+
+def test_stale_pending_orders_skips_unparsable_timestamps():
+    orders = [
+        {"id": "a", "symbol": "BE", "type": "limit", "submitted_at": None},
+        {"id": "b", "symbol": "HUT", "type": "limit", "submitted_at": "not-a-time"},
+    ]
+    assert stale_pending_orders(orders, NOW) == []
+
+
+def test_stale_pending_orders_threshold_boundary():
+    orders = [{"id": "a", "symbol": "X", "type": "limit",
+               "submitted_at": "2026-08-13T17:30:00Z"}]  # exactly 30m
+    assert len(stale_pending_orders(orders, NOW, threshold_minutes=30)) == 1
+    assert stale_pending_orders(orders, NOW, threshold_minutes=31) == []
 
 
 def test_marketable_limit_rounds_inside_slippage_band():

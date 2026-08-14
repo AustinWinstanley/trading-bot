@@ -237,6 +237,44 @@ def cancel_symbol_orders(
     return len(matches)
 
 
+# A marketable limit that goes non-marketable right after submission
+# (price gapped away) otherwise sits live until the day-TIF close, and —
+# worse — its symbol stays in pending_symbols, which blocks every later
+# full run from re-pricing it. 2026-08-13: BE and HUT sell limits went
+# stale seconds after the 09:51 open run, the 12:39 midday run skipped
+# both symbols because of the pending guard, and both orders died
+# unfilled at the close (HUT drifted ~6% below its limit meanwhile).
+# 30 minutes is comfortably longer than any observed legitimate fill
+# latency (worst seen: ~15 min on a wide-spread name).
+STALE_ORDER_CANCEL_MINUTES = 30
+
+
+def stale_pending_orders(
+    open_orders: list[dict],
+    now: dt.datetime,
+    threshold_minutes: float = STALE_ORDER_CANCEL_MINUTES,
+) -> list[tuple[dict, float]]:
+    """Non-protective open orders older than the threshold, with ages in
+    minutes. Protective (stop) orders are meant to rest indefinitely and
+    are never considered stale; orders with an unparsable submitted_at
+    are skipped rather than guessed at."""
+    stale = []
+    for order in open_orders:
+        if is_protective_order(order):
+            continue
+        submitted = order.get("submitted_at") or order.get("created_at")
+        try:
+            ts = dt.datetime.fromisoformat(str(submitted).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=dt.timezone.utc)
+        age_minutes = (now - ts).total_seconds() / 60
+        if age_minutes >= threshold_minutes:
+            stale.append((order, age_minutes))
+    return stale
+
+
 def sync_broker_stops(
     conn: sqlite3.Connection,
     positions: dict[str, Position],
@@ -428,6 +466,37 @@ def main() -> None:
         str(o.get("symbol")) for o in open_orders
         if o.get("symbol") and not is_protective_order(o)
     }
+
+    # Stale-order cancel & re-price — full runs only: the drift loop below
+    # re-proposes the freed symbol at a fresh marketable price in this
+    # same run, which is the entire point. stops-only runs skip the drift
+    # loop, so canceling there would orphan the intent until the next
+    # full run — strictly worse than leaving the order resting.
+    if not args.stops_only:
+        for order, age_minutes in stale_pending_orders(
+            open_orders, dt.datetime.now(dt.timezone.utc)
+        ):
+            symbol = str(order.get("symbol"))
+            print(f"  cancel stale {order.get('side')} {symbol} "
+                  f"(unfilled {age_minutes:.0f}m, limit {order.get('limit_price')}) "
+                  "— will re-price this run")
+            if not args.dry_run:
+                try:
+                    t.cancel_order(str(order["id"]))
+                except Exception as exc:
+                    print(f"  cancel {order.get('id')} failed: {exc} — leaving pending")
+                    continue
+                # Mark the journal row now rather than waiting a full run
+                # for reconcile to notice (the dashboard's stuck-order
+                # signal reads this status).
+                conn.execute(
+                    "UPDATE orders SET status='canceled' WHERE alpaca_id=?",
+                    (str(order["id"]),),
+                )
+            # Freed for the drift loop (in dry runs too, so the dry run
+            # previews exactly what a real run would re-propose).
+            pending_symbols.discard(symbol)
+
     if reconciled or open_orders:
         print(f"orders: reconciled={reconciled} open={len(open_orders)} "
               f"pending_symbols={len(pending_symbols)} stops={len(protective_symbols)}")
