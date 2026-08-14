@@ -1,0 +1,22 @@
+name: Commit messages
+
+# See AGENTS.md's "Commit messages" section. Blocking on PRs (every commit
+# in the PR must conform); advisory-only on a direct push to main, since a
+# push can't be rejected after the fact — the real enforcement for direct
+# pushes is AGENTS.md's own guidance plus release-please simply omitting a
+# non-conforming commit from the changelog.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v6
+        continue-on-error: ${{ github.event_name == 'push' }}

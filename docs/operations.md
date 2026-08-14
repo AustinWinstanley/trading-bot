@@ -184,3 +184,25 @@ containerized deployment as described above. Keep the old crontab backup
 `PAPER_BOT_ROOT` pointed back at the host checkout path, since
 `scripts/paper.sh`'s container-oriented default no longer matches a
 bare-host layout.
+
+## Making the repository public (one-time checklist)
+
+Enable, in this order, before flipping visibility — secret scanning should
+be active before the repo is public, not after:
+
+1. **Settings → Code security** → enable secret scanning and push
+   protection.
+2. **Settings → Branches** → add a protection rule for `main`: require the
+   `pytest` and `docker-build-smoke` status checks from `.github/workflows/ci.yml`
+   to pass. Do **not** require pull requests before merging — this repo's
+   agents and maintainer push directly to `main`; `release-please` and
+   `commitlint` are both designed around that (see AGENTS.md).
+3. **Settings → General → Danger Zone** → change repository visibility to
+   public.
+4. Description, topics (e.g. `algorithmic-trading`, `alpaca`,
+   `paper-trading`, `python`, `docker`), and a social preview image.
+5. Set up the journal deploy key (GitHub → Settings → Deploy keys → "Allow
+   write access") if not already done — see
+   ["The journal service"](architecture.md#the-journal-service).
+6. Confirm `.github/dependabot.yml` is picking up PRs (Insights →
+   Dependency graph → Dependabot).

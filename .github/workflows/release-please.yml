@@ -1,0 +1,91 @@
+name: release-please
+
+# Combined release + image-publish workflow, deliberately ONE workflow file
+# rather than two chained by `on: release: types: [published]`: a release
+# release-please creates with the default GITHUB_TOKEN does NOT trigger
+# other workflows (GitHub's own anti-recursion rule — see
+# https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
+# Chaining that way would need a separate personal-access-token secret for
+# no real benefit here; running publish-images as a second job in the same
+# run, gated on release-please's own `release_created` output, needs
+# nothing beyond the default token.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: simple
+          # version.txt is checked in specifically because the `simple`
+          # strategy's version-file updater has createIfMissing: false —
+          # release-please will never create it, only bump it.
+
+  # Runs only when release-please actually cut a release on this push (i.e.
+  # a release-please PR was just merged) — every other push to main just
+  # updates or leaves alone the standing release PR, with nothing to build.
+  publish-images:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: engine
+            dockerfile: deploy/engine.Dockerfile
+          - service: journal
+            dockerfile: deploy/journal.Dockerfile
+          - service: dashboard
+            dockerfile: dashboard/Dockerfile
+          - service: mcp-server
+            dockerfile: mcp_server/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # GHCR (and Docker image references generally) require an all-lowercase
+      # path; github.repository_owner preserves the account's actual casing
+      # (AustinWinstanley) and GitHub Actions expressions have no built-in
+      # toLower() — bash's ${VAR,,} is the standard workaround.
+      - name: Compute lowercase image namespace
+        id: image
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      # linux/amd64 only: the one deployment target (the home server) runs
+      # that architecture. Local Apple-silicon development uses
+      # deploy/docker-compose.dev.yml's `build:` blocks instead, which
+      # build natively for whatever the developer's machine is — multi-arch
+      # here would double every build for no deployment benefit.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          provenance: true
+          tags: |
+            ghcr.io/${{ steps.image.outputs.owner }}/trading-bot-${{ matrix.service }}:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/${{ steps.image.outputs.owner }}/trading-bot-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
