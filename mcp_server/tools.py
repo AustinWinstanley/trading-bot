@@ -116,6 +116,22 @@ def register_tools(mcp, repo_root: Path) -> None:
         return dashboard_db.options_payload(repo_root, profile, days)
 
     @mcp.tool()
+    def get_research(profile: str) -> dict:
+        """Shadow-collector status (observation counts, latest observation,
+        staleness vs the 21-day rule) and experiment progress toward each
+        pre-registered review bar (observed vs minimum observations and
+        distinct expirations)."""
+        _validate_profile(profile)
+        return dashboard_db.research_payload(repo_root, profile)
+
+    @mcp.tool()
+    def get_daily_notes(profile: str, name: str | None = None) -> dict:
+        """List the profile's daily run notes (reports/paper*/YYYY-MM-DD.md)
+        and read one (the latest by default, or the given name)."""
+        _validate_profile(profile)
+        return dashboard_db.notes_payload(repo_root, profile, name)
+
+    @mcp.tool()
     def query_database(profile: str, target: str, sql: str, max_rows: int = 500) -> dict:
         """Run a single read-only SELECT/WITH query against a profile's
         journal. target is "paper" (snapshots/orders/rejections/stops/

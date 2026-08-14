@@ -29,9 +29,9 @@ def test_all_expected_tools_are_registered(mcp_server):
     assert names == {
         "get_summary", "get_equity_curve", "get_orders", "get_positions",
         "get_exposure", "get_rejections", "get_options", "get_trends",
-        "get_round_trips", "query_database", "read_state_file",
-        "list_state_files", "read_config", "read_report", "list_reports",
-        "tail_trading_log",
+        "get_round_trips", "get_research", "get_daily_notes",
+        "query_database", "read_state_file", "list_state_files",
+        "read_config", "read_report", "list_reports", "tail_trading_log",
     }
 
 

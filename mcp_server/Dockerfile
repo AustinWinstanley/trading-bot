@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r mcp_server/requirements.txt
 # engine/ (not engine/execute.py, not engine/data.py — those touch the
 # Alpaca client). __init__.py is 0 bytes but copied verbatim so the
 # package structure matches the source tree exactly.
-COPY dashboard/__init__.py dashboard/db.py ./dashboard/
+COPY dashboard/__init__.py dashboard/db.py dashboard/files.py ./dashboard/
 COPY engine/__init__.py engine/attribution.py engine/config.py ./engine/
 COPY mcp_server/ ./mcp_server/
 

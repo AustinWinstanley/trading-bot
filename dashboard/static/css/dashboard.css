@@ -296,6 +296,32 @@ body.disconnected main { opacity: 0.55; }
 .problem-strip li { padding: 2px 0; }
 .problem-strip li.warn { color: var(--warn); }
 
+/* ---- research + notes panels ---- */
+
+.review-bar { width: 100%; margin: 0 0 8px; }
+
+.notes-select {
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.notes-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 10px;
+  background: var(--bg-raised);
+  border-radius: 6px;
+}
+
 /* ---- trade feed expandable detail rows ---- */
 
 tr.feed-row { cursor: pointer; }

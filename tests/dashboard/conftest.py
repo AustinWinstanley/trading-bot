@@ -195,6 +195,40 @@ def _build_journal(db_path: Path) -> None:
     conn.close()
 
 
+# Real schema of scripts/options_shadow.py's observations table (the one
+# collector DB that exists in production) — keep in sync with that module.
+# The other three collectors' fixtures only need (ts, expiration_date)-ish
+# columns for count/staleness logic, so they reuse this minimal shape.
+def build_shadow_db(db_path: Path, observation_ts: str) -> None:
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "CREATE TABLE observations(ts TEXT, expiration_date TEXT, "
+        "short_delta REAL, executable_credit REAL, qualified INTEGER, raw TEXT)"
+    )
+    conn.execute(
+        "INSERT INTO observations VALUES (?, '2026-09-18', 0.2, 0.61, 1, '{\"big\": 1}')",
+        (observation_ts,),
+    )
+    conn.commit()
+    conn.close()
+
+
+def build_reports_tree(repo_root: Path) -> None:
+    reports = repo_root / "reports"
+    (reports / "experiments").mkdir(parents=True)
+    (reports / "experiments" / "bull_put_delta_selected_live.json").write_text(
+        '{"decision": "promote_paper_active", '
+        '"evidence_at_promotion_2026_08_12": {"shadow_review_bar": '
+        '{"minimum_observations_before_review": 20, '
+        '"minimum_independent_expirations_before_review": 3}}}'
+    )
+    (reports / "paper").mkdir()
+    (reports / "paper" / "2026-08-12.md").write_text(
+        "# Paper run 2026-08-12\n\napproved 1 | submitted 1\nHALT: test halt reason\n"
+    )
+    (reports / "paper_2x").mkdir()
+
+
 @pytest.fixture
 def repo_root(tmp_path: Path) -> Path:
     """A fake repo root: real config files, a seeded journal, risk state.
@@ -231,6 +265,13 @@ def repo_root(tmp_path: Path) -> Path:
         f'{{"ts": "{today.isoformat()}T09:47:08-04:00", "healthy": true, "problems": [], '
         '"equity": 10500.0, "positions": 2, "open_orders": 0}'
     )
+    # One fresh shadow-collector DB (the other three stay absent —
+    # mirroring the live host, where only options_shadow has data),
+    # the reports/ tree, and an empty logs/ dir (endpoints must treat
+    # a missing log file as the normal quiet state).
+    build_shadow_db(state / "options_shadow.db", f"{today.isoformat()}T15:07:00-04:00")
+    build_reports_tree(tmp_path)
+    (tmp_path / "logs").mkdir()
     return tmp_path
 
 

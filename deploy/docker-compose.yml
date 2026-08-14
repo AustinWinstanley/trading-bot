@@ -19,9 +19,13 @@ services:
       - ../config.yaml:/app/config.yaml:ro
       - ../config_2x.yaml:/app/config_2x.yaml:ro
       - ../state:/app/state:ro
-      # Deliberately nothing else mounted — .env is structurally
-      # unreachable from inside the container, not just unread by
-      # convention.
+      # reports/ and logs/ (added with the /research and /notes panels)
+      # follow the mcp-server service's precedent below — read-only, and
+      # reachable only through the path-traversal-guarded readers in
+      # dashboard/files.py. .env stays structurally unreachable from
+      # inside the container, not just unread by convention.
+      - ../reports:/app/reports:ro
+      - ../logs:/app/logs:ro
     healthcheck:
       test: ["CMD", "python3", "-c",
              "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/base/summary', timeout=3)"]

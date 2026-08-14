@@ -614,6 +614,168 @@ def exposure_history(conn: sqlite3.Connection, days: int = 90) -> list[dict]:
 
 
 # ---------------------------------------------------------------------
+# Research visibility — shadow collectors + experiment review bars.
+# All 2x-lab data today; every reader tolerates absent/zero-byte files
+# (3 of 4 collector DBs don't exist yet on the live host).
+# ---------------------------------------------------------------------
+
+# Collector name -> state-dir DB filename pattern. Paths mirror the
+# scripts that write them (scripts/options_shadow.py etc.) and
+# scripts/weekly.py's summarizers; keep in sync by hand.
+SHADOW_COLLECTORS: dict[str, str] = {
+    "options_shadow": "options_shadow{suffix}.db",
+    "momentum_options_shadow": "momentum_options_shadow{suffix}.db",
+    "event_volatility_shadow": "event_volatility_shadow{suffix}.db",
+    "zero_dte_shadow": "zero_dte_shadow{suffix}.db",
+}
+
+# Mirrors scripts/weekly.py's stale_after_days for shadow summaries — a
+# collector quiet longer than this reads as dead, not just idle.
+SHADOW_STALE_AFTER_DAYS = 21
+
+# Experiment name (config's experiments: block) -> the shadow collector
+# whose observations count toward its pre-registered review bar.
+EXPERIMENT_COLLECTOR: dict[str, str] = {
+    "bull_put_delta_selected_live": "options_shadow",
+}
+
+
+def shadow_collector_status(
+    path: Path, now: dt.datetime, stale_after_days: int = SHADOW_STALE_AFTER_DAYS
+) -> dict:
+    """Observation count/latest-ts/staleness for one shadow collector DB.
+    Absent file, zero-byte file, and missing observations table are all
+    the same valid "hasn't produced anything" state."""
+    base = {"exists": False, "observation_count": 0, "latest_ts": None,
+            "age_days": None, "stale": False, "latest": None}
+    try:
+        conn = open_ro(path)
+    except sqlite3.OperationalError:
+        return base
+    with contextlib.closing(conn):
+        cols = table_columns(conn, "observations")
+        if not cols:
+            return base
+        count = conn.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
+        latest_row = conn.execute(
+            "SELECT * FROM observations ORDER BY ts DESC LIMIT 1"
+        ).fetchone()
+    latest = dict(latest_row) if latest_row else None
+    if latest:
+        latest.pop("raw", None)  # bulky quote-payload blob, not display data
+    latest_ts = latest.get("ts") if latest else None
+    age_days = None
+    ts = _parse_ts(latest_ts)
+    if ts is not None:
+        age_days = (now.astimezone(dt.timezone.utc) - ts).total_seconds() / 86400
+    return {
+        "exists": True,
+        "observation_count": count,
+        "latest_ts": latest_ts,
+        "age_days": round(age_days, 1) if age_days is not None else None,
+        "stale": age_days is not None and age_days > stale_after_days,
+        "latest": latest,
+    }
+
+
+def _experiment_review_bars(repo_root: Path, state_dir: Path, suffix: str, now: dt.datetime) -> list[dict]:
+    """Progress toward each registered experiment's pre-declared review
+    bar: minimums from reports/experiments/*.json (defensively parsed —
+    the real file nests them under shadow_review_bar), observed counts
+    from the mapped shadow collector DB."""
+    from dashboard import files as dashboard_files
+
+    listing = dashboard_files.list_dir(repo_root / "reports", "experiments")
+    if not listing.get("exists"):
+        return []
+    out = []
+    for entry in listing["entries"]:
+        if entry["is_dir"] or not entry["name"].endswith(".json"):
+            continue
+        doc = dashboard_files.safe_read_json(repo_root / "reports", f"experiments/{entry['name']}")
+        data = doc.get("data") or {}
+        name = entry["name"].removesuffix(".json")
+        bar = {}
+        for container in (data.get("evidence_at_promotion_2026_08_12"), data):
+            if isinstance(container, dict):
+                candidate = container.get("shadow_review_bar")
+                if isinstance(candidate, dict):
+                    bar = candidate
+                    break
+        min_obs = bar.get("minimum_observations_before_review")
+        min_exp = bar.get("minimum_independent_expirations_before_review")
+
+        observed = expirations = None
+        collector = EXPERIMENT_COLLECTOR.get(name)
+        if collector:
+            db_path = state_dir / SHADOW_COLLECTORS[collector].format(suffix=suffix)
+            status = shadow_collector_status(db_path, now)
+            observed = status["observation_count"]
+            if status["exists"]:
+                try:
+                    conn = open_ro(db_path)
+                    with contextlib.closing(conn):
+                        if "expiration_date" in table_columns(conn, "observations"):
+                            expirations = conn.execute(
+                                "SELECT COUNT(DISTINCT expiration_date) FROM observations"
+                            ).fetchone()[0]
+                except sqlite3.OperationalError:
+                    pass
+        out.append({
+            "name": name,
+            "minimum_observations": min_obs,
+            "observed": observed,
+            "minimum_expirations": min_exp,
+            "expirations_observed": expirations,
+        })
+    return out
+
+
+def research_payload(repo_root: Path, profile: str) -> dict:
+    _cfg_file, suffix = PROFILES[profile]
+    state_dir = repo_root / "state"
+    now = dt.datetime.now(dt.timezone.utc)
+    collectors = {
+        name: shadow_collector_status(
+            state_dir / pattern.format(suffix=suffix), now
+        )
+        for name, pattern in SHADOW_COLLECTORS.items()
+    }
+    return {
+        "collectors": collectors,
+        "experiments": _experiment_review_bars(repo_root, state_dir, suffix, now),
+    }
+
+
+# Daily notes live at reports/paper{suffix}/YYYY-MM-DD.md; weekly reports
+# at reports/paper/weekly-*.md. The name allowlist is validated BEFORE
+# any path logic — belt and suspenders on top of files._resolve_within.
+_NOTE_NAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}|weekly-[\w-]+)\.md$")
+
+
+def notes_payload(repo_root: Path, profile: str, name: str | None = None) -> dict:
+    from dashboard import files as dashboard_files
+
+    _cfg_file, suffix = PROFILES[profile]
+    notes_dir = f"paper{suffix}"
+    listing = dashboard_files.list_dir(repo_root / "reports", notes_dir)
+    available = sorted(
+        (e["name"] for e in listing.get("entries", [])
+         if not e["is_dir"] and _NOTE_NAME_RE.match(e["name"])),
+        reverse=True,
+    )
+    if name is not None and not _NOTE_NAME_RE.match(name):
+        return {"available": available, "note": {"exists": False, "path": name,
+                                                  "error": "invalid note name"}}
+    target = name or (available[0] if available else None)
+    note = (
+        dashboard_files.safe_read_text(repo_root / "reports", f"{notes_dir}/{target}")
+        if target else {"exists": False, "path": None}
+    )
+    return {"available": available, "note": note}
+
+
+# ---------------------------------------------------------------------
 # Attention signals — "something needs a look" states, each with a real
 # incident behind it (see each docstring). All feed the "attention" key
 # on /summary; each takes `now` explicitly for testability and degrades
@@ -805,6 +967,79 @@ def buying_power_miss_signals(experiments: dict) -> list[dict]:
     return signals
 
 
+def shadow_staleness_signals(repo_root: Path, profile: str, now: dt.datetime) -> list[dict]:
+    """A dead shadow collector reads as healthy unless something checks
+    its last-observation age (scripts/weekly.py:399's own documented
+    failure mode) — warn when a collector that HAS produced data goes
+    quiet past the stale threshold. Collectors that never produced
+    anything are not flagged here (the research panel shows them as
+    absent; on base they never will exist)."""
+    _cfg_file, suffix = PROFILES[profile]
+    state_dir = repo_root / "state"
+    signals = []
+    for name, pattern in SHADOW_COLLECTORS.items():
+        status = shadow_collector_status(state_dir / pattern.format(suffix=suffix), now)
+        if status["exists"] and status["stale"]:
+            signals.append({
+                "id": f"shadow_stale:{name}",
+                "severity": "warn",
+                "message": (
+                    f"shadow collector {name} last observed {status['age_days']:.0f}d ago "
+                    f"(stale after {SHADOW_STALE_AFTER_DAYS}d) — it may have died"
+                ),
+            })
+    return signals
+
+
+def halt_reason_signal(repo_root: Path, profile: str, halted: bool) -> list[dict]:
+    """When halted, grep the latest daily note for the reason —
+    run_daily.py writes `HALT: <reason>` only to the markdown note, never
+    to SQLite. Unmounted reports/ still fires the signal, just without
+    the excerpt."""
+    if not halted:
+        return []
+    detail = ""
+    payload = notes_payload(repo_root, profile)
+    note = payload.get("note") or {}
+    if note.get("exists"):
+        halt_lines = [
+            line.strip() for line in note.get("text", "").splitlines()
+            if "halt" in line.lower()
+        ]
+        if halt_lines:
+            detail = f" — {halt_lines[-1][:160]}"
+    return [{
+        "id": "halted",
+        "severity": "danger",
+        "message": f"trading is HALTED{detail}",
+    }]
+
+
+def critical_log_signal(repo_root: Path, now: dt.datetime) -> list[dict]:
+    """CRITICAL/Traceback lines in today's cron log — the same lines
+    scripts/weekly.py scrapes weekly, surfaced same-day. Unmounted logs/
+    is the normal quiet state for older deployments and tests."""
+    from dashboard import files as dashboard_files
+
+    tail = dashboard_files.tail_log(
+        repo_root / "logs", date=now.astimezone(dt.timezone.utc).strftime("%Y%m%d"),
+        lines=400,
+    )
+    if not tail.get("exists"):
+        return []
+    hits = [line for line in tail["lines"] if "CRITICAL" in line or "Traceback" in line]
+    if not hits:
+        return []
+    return [{
+        "id": "critical_log_lines",
+        "severity": "warn",
+        "message": (
+            f"{len(hits)} CRITICAL/Traceback line(s) in today's cron log — "
+            f"latest: {hits[-1].strip()[:140]}"
+        ),
+    }]
+
+
 def attention_signals(
     *,
     journal_signals: list[dict],
@@ -814,6 +1049,8 @@ def attention_signals(
     cfg,
     paths: ProfilePaths,
     experiments: dict,
+    profile: str,
+    halted: bool = False,
     now: dt.datetime | None = None,
 ) -> dict:
     """Aggregate every attention signal for /summary's "attention" key.
@@ -822,11 +1059,14 @@ def attention_signals(
     (stable within severity by check order)."""
     now = now or dt.datetime.now(dt.timezone.utc)
     signals: list[dict] = list(journal_signals)
+    signals += halt_reason_signal(repo_root, profile, halted)
     signals += health_staleness(health, now)
     signals += last_run_staleness(last_run_ts, now)
     signals += mom_ls_targets_staleness(repo_root, cfg, now)
     signals += options_db_zero_byte(paths)
     signals += buying_power_miss_signals(experiments)
+    signals += shadow_staleness_signals(repo_root, profile, now)
+    signals += critical_log_signal(repo_root, now)
     signals.sort(key=lambda s: 0 if s["severity"] == "danger" else 1)
     return {"signals": signals}
 
@@ -916,6 +1156,8 @@ def summary_payload(repo_root: Path, profile: str) -> dict:
             cfg=cfg,
             paths=paths,
             experiments=experiments,
+            profile=profile,
+            halted=bool(risk_state.get("halted", False)),
             now=now,
         ),
     }
