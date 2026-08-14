@@ -1,6 +1,6 @@
 # Build from the repo root: docker build -f dashboard/Dockerfile ..
 # (deploy/docker-compose.yml sets this context/dockerfile pair automatically.)
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
