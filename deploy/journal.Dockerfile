@@ -11,7 +11,7 @@
 # commit/push on a schedule) and needs none of the Python dependency stack
 # — alpine + git + openssh-client + supercronic keeps it small and keeps
 # its dependency surface unrelated to the engine's.
-FROM alpine:3.20
+FROM alpine:3.24
 
 # tzdata is required for CRON_TZ (Go's time.LoadLocation needs the IANA
 # zoneinfo database on disk) — unlike deploy/engine.Dockerfile's
