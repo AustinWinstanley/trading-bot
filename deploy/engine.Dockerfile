@@ -14,7 +14,7 @@
 # volume-mounted: "the image is what runs" is now literally true for the
 # trading logic, matching the promotion discipline in AGENTS.md — an edit
 # only takes effect through a new image tag, never a live directory edit.
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
