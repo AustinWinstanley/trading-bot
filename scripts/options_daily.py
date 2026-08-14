@@ -66,6 +66,12 @@ from scripts.options_shadow import (
 ET = ZoneInfo("America/New_York")
 DB = REPO_ROOT / "state" / "options_2x.db"
 RISK_STATE = REPO_ROOT / "state" / "risk_state_2x.json"
+# The equity journal (scripts.run_daily --profile 2x's own database) —
+# distinct from DB above. This module is 2x-only (see the --profile
+# choices in main() below), so the path is deterministic; read-only here,
+# opened mode=ro so a bug in this module can never write to the equity
+# journal. Used by reconcile_option_structures's equity_explained_qty.
+EQUITY_DB = REPO_ROOT / "state" / "paper_2x.db"
 
 # The experiment-tier sleeve name (config_2x.yaml's experiments: block) —
 # distinct from STRATEGY_KEY, the options_experiments config key shared
@@ -139,7 +145,10 @@ def db() -> sqlite3.Connection:
 
 
 def reconcile_option_structures(
-    positions: list[dict], open_structures: list[dict]
+    positions: list[dict],
+    open_structures: list[dict],
+    *,
+    equity_explained_qty: dict[str, float] | None = None,
 ) -> list[str]:
     """Do broker positions match the journal's open structures, and is
     there any unexplained equity position in an underlying with an open
@@ -148,6 +157,19 @@ def reconcile_option_structures(
     ``positions`` is Trader.get_positions()'s raw list of dicts.
     ``open_structures`` is a list of
     {"structure_id", "underlying", "legs": [{"symbol", "position_intent"}, ...]}.
+    ``equity_explained_qty`` is an optional {underlying: qty} map of how
+    much of that symbol's broker equity position is already accounted for
+    by this system's own equity orders (see
+    ``equity_qty_explained_by_orders`` below) — an underlying that's also
+    a core equity holding (SPY, in this repo's only live experiment)
+    otherwise flags on *every* day a structure is open, since ordinary
+    equity_core/trend SPY shares always coexist with an options structure
+    trading the same name. Omitting it (or a symbol missing from it)
+    treats the whole broker qty as unexplained, matching the original,
+    stricter behavior — real assignment moves qty by a full contract's
+    worth of shares (100, before any split), several orders of magnitude
+    past the fractional-share rounding noise ordinary rebalancing leaves
+    behind, so a wide tolerance here costs nothing in sensitivity.
 
     No automatic remediation lives here or anywhere in this module — this
     repo has never observed whether Alpaca's paper broker simulates early
@@ -155,6 +177,7 @@ def reconcile_option_structures(
     unverified assumption into autonomous "smart" remediation is a worse
     risk than a loud, human-reviewed page.
     """
+    equity_explained_qty = equity_explained_qty or {}
     findings: list[str] = []
     position_qty: dict[str, float] = {}
     position_asset_class: dict[str, str] = {}
@@ -186,12 +209,72 @@ def reconcile_option_structures(
                 )
 
     for symbol, asset_class in position_asset_class.items():
-        if asset_class == "us_equity" and symbol in underlyings_with_open_structures:
+        if asset_class != "us_equity" or symbol not in underlyings_with_open_structures:
+            continue
+        actual_qty = position_qty.get(symbol, 0.0)
+        explained_qty = equity_explained_qty.get(symbol, 0.0)
+        unexplained_qty = actual_qty - explained_qty
+        if abs(unexplained_qty) > 0.5:
             findings.append(
-                f"unexpected equity position in {symbol} while an options "
-                "structure is open — possible option assignment"
+                f"unexplained {unexplained_qty:+.4f}-share equity position in "
+                f"{symbol} while an options structure is open (broker qty "
+                f"{actual_qty:.4f}, this system's own orders explain "
+                f"{explained_qty:.4f}) — possible option assignment"
             )
     return findings
+
+
+def equity_qty_explained_by_orders(conn: sqlite3.Connection, symbol: str) -> float:
+    """Net quantity of ``symbol`` this system's own equity orders account
+    for, from the EQUITY journal (``state/paper*.db`` — a different
+    database than this module's own ``conn``/``state/options_2x.db``;
+    callers must pass a connection to the right one). Buys/covers add,
+    sells/shorts subtract. A genuine option assignment creates or removes
+    broker shares directly, bypassing our order-submission path entirely,
+    so it never appears here — the gap between this and the broker's
+    actual quantity is exactly the signal
+    ``reconcile_option_structures``'s ``equity_explained_qty`` needs.
+    """
+    row = conn.execute(
+        "SELECT COALESCE(SUM(CASE "
+        "WHEN side IN ('buy','cover') THEN filled_qty "
+        "WHEN side IN ('sell','short') THEN -filled_qty "
+        "ELSE 0 END), 0) FROM orders WHERE symbol=? AND status='filled'",
+        (symbol,),
+    ).fetchone()
+    return float(row[0]) if row and row[0] is not None else 0.0
+
+
+def load_equity_explained_qty(
+    equity_db_path, open_structures: list[dict]
+) -> dict[str, float]:
+    """Build the {underlying: qty} map reconcile_option_structures's
+    equity_explained_qty expects, reading equity_db_path (the profile's
+    own state/paper*.db) read-only. Shared by scripts.options_daily's and
+    scripts.healthcheck's call sites so the two never compute this two
+    different ways.
+
+    A missing journal, or one with no orders table yet (mirrors
+    scripts.healthcheck.open_option_structures's handling of the
+    equivalent case for the options journal), returns {} — the same
+    conservative "nothing explained" default reconcile_option_structures
+    already falls back to for an omitted or symbol-missing map, so a
+    profile that's never run scripts.run_daily degrades to the original,
+    stricter behavior rather than silently suppressing a real finding.
+    """
+    underlyings = {s["underlying"] for s in open_structures}
+    if not underlyings or not equity_db_path.exists():
+        return {}
+    conn = sqlite3.connect(f"file:{equity_db_path}?mode=ro", uri=True)
+    try:
+        has_table = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='orders'"
+        ).fetchone()
+        if not has_table:
+            return {}
+        return {u: equity_qty_explained_by_orders(conn, u) for u in underlyings}
+    finally:
+        conn.close()
 
 
 def _parse_quote_ts(raw: str | None, *, fallback: dt.datetime) -> dt.datetime:
@@ -449,7 +532,10 @@ def main() -> None:
 
     open_structures = fetch_open_structures(conn, EXPERIMENT_NAME)
     positions = trader.get_positions()
-    findings = reconcile_option_structures(positions, open_structures)
+    equity_explained_qty = load_equity_explained_qty(EQUITY_DB, open_structures)
+    findings = reconcile_option_structures(
+        positions, open_structures, equity_explained_qty=equity_explained_qty
+    )
     for finding in findings:
         print(f"CRITICAL: {finding}")
         log_reconciliation_event(conn, now.isoformat(), finding)

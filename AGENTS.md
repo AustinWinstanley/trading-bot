@@ -477,6 +477,33 @@ config default that could silently drift.
   Alpaca's paper broker simulates early assignment at all or only settles
   at expiration, and encoding an unverified assumption into autonomous
   "smart" remediation would be a worse risk than a page a human reviews.
+  "Unexplained" is now literal, not just documentation intent: SPY is
+  both this experiment's only underlying and `equity_core`+`trend`'s core
+  holding, so the first day the spread went live (2026-08-14) this check
+  correctly-by-the-letter but uselessly-in-practice flagged the account's
+  ordinary ~15-share SPY position as a possible assignment, tripping
+  `health2x` CRITICAL for a non-event. Fixed by computing
+  `equity_explained_qty` — net quantity the equity journal's own filled
+  orders (`buy`/`cover` add, `sell`/`short` subtract) already account for
+  in that symbol — and flagging only the delta beyond it
+  (`scripts/options_daily.py`'s `equity_qty_explained_by_orders` /
+  `load_equity_explained_qty`), with a 0.5-share tolerance that's still
+  two orders of magnitude below a real assignment's 100-share move. A
+  missing or schema-less equity journal (a profile that's never traded)
+  falls back to the original, stricter "everything is unexplained"
+  behavior rather than silently suppressing a real finding.
+
+  The same day surfaced a second, related false positive:
+  `scripts/healthcheck.py`'s `assess_health` also flagged both open
+  option legs themselves as "no broker or fallback stop" — true by the
+  letter (no stop order exists), but a non-event by design. Option legs
+  are defined-risk by the spread structure's own `maximum_loss`, never by
+  an equity-style stop; `scripts/options_daily.py` has no stop-submission
+  path for legs at all. `assess_health` now skips this check for any
+  position whose `asset_class` is `us_option` — an orphaned or
+  mismatched leg is a real problem, but it's `reconcile_option_structures`'s
+  job to catch that (its own missing-leg / wrong-sign-leg findings), not
+  this equity-shaped check's.
 - **Options-level pre-flight is real, not assumed.** Alpaca requires
   options trading Level 3 for multi-leg spreads; nothing checked this
   before `scripts/check_options_level.py` (run by hand once) and the same

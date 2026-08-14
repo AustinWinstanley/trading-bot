@@ -16,6 +16,7 @@ from engine.execute import Trader
 from scripts.options_daily import (
     DB as OPTIONS_DB,
     EXPERIMENT_NAME as OPTIONS_EXPERIMENT_NAME,
+    equity_qty_explained_by_orders,
     fetch_open_structures,
     reconcile_option_structures,
 )
@@ -115,6 +116,17 @@ def assess_health(
         symbol = str(position.get("symbol", ""))
         if not symbol or symbol in unstopped:
             continue
+        # Option contracts (scripts/options_daily.py's bull-put spread, this
+        # repo's only source of us_option positions) are defined-risk by the
+        # spread's own maximum_loss, never by an equity-style stop order —
+        # scripts/options_daily.py has no stop-submission path for legs at
+        # all. Flagging them here was pure noise from day one of live
+        # options trading (2026-08-14). An orphaned or mismatched leg is a
+        # real problem, but it's scripts/options_daily.py's
+        # reconcile_option_structures's job to catch that (missing-leg /
+        # wrong-sign-leg findings), not this equity-shaped check's.
+        if str(position.get("asset_class", "")) == "us_option":
+            continue
         if symbol not in protected and symbol not in fallback_stops:
             problems.append(f"{symbol}: position has no broker or fallback stop")
 
@@ -201,7 +213,22 @@ def main() -> None:
     # scripts.options_daily; that is healthy, not a problem.
     if args.profile == "2x":
         open_structures = open_option_structures(OPTIONS_DB)
-        problems += reconcile_option_structures(positions, open_structures)
+        # equity_explained_qty distinguishes a genuinely unexplained equity
+        # position (a possible assignment) from an underlying — SPY, in
+        # this repo's only live experiment — that's ALSO an ordinary
+        # equity_core/trend holding, which would otherwise flag on every
+        # single day the options structure is open. Computed from the same
+        # `conn` opened above, when it exists; a pristine profile (no
+        # db_path yet) has no orders to explain, so falls back to the
+        # original, stricter "everything is unexplained" behavior via the
+        # empty dict default.
+        equity_explained_qty = {
+            s["underlying"]: equity_qty_explained_by_orders(conn, s["underlying"])
+            for s in open_structures
+        } if db_path.exists() else {}
+        problems += reconcile_option_structures(
+            positions, open_structures, equity_explained_qty=equity_explained_qty
+        )
 
     # Persisted for the read-only dashboard (dashboard/), which must never
     # call Alpaca itself — this is the one place that result reaches disk.
