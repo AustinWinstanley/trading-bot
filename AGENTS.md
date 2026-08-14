@@ -723,6 +723,41 @@ server, not something to bake into git history):
 claude mcp add --transport http trading-bot-debug http://<server-ip>:8788/mcp
 ```
 
+## Commit messages: Conventional Commits drive the release version
+
+Every commit subject follows [Conventional Commits](https://www.conventionalcommits.org/):
+`type(scope): summary`, imperative mood, lowercase type. `scope` is optional
+and usually a top-level area (`engine`, `risk`, `mom_ls`, `dashboard`,
+`deploy`, ...). Release automation (`release-please`) reads these directly
+off `main` to decide the next semantic version and to write the changelog —
+get the type right, not just the prose.
+
+- **`fix:`** — a bug fix. Triggers a patch release.
+- **`feat:`** — a new capability (a new sleeve, a new experiment, a new
+  dashboard view). Triggers a minor release.
+- **`feat!:`** or a `BREAKING CHANGE:` footer — an incompatible change
+  (a config schema change, a removed script flag). Triggers a major
+  release. Rare in a project without a public API, but real for things
+  like `config.yaml` schema or the CLI surface of `scripts/`.
+- **`chore:`** — no production code change (`.gitignore`, dependency
+  bumps, tracked-report housekeeping). Does not trigger a release.
+- **`docs:`**, **`test:`**, **`refactor:`**, **`perf:`**, **`style:`** —
+  standard Conventional Commits types, used for exactly what they say.
+  None trigger a release on their own.
+- **`chore(journal): paper reports`** — the automated daily/weekly journal
+  commits described elsewhere in this file. Never hand-write one of these;
+  they're machine-generated and excluded from the changelog by convention.
+
+A **research decision** (a study's `reports/*.json` plus whatever config
+change it authorizes) is usually `feat:` if it activates or changes a
+sleeve/experiment, or `chore:`/`docs:` if it's a pure rejection with no
+production code change — a rejected candidate that only adds a report file
+is `docs:` or `chore:`, not `feat:`.
+
+This convention is enforced (a lint check on PRs, advisory on direct pushes
+to `main`) but the release automation only cares about `main`'s history —
+getting the type right on a direct push matters exactly as much as on a PR.
+
 ## Verification
 
 ```bash
