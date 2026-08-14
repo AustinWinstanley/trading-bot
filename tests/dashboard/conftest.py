@@ -136,6 +136,22 @@ def _build_journal(db_path: Path) -> None:
             # 2026-08-13, where two orders sat 'new' all day unnoticed).
             (f"{dates[1]}T09:47:03-04:00", "HUT", "sell", "rebalance", 1, 91.0,
              91.5, 0.0, "clean", "id-3", "new", 91.0, 91.0, 0.0, None, None),
+            # A complete round trip (WDC: buy day 0, sell day 2) plus a
+            # partial exit (XOM: buy 2, sell 1) — feeds round_trips()'s
+            # FIFO matching tests, and gives execution_trends() fills on
+            # more than one calendar day.
+            (f"{dates[0]}T09:47:04-04:00", "WDC", "buy", "mom_ls", 1, 100.0,
+             101.0, 0.0, "clean", "id-4", "filled", 100.0, 100.0, 1.0, 100.0,
+             f"{dates[0]}T09:47:08-04:00"),
+            (f"{dates[2]}T09:47:05-04:00", "WDC", "sell", "mom_ls", 1, 110.0,
+             109.0, 0.0, "clean", "id-5", "filled", 110.0, 110.0, 1.0, 110.0,
+             f"{dates[2]}T09:47:09-04:00"),
+            (f"{dates[0]}T09:47:06-04:00", "XOM", "buy", "mom_ls", 2, 100.0,
+             51.0, 0.0, "clean", "id-6", "filled", 100.0, 50.0, 2.0, 50.0,
+             f"{dates[0]}T09:47:10-04:00"),
+            (f"{dates[2]}T09:47:07-04:00", "XOM", "sell", "mom_ls", 1, 55.0,
+             54.0, 0.0, "clean", "id-7", "filled", 55.0, 55.0, 1.0, 55.0,
+             f"{dates[2]}T09:47:11-04:00"),
         ],
     )
     conn.executemany(

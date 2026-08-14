@@ -53,6 +53,18 @@ def exposure(profile: str):
     return jsonify(dashboard_db.exposure_payload(_repo_root(), profile))
 
 
+@bp.get("/api/<profile:profile>/trends")
+def trends(profile: str):
+    days = max(1, min(int(request.args.get("days", 30)), 365))
+    return jsonify(dashboard_db.trends_payload(_repo_root(), profile, days))
+
+
+@bp.get("/api/<profile:profile>/round-trips")
+def round_trips(profile: str):
+    limit = max(1, min(int(request.args.get("limit", 100)), 500))
+    return jsonify(dashboard_db.round_trips_payload(_repo_root(), profile, limit))
+
+
 @bp.get("/api/<profile:profile>/rejections")
 def rejections(profile: str):
     days = max(1, min(int(request.args.get("days", 7)), 90))

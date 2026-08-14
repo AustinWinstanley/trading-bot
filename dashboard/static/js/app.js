@@ -13,6 +13,10 @@ const state = {
   allOrders: [],        // full window from the API; feed re-renders from this
   seenOrderKeys: new Set(),
   lastChartPayload: null,
+  lastTrendsPayload: null,
+  lastExposurePayload: null,
+  chartView: "equity",  // "equity" | "return" | "pnl" | "drawdown"
+  chartDays: 90,
   timers: [],
 };
 
@@ -433,7 +437,10 @@ function renderExecution(execution) {
 
 // ---- exposure ------------------------------------------------------------
 
-function renderExposure(exposure) {
+function renderExposure(payload) {
+  state.lastExposurePayload = payload;
+  const exposure = payload && payload.latest_exposure;
+  renderExposureHistory((payload && payload.history) || []);
   const tbody = document.querySelector("#exposure-table tbody");
   const drift = document.getElementById("drift-list");
   clearChildren(tbody);
@@ -481,6 +488,93 @@ function renderExposure(exposure) {
     });
     drift.textContent = "biggest symbol drift: " + parts.join(" · ");
   }
+}
+
+function renderExposureHistory(history) {
+  const canvas = document.getElementById("exposure-history-chart");
+  drawChart(canvas, {
+    labels: history.map((h) => h.date),
+    series: [
+      { values: history.map((h) => h.target_gross), color: cssVar("--cash"), width: 1 },
+      { values: history.map((h) => h.actual_gross), color: cssVar("--accent"), width: 2 },
+    ],
+    yFormat: (v) => v.toFixed(2) + "x",
+    emptyText: "no exposure history yet",
+  });
+}
+
+// ---- execution trends ----------------------------------------------------
+
+function renderTrends(data) {
+  state.lastTrendsPayload = data;
+  const days = data.days || [];
+  drawChart(document.getElementById("trends-chart"), {
+    labels: days.map((d) => d.date),
+    series: [{
+      values: days.map((d) => d.adverse_slippage_bps), type: "bar",
+      color: cssVar("--warn"), negativeColor: cssVar("--ok"),
+    }],
+    yFormat: (v) => v.toFixed(1) + "bp",
+    emptyText: "no execution history yet",
+  });
+
+  const tbody = document.querySelector("#trends-table tbody");
+  clearChildren(tbody);
+  if (!days.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="muted">no orders or rejections in range</td></tr>';
+    return;
+  }
+  [...days].reverse().slice(0, 15).forEach((d) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(d.date)}</td>
+      <td>${esc(d.orders)}</td>
+      <td>${d.fill_pct !== null && d.fill_pct !== undefined ? fmtPct(d.fill_pct) : "—"}</td>
+      <td>${d.adverse_slippage_bps !== null && d.adverse_slippage_bps !== undefined
+        ? d.adverse_slippage_bps.toFixed(1) + " bp" : "—"}</td>
+      <td>${d.avg_latency_s !== null && d.avg_latency_s !== undefined
+        ? d.avg_latency_s.toFixed(0) + "s" : "—"}</td>
+      <td>${esc(d.rejections)}</td>
+      <td>${fmtMoney(d.blocked_notional)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---- realized P&L (round trips) ------------------------------------------
+
+function renderRoundTrips(data) {
+  const summary = document.getElementById("roundtrips-summary");
+  const bySleeve = data.by_sleeve || {};
+  const parts = Object.entries(bySleeve).map(([sleeve, agg]) =>
+    `${sleeve}: ${fmtMoney(agg.realized_pnl)} over ${agg.trips} trips (${agg.wins}W/${agg.losses}L)`);
+  summary.textContent = parts.length
+    ? parts.join(" · ") + ` · ${esc(data.coverage_note || "")}` +
+      (data.unmatched ? ` · ${data.unmatched} exit(s) unmatched (predate fill recording)` : "")
+    : "";
+
+  const tbody = document.querySelector("#roundtrips-table tbody");
+  clearChildren(tbody);
+  const trips = data.trips || [];
+  if (!trips.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="muted">no closed round trips yet (${esc(data.coverage_note || "")})</td></tr>`;
+    return;
+  }
+  trips.slice(0, 40).forEach((t) => {
+    const tr = document.createElement("tr");
+    const pnlClass = t.realized_pnl >= 0 ? "side-buy" : "side-sell";
+    tr.innerHTML = `
+      <td>${esc(t.symbol)}</td>
+      <td>${esc(t.sleeve) || "—"}</td>
+      <td>${fmtTime(t.entry_ts)}</td>
+      <td>${fmtTime(t.exit_ts)}</td>
+      <td>${esc(t.qty)}</td>
+      <td>${fmtMoney(t.entry_price)}</td>
+      <td>${fmtMoney(t.exit_price)}</td>
+      <td class="${pnlClass}">${fmtMoney(t.realized_pnl)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // ---- trade feed ----------------------------------------------------------
@@ -622,17 +716,19 @@ function renderRejections(data) {
   }
 }
 
-// ---- equity chart (hand-rolled canvas, no dependency) -------------------
+// ---- charts (hand-rolled canvas, no dependency) -------------------------
 
 function chartGeometry(canvas) {
   const cssWidth = canvas.clientWidth || 900;
-  const cssHeight = parseInt(cssVar("--chart-height"), 10) || 170;
+  const fallback = canvas.classList.contains("mini-chart") ? 90 : 170;
+  const cssHeight = canvas.clientHeight || fallback;
   return { cssWidth, cssHeight, pad: { top: 12, right: 12, bottom: 24, left: 64 } };
 }
 
-function drawEquityChart(payload) {
-  state.lastChartPayload = payload;
-  const canvas = document.getElementById("equity-chart");
+// Generic single-axis chart: line and bar series share one y-scale.
+// config: {labels, series: [{values, color, width, type: "line"|"bar"}],
+//          refs: [{value, color}], yFormat, emptyText}
+function drawChart(canvas, config) {
   const ctx = canvas.getContext("2d");
   const { cssWidth, cssHeight, pad } = chartGeometry(canvas);
   const dpr = window.devicePixelRatio || 1;
@@ -641,30 +737,28 @@ function drawEquityChart(payload) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-  const points = payload.points || [];
+  const labels = config.labels || [];
   const plotW = cssWidth - pad.left - pad.right;
   const plotH = cssHeight - pad.top - pad.bottom;
-
   const colorMuted = cssVar("--fg-muted");
   const colorGrid = cssVar("--border");
-  const colorEquity = cssVar("--accent");
-  const colorCash = cssVar("--cash");
-  const colorHalt = cssVar("--danger");
-  const colorKill = cssVar("--warn");
 
-  if (points.length < 2) {
+  if (labels.length < 2) {
     ctx.fillStyle = colorMuted;
     ctx.font = "13px sans-serif";
-    ctx.fillText("not enough history yet", pad.left, pad.top + 20);
-    return;
+    ctx.fillText(config.emptyText || "not enough history yet", pad.left, pad.top + 20);
+    return null;
   }
 
-  const values = points.map((p) => p.equity);
-  points.forEach((p) => { if (p.cash !== null && p.cash !== undefined) values.push(p.cash); });
-  const refs = payload.reference_lines || {};
-  [refs.peak_drawdown_halt, refs.monthly_kill_switch].forEach((v) => {
+  const values = [];
+  config.series.forEach((s) => s.values.forEach((v) => {
     if (v !== null && v !== undefined) values.push(v);
+  }));
+  (config.refs || []).forEach((r) => {
+    if (r.value !== null && r.value !== undefined) values.push(r.value);
   });
+  const hasBars = config.series.some((s) => s.type === "bar");
+  if (hasBars) values.push(0);  // bars need a zero baseline in view
   let min = Math.min(...values);
   let max = Math.max(...values);
   if (min === max) { min -= 1; max += 1; }
@@ -672,10 +766,10 @@ function drawEquityChart(payload) {
   min -= span * 0.08;
   max += span * 0.08;
 
-  const x = (i) => pad.left + (i / (points.length - 1)) * plotW;
+  const x = (i) => pad.left + (i / (labels.length - 1)) * plotW;
   const y = (v) => pad.top + plotH - ((v - min) / (max - min)) * plotH;
+  const yFormat = config.yFormat || ((v) => "$" + Math.round(v).toLocaleString());
 
-  // gridlines + axis labels
   ctx.strokeStyle = colorGrid;
   ctx.fillStyle = colorMuted;
   ctx.font = "11px sans-serif";
@@ -688,45 +782,116 @@ function drawEquityChart(payload) {
     ctx.moveTo(pad.left, yy);
     ctx.lineTo(cssWidth - pad.right, yy);
     ctx.stroke();
-    ctx.fillText("$" + Math.round(v).toLocaleString(), 4, yy + 4);
+    ctx.fillText(yFormat(v), 4, yy + 4);
   }
 
-  function referenceLine(value, color) {
-    if (value === null || value === undefined) return;
-    const yy = y(value);
+  (config.refs || []).forEach((r) => {
+    if (r.value === null || r.value === undefined) return;
     ctx.save();
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = r.color;
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.moveTo(pad.left, yy);
-    ctx.lineTo(cssWidth - pad.right, yy);
+    ctx.moveTo(pad.left, y(r.value));
+    ctx.lineTo(cssWidth - pad.right, y(r.value));
     ctx.stroke();
     ctx.restore();
-  }
-  referenceLine(refs.peak_drawdown_halt, colorHalt);
-  referenceLine(refs.monthly_kill_switch, colorKill);
+  });
 
-  function series(values, color, width) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
+  config.series.forEach((s) => {
+    if (s.type === "bar") {
+      const barW = Math.max(2, (plotW / labels.length) * 0.6);
+      const y0 = y(0);
+      s.values.forEach((v, i) => {
+        if (v === null || v === undefined) return;
+        ctx.fillStyle = s.negativeColor && v < 0 ? s.negativeColor : s.color;
+        const py = y(v);
+        ctx.fillRect(x(i) - barW / 2, Math.min(py, y0), barW, Math.abs(py - y0) || 1);
+      });
+      return;
+    }
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width || 1;
     ctx.beginPath();
     let started = false;
-    values.forEach((v, i) => {
+    s.values.forEach((v, i) => {
       if (v === null || v === undefined) return;
-      const px = x(i);
-      const py = y(v);
-      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      if (!started) { ctx.moveTo(x(i), y(v)); started = true; } else ctx.lineTo(x(i), y(v));
     });
     ctx.stroke();
-  }
-  series(points.map((p) => p.cash), colorCash, 1);
-  series(points.map((p) => p.equity), colorEquity, 2);
+  });
 
-  // x-axis: first/last date labels only, to avoid crowding
   ctx.fillStyle = colorMuted;
-  ctx.fillText(points[0].date, pad.left, cssHeight - 6);
-  const lastLabel = points[points.length - 1].date;
+  ctx.fillText(labels[0], pad.left, cssHeight - 6);
+  const lastLabel = labels[labels.length - 1];
   ctx.fillText(lastLabel, cssWidth - pad.right - ctx.measureText(lastLabel).width, cssHeight - 6);
+  return { x, y, pad, cssWidth, cssHeight, plotW };
+}
+
+// The equity chart's four views over the same payload. Legend text and
+// y-format switch with the view; the tooltip always shows everything.
+const CHART_VIEWS = {
+  equity: {
+    legend: '<span><i class="swatch equity"></i>equity</span><span><i class="swatch cash"></i>cash</span>'
+      + '<span><i class="swatch halt"></i>peak-drawdown halt</span><span><i class="swatch kill"></i>monthly kill switch</span>',
+    config: (points, refs) => ({
+      series: [
+        { values: points.map((p) => p.cash), color: cssVar("--cash"), width: 1 },
+        { values: points.map((p) => p.equity), color: cssVar("--accent"), width: 2 },
+      ],
+      refs: [
+        { value: refs.peak_drawdown_halt, color: cssVar("--danger") },
+        { value: refs.monthly_kill_switch, color: cssVar("--warn") },
+      ],
+    }),
+  },
+  return: {
+    legend: '<span><i class="swatch equity"></i>cumulative return over window</span>',
+    config: (points) => ({
+      series: [{ values: points.map((p) => p.return_pct), color: cssVar("--accent"), width: 2 }],
+      refs: [{ value: 0, color: cssVar("--border") }],
+      yFormat: (v) => v.toFixed(1) + "%",
+    }),
+  },
+  pnl: {
+    legend: '<span><i class="swatch equity"></i>daily P&amp;L</span>',
+    config: (points) => ({
+      series: [{
+        values: points.map((p) => p.pnl), type: "bar",
+        color: cssVar("--ok"), negativeColor: cssVar("--danger"),
+      }],
+      yFormat: (v) => "$" + Math.round(v).toLocaleString(),
+    }),
+  },
+  drawdown: {
+    legend: '<span><i class="swatch halt"></i>drawdown from all-time peak</span>',
+    config: (points) => ({
+      series: [{ values: points.map((p) => p.drawdown_pct), color: cssVar("--danger"), width: 2 }],
+      refs: [{ value: 0, color: cssVar("--border") }],
+      yFormat: (v) => v.toFixed(1) + "%",
+    }),
+  },
+};
+
+function drawEquityChart(payload) {
+  state.lastChartPayload = payload;
+  const canvas = document.getElementById("equity-chart");
+  const points = payload.points || [];
+  const view = CHART_VIEWS[state.chartView] || CHART_VIEWS.equity;
+  const config = view.config(points, payload.reference_lines || {});
+  config.labels = points.map((p) => p.date);
+  drawChart(canvas, config);
+  document.getElementById("equity-legend").innerHTML = view.legend;
+
+  // Day-over-day equity delta in the panel title.
+  const deltaEl = document.getElementById("equity-delta");
+  const last = points[points.length - 1];
+  if (last && last.pnl !== null && last.pnl !== undefined) {
+    const up = last.pnl >= 0;
+    deltaEl.textContent = `${up ? "+" : ""}${fmtMoney(last.pnl)} today`;
+    deltaEl.className = "equity-delta " + (up ? "pos" : "neg");
+  } else {
+    deltaEl.textContent = "";
+  }
 }
 
 // Crosshair + tooltip: nearest point by x, redrawn over the base chart.
@@ -760,10 +925,15 @@ function setupChartHover() {
     ctx.stroke();
     ctx.restore();
 
+    // Every derived metric regardless of active view — the tooltip is
+    // where the views converge.
     tooltip.innerHTML =
       `<span class="tt-date">${esc(p.date)}</span><br>` +
       `equity ${fmtMoney(p.equity)}` +
-      (p.cash !== null && p.cash !== undefined ? `<br>cash ${fmtMoney(p.cash)}` : "");
+      (p.cash !== null && p.cash !== undefined ? `<br>cash ${fmtMoney(p.cash)}` : "") +
+      (p.pnl !== null && p.pnl !== undefined ? `<br>day P&amp;L ${fmtMoney(p.pnl)}` : "") +
+      (p.return_pct !== null && p.return_pct !== undefined ? `<br>window ${fmtPct(p.return_pct)}` : "") +
+      (p.drawdown_pct ? `<br>drawdown ${fmtPct(p.drawdown_pct)}` : "");
     tooltip.hidden = false;
     const wrap = canvas.parentElement.getBoundingClientRect();
     const ttWidth = tooltip.offsetWidth || 120;
@@ -806,9 +976,11 @@ function startPollers() {
     renderPositions(data.positions || []);
   }));
 
-  state.timers.push(poll(() => apiUrl("/equity-curve?days=90"), 60000, drawEquityChart));
-  state.timers.push(poll(() => apiUrl("/exposure"), 60000, (data) => renderExposure(data.latest_exposure)));
+  state.timers.push(poll(() => apiUrl(`/equity-curve?days=${state.chartDays}`), 60000, drawEquityChart));
+  state.timers.push(poll(() => apiUrl("/exposure"), 60000, renderExposure));
   state.timers.push(poll(() => apiUrl("/rejections?days=7"), 60000, renderRejections));
+  state.timers.push(poll(() => apiUrl("/trends?days=30"), 60000, renderTrends));
+  state.timers.push(poll(() => apiUrl("/round-trips?limit=100"), 60000, renderRoundTrips));
 
   if (state.profile !== "base") {
     state.timers.push(poll(() => apiUrl("/options"), 30000, renderOptions));
@@ -831,13 +1003,41 @@ document.querySelectorAll(".tab").forEach((btn) => {
   btn.addEventListener("click", () => selectProfile(btn.dataset.profile));
 });
 
-document.querySelectorAll(".toggle-btn").forEach((btn) => {
+// Each toggle group manages its own active state — scoped by data
+// attribute, NOT all .toggle-btn globally (the chart controls reuse the
+// same class).
+document.querySelectorAll(".toggle-btn[data-feed]").forEach((btn) => {
   btn.addEventListener("click", () => {
     state.feedMode = btn.dataset.feed;
-    document.querySelectorAll(".toggle-btn").forEach((b) => {
+    document.querySelectorAll(".toggle-btn[data-feed]").forEach((b) => {
       b.classList.toggle("active", b === btn);
     });
     renderFeed();
+  });
+});
+
+document.querySelectorAll(".toggle-btn[data-view]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    state.chartView = btn.dataset.view;
+    document.querySelectorAll(".toggle-btn[data-view]").forEach((b) => {
+      b.classList.toggle("active", b === btn);
+    });
+    if (state.lastChartPayload) drawEquityChart(state.lastChartPayload);
+  });
+});
+
+document.querySelectorAll(".toggle-btn[data-days]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    state.chartDays = parseInt(btn.dataset.days, 10) || 90;
+    document.querySelectorAll(".toggle-btn[data-days]").forEach((b) => {
+      b.classList.toggle("active", b === btn);
+    });
+    // Refetch at the new window immediately rather than waiting out the
+    // 60s poll interval.
+    fetch(apiUrl(`/equity-curve?days=${state.chartDays}`))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) drawEquityChart(data); })
+      .catch(() => {});
   });
 });
 
@@ -846,6 +1046,8 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (state.lastChartPayload) drawEquityChart(state.lastChartPayload);
+    if (state.lastTrendsPayload) renderTrends(state.lastTrendsPayload);
+    if (state.lastExposurePayload) renderExposure(state.lastExposurePayload);
   }, 150);
 });
 

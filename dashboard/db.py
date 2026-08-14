@@ -113,27 +113,53 @@ def latest_snapshot(conn: sqlite3.Connection) -> dict | None:
 
 
 def equity_curve(conn: sqlite3.Connection, days: int = 90) -> list[dict]:
-    """One point per calendar day (that day's last snapshot).
+    """One point per calendar day (that day's last snapshot), with derived
+    day-over-day P&L, cumulative window return, and drawdown-from-peak.
 
     The daily job fires more than once a session (AGENTS.md), so a raw
     row-per-run series would chart intraday polling noise rather than
     day-over-day change; this matches how the rest of the repo already
     treats "the run of record" for a date.
+
+    Derivations are computed over the FULL history and only then sliced
+    to the window: drawdown uses the true running all-history peak (a
+    window that starts mid-drawdown must not report 0%), and pnl's first
+    windowed point still knows the prior day's equity. return_pct alone
+    is window-relative by design — "how has it done over the period I'm
+    looking at."
     """
     rows = conn.execute("SELECT ts, equity, cash FROM snapshots ORDER BY ts").fetchall()
     by_day: dict[str, sqlite3.Row] = {}
     for row in rows:
         by_day[str(row["ts"])[:10]] = row  # ts-ascending, so last write wins
-    ordered_days = sorted(by_day)[-days:]
-    return [
-        {
+    all_days = sorted(by_day)
+
+    points = []
+    peak = None
+    prev_equity = None
+    for day in all_days:
+        row = by_day[day]
+        equity = row["equity"]
+        peak = equity if peak is None else max(peak, equity)
+        points.append({
             "date": day,
-            "ts": by_day[day]["ts"],
-            "equity": by_day[day]["equity"],
-            "cash": by_day[day]["cash"],
-        }
-        for day in ordered_days
-    ]
+            "ts": row["ts"],
+            "equity": equity,
+            "cash": row["cash"],
+            "pnl": round(equity - prev_equity, 2) if prev_equity is not None else None,
+            "drawdown_pct": (
+                round((equity - peak) / peak * 100, 3) if peak else 0.0
+            ),
+        })
+        prev_equity = equity
+
+    window = points[-days:]
+    base = window[0]["equity"] if window else None
+    for point in window:
+        point["return_pct"] = (
+            round((point["equity"] - base) / base * 100, 3) if base else None
+        )
+    return window
 
 
 _ORDER_BASE_COLUMNS = (
@@ -390,6 +416,201 @@ def reconciliation_events(conn: sqlite3.Connection, since: str) -> list[dict]:
         (since,),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+# ---------------------------------------------------------------------
+# Time-series analytics — per-day views of data execution_summary only
+# aggregates all-time. Plain SQL + stdlib arithmetic; missing migration
+# columns degrade per-field to None, never an error.
+# ---------------------------------------------------------------------
+
+
+def execution_trends(conn: sqlite3.Connection, since: str) -> list[dict]:
+    """Per-day execution/rejection quality — the time-series version of
+    engine.attribution.execution_summary's single all-time aggregate.
+    Slippage is notional-weighted with the same sign convention (adverse
+    positive), latency is filled_at - ts in seconds."""
+    order_cols = table_columns(conn, "orders")
+    have_fills = {"filled_avg_price", "reference_price", "filled_at"}.issubset(order_cols)
+
+    days: dict[str, dict] = {}
+
+    def bucket(date: str) -> dict:
+        return days.setdefault(date, {
+            "date": date, "orders": 0, "filled_orders": 0, "fill_pct": None,
+            "adverse_slippage_bps": None, "avg_latency_s": None,
+            "rejections": 0, "blocked_notional": 0.0,
+            "_slip_weighted": 0.0, "_slip_notional": 0.0,
+            "_latency_total": 0.0, "_latency_n": 0,
+        })
+
+    select = "ts, side, notional, status"
+    if have_fills:
+        select += ", filled_avg_price, reference_price, filled_at"
+    for row in conn.execute(f"SELECT {select} FROM orders WHERE ts > ? ORDER BY ts", (since,)):
+        b = bucket(str(row["ts"])[:10])
+        b["orders"] += 1
+        if str(row["status"] or "") == "filled":
+            b["filled_orders"] += 1
+        if not have_fills:
+            continue
+        fill_px, ref_px = row["filled_avg_price"], row["reference_price"]
+        if fill_px and ref_px:
+            direction = 1 if row["side"] in ("buy", "cover") else -1
+            slip_bps = (fill_px - ref_px) / ref_px * direction * 10000
+            notional = float(row["notional"] or 0.0)
+            b["_slip_weighted"] += slip_bps * notional
+            b["_slip_notional"] += notional
+        filled_at = _parse_ts(row["filled_at"])
+        ts = _parse_ts(row["ts"])
+        if filled_at and ts and filled_at >= ts:
+            b["_latency_total"] += (filled_at - ts).total_seconds()
+            b["_latency_n"] += 1
+
+    rej_cols = table_columns(conn, "rejections")
+    have_rej_notional = "requested_notional" in rej_cols
+    select = "ts" + (", requested_notional" if have_rej_notional else "")
+    for row in conn.execute(f"SELECT {select} FROM rejections WHERE ts > ?", (since,)):
+        b = bucket(str(row["ts"])[:10])
+        b["rejections"] += 1
+        if have_rej_notional and row["requested_notional"]:
+            b["blocked_notional"] += float(row["requested_notional"])
+
+    out = []
+    for date in sorted(days):
+        b = days[date]
+        if b["orders"]:
+            b["fill_pct"] = round(b["filled_orders"] / b["orders"] * 100, 1)
+        if b["_slip_notional"] > 0:
+            b["adverse_slippage_bps"] = round(b["_slip_weighted"] / b["_slip_notional"], 2)
+        if b["_latency_n"]:
+            b["avg_latency_s"] = round(b["_latency_total"] / b["_latency_n"], 1)
+        b["blocked_notional"] = round(b["blocked_notional"], 2)
+        out.append({k: v for k, v in b.items() if not k.startswith("_")})
+    return out
+
+
+# Fill columns only exist in journal rows written since this date (the
+# order-journal migration) — part of the round-trips contract so the UI
+# says so instead of implying full history.
+_FILL_COVERAGE_NOTE = "fills recorded since 2026-08-04"
+
+_ENTRY_SIDES = frozenset({"buy", "short"})
+_EXIT_SIDES = frozenset({"sell", "cover"})
+
+
+def round_trips(conn: sqlite3.Connection, limit: int = 100) -> dict:
+    """FIFO-matched realized P&L per closed round trip, from order fills
+    ONLY (filled_qty/filled_avg_price) — deliberately not stops.entry_price,
+    since stops rows are mutated and deleted over a position's life while
+    the fill columns are the immutable record. Exits with no recorded
+    entry (position predates fill recording) are counted in "unmatched",
+    never guessed at."""
+    cols = table_columns(conn, "orders")
+    if not {"filled_qty", "filled_avg_price"}.issubset(cols):
+        return {"trips": [], "by_sleeve": {}, "unmatched": 0,
+                "coverage_note": _FILL_COVERAGE_NOTE}
+
+    rows = conn.execute(
+        "SELECT ts, symbol, side, sleeve, filled_qty, filled_avg_price FROM orders "
+        "WHERE COALESCE(status,'') = 'filled' AND filled_qty > 0 "
+        "AND filled_avg_price IS NOT NULL ORDER BY ts"
+    ).fetchall()
+
+    # Per symbol: open FIFO lots [(qty_remaining, price, ts, sleeve, side)].
+    lots: dict[str, list[dict]] = {}
+    trips: list[dict] = []
+    unmatched = 0
+    for row in rows:
+        symbol = str(row["symbol"])
+        side = str(row["side"])
+        qty = float(row["filled_qty"])
+        price = float(row["filled_avg_price"])
+        if side in _ENTRY_SIDES:
+            lots.setdefault(symbol, []).append({
+                "qty": qty, "price": price, "ts": row["ts"],
+                "sleeve": row["sleeve"], "side": side,
+            })
+            continue
+        if side not in _EXIT_SIDES:
+            continue
+        remaining = qty
+        symbol_lots = lots.get(symbol, [])
+        while remaining > 1e-9 and symbol_lots:
+            lot = symbol_lots[0]
+            matched = min(remaining, lot["qty"])
+            # Long round trip: sell exits a buy; short: cover exits a short.
+            direction = 1 if lot["side"] == "buy" else -1
+            pnl = (price - lot["price"]) * matched * direction
+            trips.append({
+                "symbol": symbol,
+                "sleeve": str(lot["sleeve"] or ""),
+                "entry_ts": lot["ts"],
+                "exit_ts": row["ts"],
+                "qty": round(matched, 6),
+                "entry_price": lot["price"],
+                "exit_price": price,
+                "realized_pnl": round(pnl, 2),
+            })
+            lot["qty"] -= matched
+            remaining -= matched
+            if lot["qty"] <= 1e-9:
+                symbol_lots.pop(0)
+        if remaining > 1e-9:
+            unmatched += 1
+
+    by_sleeve: dict[str, dict] = {}
+    for trip in trips:
+        agg = by_sleeve.setdefault(trip["sleeve"] or "(untagged)", {
+            "trips": 0, "realized_pnl": 0.0, "wins": 0, "losses": 0,
+        })
+        agg["trips"] += 1
+        agg["realized_pnl"] = round(agg["realized_pnl"] + trip["realized_pnl"], 2)
+        if trip["realized_pnl"] >= 0:
+            agg["wins"] += 1
+        else:
+            agg["losses"] += 1
+
+    return {
+        "trips": trips[-limit:][::-1],  # newest first
+        "by_sleeve": by_sleeve,
+        "unmatched": unmatched,
+        "coverage_note": _FILL_COVERAGE_NOTE,
+    }
+
+
+def exposure_history(conn: sqlite3.Connection, days: int = 90) -> list[dict]:
+    """Target-vs-actual gross exposure over time from attribution_snapshots
+    — the table engine.attribution only ever reads LIMIT 1 from. One point
+    per calendar day (last write wins), same dedup as equity_curve."""
+    cols = table_columns(conn, "attribution_snapshots")
+    if not {"ts", "target_gross", "actual_gross"}.issubset(cols):
+        return []
+    rows = conn.execute(
+        "SELECT ts, target_gross, actual_gross, target_long, target_short, "
+        "actual_long, actual_short FROM attribution_snapshots ORDER BY ts"
+    ).fetchall()
+    by_day: dict[str, sqlite3.Row] = {}
+    for row in rows:
+        by_day[str(row["ts"])[:10]] = row
+    return [
+        {
+            "date": day,
+            "target_gross": by_day[day]["target_gross"],
+            "actual_gross": by_day[day]["actual_gross"],
+            "target_net": (
+                round(by_day[day]["target_long"] - by_day[day]["target_short"], 4)
+                if by_day[day]["target_long"] is not None
+                and by_day[day]["target_short"] is not None else None
+            ),
+            "actual_net": (
+                round(by_day[day]["actual_long"] - by_day[day]["actual_short"], 4)
+                if by_day[day]["actual_long"] is not None
+                and by_day[day]["actual_short"] is not None else None
+            ),
+        }
+        for day in sorted(by_day)[-days:]
+    ]
 
 
 # ---------------------------------------------------------------------
@@ -751,10 +972,31 @@ def exposure_payload(repo_root: Path, profile: str) -> dict:
     paths = profile_paths(repo_root, profile)
     conn = _open_ro_or_none(paths)
     if conn is None:
-        return {"latest_exposure": None}
+        return {"latest_exposure": None, "history": []}
     with contextlib.closing(conn):
         es = execution_summary(conn, EPOCH)
-    return {"latest_exposure": es["latest_exposure"]}
+        history = exposure_history(conn)
+    return {"latest_exposure": es["latest_exposure"], "history": history}
+
+
+def trends_payload(repo_root: Path, profile: str, days: int) -> dict:
+    paths = profile_paths(repo_root, profile)
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"days": []}
+    with contextlib.closing(conn):
+        return {"days": execution_trends(conn, since)}
+
+
+def round_trips_payload(repo_root: Path, profile: str, limit: int) -> dict:
+    paths = profile_paths(repo_root, profile)
+    conn = _open_ro_or_none(paths)
+    if conn is None:
+        return {"trips": [], "by_sleeve": {}, "unmatched": 0,
+                "coverage_note": _FILL_COVERAGE_NOTE}
+    with contextlib.closing(conn):
+        return round_trips(conn, limit=limit)
 
 
 def rejections_payload(
