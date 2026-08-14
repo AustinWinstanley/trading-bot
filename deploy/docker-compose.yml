@@ -1,3 +1,12 @@
+# Docker's default json-file log driver has no size cap on its own — left
+# unset, months of passed-through cron/git/HTTP-access-log output would
+# grow the on-disk log files without bound. Applied to every service below.
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # The trusted tier: holds broker credentials (via env_file below — never
   # baked into the image) and is the only service that writes to state/,
@@ -27,6 +36,7 @@ services:
     # weekly locks before ever stopping this service, so in practice a stop
     # should find nothing running — this is the backstop, not the plan.
     stop_grace_period: 55m
+    logging: *default-logging
     volumes:
       - ../state:/app/state
       - ../reports:/app/reports
@@ -63,6 +73,7 @@ services:
       # pins GitHub's own published host keys at image build time, so this
       # never falls back to trust-on-first-connect.
       - GIT_SSH_COMMAND=ssh -i /run/secrets/journal_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes
+    logging: *default-logging
     volumes:
       # The whole checkout, read-write: `git add`/`commit`/`push` need the
       # working tree and .git/ both, not just reports/.
@@ -74,6 +85,7 @@ services:
     image: ghcr.io/austinwinstanley/trading-bot-dashboard:${DASHBOARD_TAG:-latest}
     container_name: trading-bot-dashboard
     restart: unless-stopped
+    logging: *default-logging
     ports:
       # Published on all host interfaces (LAN-reachable), not loopback-only.
       # The app has zero login/auth by design — anyone who can reach the
@@ -106,6 +118,7 @@ services:
     image: ghcr.io/austinwinstanley/trading-bot-mcp-server:${MCP_TAG:-latest}
     container_name: trading-bot-mcp-server
     restart: unless-stopped
+    logging: *default-logging
     ports:
       # Same LAN-exposed, no-auth posture as `dashboard` above (see that
       # service's comment) — an already-approved precedent, not a new
