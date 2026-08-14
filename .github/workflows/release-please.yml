@@ -25,20 +25,13 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      # release-type/bump-minor-pre-major live in release-please-config.json,
-      # not here, once a manifest config exists (googleapis/release-please's
-      # own "Advanced Configuration" docs: pass config-file/manifest-file,
-      # not release-type, once you've bootstrapped a manifest). The manifest
-      # is what makes the very first release 0.1.0 instead of release-please's
-      # unreleased-repo default of 1.0.0 — see .release-please-manifest.json's
-      # bootstrapped "0.0.0" entry and release-please-config.json's
-      # bump-minor-pre-major (so a pre-1.0 breaking change bumps minor, not
-      # straight to 1.0.0, until this project is deliberately ready for that).
       - uses: googleapis/release-please-action@v4
         id: release
-        # version.txt is checked in specifically because the `simple`
-        # strategy's version-file updater has createIfMissing: false —
-        # release-please will never create it, only bump it.
+        with:
+          release-type: simple
+          # version.txt is checked in specifically because the `simple`
+          # strategy's version-file updater has createIfMissing: false —
+          # release-please will never create it, only bump it.
 
   # Runs only when release-please actually cut a release on this push (i.e.
   # a release-please PR was just merged) — every other push to main just
