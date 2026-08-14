@@ -8,4 +8,4 @@ PyYAML>=6,<7
 # support, unused here — this server has no auth). Pin below 43 until
 # confirmed fixed upstream or this is deployed to hardware that doesn't
 # hit it.
-cryptography<43
+cryptography<51
