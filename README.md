@@ -1,5 +1,9 @@
 # trading-bot
 
+[![CI](https://github.com/AustinWinstanley/trading-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/AustinWinstanley/trading-bot/actions/workflows/ci.yml)
+[![Conventional Commits](https://img.shields.io/badge/conventional%20commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A deterministic, rule-based paper-trading system for Alpaca. It runs a
 diversified long-flat/long-short equity strategy — trend-following,
 cross-sectional momentum, and a market-tracking core — through a

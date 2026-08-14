@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same branch/PR — this suite (pytest +
+# 4 docker builds) is not cheap, and a rapid sequence of pushes to the
+# same PR would otherwise queue every one of them to completion.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            dashboard/requirements.txt
+            mcp_server/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dashboard/requirements.txt
+          pip install -r mcp_server/requirements.txt
+
+      # The suite is fully offline and needs no credentials — verified
+      # locally before this workflow was added (no test reaches the
+      # network; every Alpaca-touching path is mocked or stubbed). An
+      # empty .env-equivalent environment is intentional, not an
+      # oversight — it exercises the same fail-closed path
+      # tests/test_shadow_credential_guard.py asserts on directly.
+      - name: Run test suite
+        run: python -m pytest -q
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker-build-smoke:
+    name: docker build (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: engine
+            dockerfile: deploy/engine.Dockerfile
+          - service: journal
+            dockerfile: deploy/journal.Dockerfile
+          - service: dashboard
+            dockerfile: dashboard/Dockerfile
+          - service: mcp-server
+            dockerfile: mcp_server/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build only — no push, no tag beyond a throwaway local one. This
+      # exists to catch a broken Dockerfile/COPY/dependency before it
+      # ever reaches deploy/workflows/release.yml's real GHCR push.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: trading-bot-${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}

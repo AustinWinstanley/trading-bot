@@ -40,7 +40,6 @@ fi
 
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 
-LOCKS_HELD=0
 UPGRADE_SUCCEEDED=0
 
 on_exit() {
@@ -80,7 +79,6 @@ flock 202
 flock 203
 flock 204
 flock 205
-LOCKS_HELD=1
 
 # --dashboard/--mcp-server tests never load — they're outside the trusted
 # tier's image entirely (see deploy/engine.Dockerfile's comment on this).
@@ -109,7 +107,6 @@ ENGINE_TAG="$CANDIDATE_TAG" "${COMPOSE[@]}" run --rm --no-deps engine \
 # Release the locks now — verification is done, and the actual switch below
 # (stop + up -d) needs no exclusion beyond what compose itself provides.
 flock -u 201 202 203 204 205
-LOCKS_HELD=0
 
 echo "==> Switching the live engine service to $CANDIDATE_TAG"
 "${COMPOSE[@]}" stop engine

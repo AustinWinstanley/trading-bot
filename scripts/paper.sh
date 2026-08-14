@@ -101,7 +101,7 @@ esac
 {
   echo "=== $(date -u '+%F %T UTC') job=$JOB slot=${SLOT:-any} ==="
   flock -n 200 || { echo "CRITICAL: previous run still holds the lock"; exit 1; }
-  cd "$BOT"
+  cd "$BOT" || { echo "CRITICAL: cannot cd to BOT=$BOT"; exit 1; }
   case "$JOB" in
     daily)    timeout "$TIMEOUT" "$PY" -m scripts.run_daily ;;
     daily2x)  timeout "$TIMEOUT" "$PY" -m scripts.run_daily --profile 2x ;;
