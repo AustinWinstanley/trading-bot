@@ -31,9 +31,21 @@
     <section class="panel span-2" id="panel-orders">
       <div class="panel-head">
         <h2>Trade feed</h2>
-        <div class="toggle" role="tablist" aria-label="feed range">
-          <button class="toggle-btn active" data-feed="today">Today</button>
-          <button class="toggle-btn" data-feed="all">All</button>
+        <div class="feed-controls">
+          <select id="feed-sleeve" class="notes-select" aria-label="filter by sleeve">
+            <option value="">all sleeves</option>
+          </select>
+          <select id="feed-side" class="notes-select" aria-label="filter by side">
+            <option value="">all sides</option>
+            <option value="buy">buy</option>
+            <option value="sell">sell</option>
+            <option value="short">short</option>
+            <option value="cover">cover</option>
+          </select>
+          <div class="toggle" role="tablist" aria-label="feed range">
+            <button class="toggle-btn active" data-feed="today">Today</button>
+            <button class="toggle-btn" data-feed="all">All</button>
+          </div>
         </div>
       </div>
       <div class="table-wrap">
@@ -112,7 +124,13 @@
       <div class="table-wrap">
         <table id="positions-table">
           <thead>
-            <tr><th>Symbol</th><th>Sleeve</th><th>Qty</th><th>Price</th><th>Value</th><th>Entry date</th><th>Stop</th><th>To stop</th><th>Unrealized P&amp;L</th></tr>
+            <tr>
+              <th data-sort="symbol">Symbol</th><th data-sort="sleeve">Sleeve</th>
+              <th data-sort="qty">Qty</th><th data-sort="price">Price</th>
+              <th data-sort="market_value">Value</th><th data-sort="entry_date">Age</th>
+              <th data-sort="stop_price">Stop</th><th data-sort="_to_stop">To stop</th>
+              <th data-sort="unrealized_pl">Unrealized P&amp;L</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
