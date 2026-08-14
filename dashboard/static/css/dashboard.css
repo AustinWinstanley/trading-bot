@@ -296,6 +296,14 @@ body.disconnected main { opacity: 0.55; }
 .problem-strip li { padding: 2px 0; }
 .problem-strip li.warn { color: var(--warn); }
 
+/* ---- sortable headers + feed filters ---- */
+
+th[data-sort] { cursor: pointer; user-select: none; }
+th[data-sort].sorted::after { content: " ↓"; color: var(--accent); }
+th[data-sort].sorted[data-dir="asc"]::after { content: " ↑"; }
+
+.feed-controls { display: flex; gap: 8px; align-items: center; }
+
 /* ---- research + notes panels ---- */
 
 .review-bar { width: 100%; margin: 0 0 8px; }

@@ -6,17 +6,54 @@
 // bot's cron cadence); polling is a UX choice for a "feels live" feed, not
 // a freshness guarantee.
 
+// UI preferences + seen-order keys survive reload via localStorage —
+// without this a refresh forgot the selected profile/view and re-marked
+// every order as already-seen, so the new-row flash never fired again.
+const PREFS_KEY = "tbmon-prefs";
+const SEEN_KEY = "tbmon-seen-orders";
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+
+function savePrefs() {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({
+      profile: state.profile, feedMode: state.feedMode,
+      chartView: state.chartView, chartDays: state.chartDays,
+    }));
+  } catch (e) { /* storage full/blocked — prefs just don't persist */ }
+}
+
+function loadSeenKeys() {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY)) || []); }
+  catch (e) { return new Set(); }
+}
+
+function saveSeenKeys() {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...state.seenOrderKeys].slice(-500)));
+  } catch (e) { /* ditto */ }
+}
+
+const _prefs = loadPrefs();
+
 const state = {
-  profile: "base",
+  profile: _prefs.profile || "base",
   ordersCursor: null,
-  feedMode: "today",   // "today" | "all"
+  feedMode: _prefs.feedMode || "today",   // "today" | "all"
+  feedSleeve: "",
+  feedSide: "",
   allOrders: [],        // full window from the API; feed re-renders from this
-  seenOrderKeys: new Set(),
+  seenOrderKeys: loadSeenKeys(),
   lastChartPayload: null,
   lastTrendsPayload: null,
   lastExposurePayload: null,
-  chartView: "equity",  // "equity" | "return" | "pnl" | "drawdown"
-  chartDays: 90,
+  lastPositions: [],
+  positionsSort: { key: "market_value", dir: -1 },
+  chartView: _prefs.chartView || "equity",  // "equity" | "return" | "pnl" | "drawdown"
+  chartDays: _prefs.chartDays || 90,
   timers: [],
 };
 
@@ -355,38 +392,67 @@ function renderOptions(data) {
 
 // ---- positions -----------------------------------------------------------
 
+function positionAgeDays(entryDate) {
+  if (!entryDate) return null;
+  const ms = Date.now() - new Date(entryDate + "T12:00:00Z");
+  if (!isFinite(ms) || ms < 0) return null;
+  return Math.floor(ms / 86400000);
+}
+
+function toStopPct(p) {
+  if (p.stop_price === null || !(p.price > 0)) return null;
+  // Shorts have stops above price (negative distance as computed) —
+  // magnitude is what matters for "how close am I".
+  return Math.abs((p.price - p.stop_price) / p.price) * 100;
+}
+
 function renderPositions(positions) {
+  state.lastPositions = positions;
   const tbody = document.querySelector("#positions-table tbody");
   clearChildren(tbody);
   if (!positions.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="muted">no open positions</td></tr>';
     return;
   }
-  positions.forEach((p) => {
+
+  const { key, dir } = state.positionsSort;
+  const value = (p) => (key === "_to_stop" ? toStopPct(p) : p[key]);
+  const sorted = [...positions].sort((a, b) => {
+    const av = value(a);
+    const bv = value(b);
+    if (av === null || av === undefined) return 1;   // blanks last, either dir
+    if (bv === null || bv === undefined) return -1;
+    if (typeof av === "string" || typeof bv === "string") {
+      return String(av).localeCompare(String(bv)) * dir;
+    }
+    return (av - bv) * dir;
+  });
+  document.querySelectorAll("#positions-table th[data-sort]").forEach((th) => {
+    th.classList.toggle("sorted", th.dataset.sort === key);
+    th.dataset.dir = th.dataset.sort === key ? (dir > 0 ? "asc" : "desc") : "";
+  });
+
+  sorted.forEach((p) => {
     const tr = document.createElement("tr");
     const pnl = p.cost_basis_available
       ? fmtMoney(p.unrealized_pl)
       : (p.stop_exempt_sleeve ? "n/a (stop-exempt)" : "n/a");
-    let toStop = "—";
-    let toStopClass = "";
-    if (p.stop_price !== null && p.price > 0) {
-      const dist = (p.price - p.stop_price) / p.price;
-      // Shorts have stops above price (negative distance as computed) —
-      // magnitude is what matters for "how close am I".
-      const distPct = Math.abs(dist) * 100;
-      toStop = fmtPct(distPct);
-      if (distPct < 2) toStopClass = "near-stop";
-    }
+    const distPct = toStopPct(p);
+    const toStop = distPct !== null ? fmtPct(distPct) : "—";
+    const toStopClass = distPct !== null && distPct < 2 ? "near-stop" : "";
     const stopCell = p.stop_price !== null
       ? fmtMoney(p.stop_price)
       : (p.stop_exempt_sleeve ? "exempt" : '<span class="badge warn">unprotected</span>');
+    const age = positionAgeDays(p.entry_date);
+    const ageCell = age !== null
+      ? `<span title="${esc(p.entry_date)}">${age}d</span>` : "—";
     tr.innerHTML = `
       <td>${esc(p.symbol)}</td>
       <td>${esc(p.sleeve) || "—"}</td>
       <td>${esc(p.qty)}</td>
       <td>${fmtMoney(p.price)}</td>
       <td>${fmtMoney(p.market_value)}</td>
-      <td>${esc(p.entry_date) || "—"}</td>
+      <td>${ageCell}</td>
       <td>${stopCell}</td>
       <td class="${toStopClass}">${toStop}</td>
       <td>${pnl}</td>
@@ -719,11 +785,15 @@ function orderRow(o, isNew) {
 function renderFeed(newKeys) {
   const tbody = document.querySelector("#orders-table tbody");
   clearChildren(tbody);
-  const visible = state.feedMode === "today"
+  let visible = state.feedMode === "today"
     ? state.allOrders.filter((o) => isToday(o.ts))
     : state.allOrders;
+  if (state.feedSleeve) visible = visible.filter((o) => o.sleeve === state.feedSleeve);
+  if (state.feedSide) visible = visible.filter((o) => o.side === state.feedSide);
   if (!visible.length) {
-    const msg = state.feedMode === "today" ? "no trades yet today" : "no orders in range";
+    const filtered = state.feedSleeve || state.feedSide;
+    const msg = filtered ? "no orders match the filter"
+      : state.feedMode === "today" ? "no trades yet today" : "no orders in range";
     tbody.innerHTML = `<tr><td colspan="11" class="muted">${msg}</td></tr>`;
     return;
   }
@@ -733,21 +803,48 @@ function renderFeed(newKeys) {
   });
 }
 
+function refreshSleeveFilterOptions() {
+  const select = document.getElementById("feed-sleeve");
+  const current = select.value;
+  const sleeves = [...new Set(state.allOrders.map((o) => o.sleeve).filter(Boolean))].sort();
+  clearChildren(select);
+  const all = document.createElement("option");
+  all.value = "";
+  all.textContent = "all sleeves";
+  select.appendChild(all);
+  sleeves.forEach((s) => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    select.appendChild(opt);
+  });
+  select.value = sleeves.includes(current) ? current : "";
+}
+
 function ingestOrders(data) {
   const incoming = data.orders || [];
   const newKeys = new Set();
-  const firstLoad = state.ordersCursor === null;
+  // With seen-keys persisted across reloads, "first load of this page"
+  // no longer implies "never seen" — the persisted set decides what
+  // flashes, so a reload right after new fills still highlights them.
+  const firstEver = state.ordersCursor === null && state.seenOrderKeys.size === 0;
+  const have = new Set(state.allOrders.map(orderKey));
   incoming.forEach((o) => {
     const key = orderKey(o);
     if (!state.seenOrderKeys.has(key)) {
       state.seenOrderKeys.add(key);
-      state.allOrders.push(o);
-      if (!firstLoad) newKeys.add(key);
+      if (!firstEver) newKeys.add(key);
+    }
+    if (!have.has(key)) {
+      have.add(key);
+      state.allOrders.push(o);  // may be seen-before (persisted) but not yet rendered
     }
   });
   state.allOrders.sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0));
   if (state.allOrders.length > 500) state.allOrders = state.allOrders.slice(-500);
   if (data.latest_ts) state.ordersCursor = data.latest_ts;
+  saveSeenKeys();
+  refreshSleeveFilterOptions();
   renderFeed(newKeys);
 }
 
@@ -967,22 +1064,20 @@ function drawEquityChart(payload) {
 }
 
 // Crosshair + tooltip: nearest point by x, redrawn over the base chart.
+// Shared by mouse and touch (the crosshair math is identical; only the
+// coordinate source differs).
 function setupChartHover() {
   const canvas = document.getElementById("equity-chart");
   const tooltip = document.getElementById("chart-tooltip");
 
-  function nearestIndex(offsetX, points, pad, plotW) {
-    const t = (offsetX - pad.left) / plotW;
-    return Math.max(0, Math.min(points.length - 1, Math.round(t * (points.length - 1))));
-  }
-
-  canvas.addEventListener("mousemove", (ev) => {
+  function showCrosshair(offsetX, clientX) {
     const payload = state.lastChartPayload;
     const points = payload && payload.points;
     if (!points || points.length < 2) return;
     const { cssWidth, cssHeight, pad } = chartGeometry(canvas);
     const plotW = cssWidth - pad.left - pad.right;
-    const i = nearestIndex(ev.offsetX, points, pad, plotW);
+    const t = (offsetX - pad.left) / plotW;
+    const i = Math.max(0, Math.min(points.length - 1, Math.round(t * (points.length - 1))));
     const p = points[i];
 
     drawEquityChart(payload);   // clean base frame
@@ -1009,15 +1104,34 @@ function setupChartHover() {
     tooltip.hidden = false;
     const wrap = canvas.parentElement.getBoundingClientRect();
     const ttWidth = tooltip.offsetWidth || 120;
-    const left = Math.min(ev.clientX - wrap.left + 14, wrap.width - ttWidth - 4);
+    const left = Math.min(clientX - wrap.left + 14, wrap.width - ttWidth - 4);
     tooltip.style.left = Math.max(0, left) + "px";
     tooltip.style.top = "8px";
-  });
+  }
 
-  canvas.addEventListener("mouseleave", () => {
+  function hideCrosshair() {
     tooltip.hidden = true;
     if (state.lastChartPayload) drawEquityChart(state.lastChartPayload);
-  });
+  }
+
+  canvas.addEventListener("mousemove", (ev) => showCrosshair(ev.offsetX, ev.clientX));
+  canvas.addEventListener("mouseleave", hideCrosshair);
+
+  function touchPoint(ev) {
+    const touch = ev.touches[0];
+    if (!touch) return null;
+    const rect = canvas.getBoundingClientRect();
+    return { offsetX: touch.clientX - rect.left, clientX: touch.clientX };
+  }
+  canvas.addEventListener("touchstart", (ev) => {
+    const pt = touchPoint(ev);
+    if (pt) { ev.preventDefault(); showCrosshair(pt.offsetX, pt.clientX); }
+  }, { passive: false });
+  canvas.addEventListener("touchmove", (ev) => {
+    const pt = touchPoint(ev);
+    if (pt) { ev.preventDefault(); showCrosshair(pt.offsetX, pt.clientX); }
+  }, { passive: false });
+  canvas.addEventListener("touchend", hideCrosshair);
 }
 
 // ---- wiring --------------------------------------------------------
@@ -1070,6 +1184,11 @@ function selectProfile(profile) {
     btn.classList.toggle("active", active);
     btn.setAttribute("aria-selected", String(active));
   });
+  // Linkable/bookmarkable state: #2x selects the lab profile on load.
+  if (window.location.hash !== "#" + profile) {
+    try { history.replaceState(null, "", "#" + profile); } catch (e) { /* noop */ }
+  }
+  savePrefs();
   startPollers();
 }
 
@@ -1086,6 +1205,7 @@ document.querySelectorAll(".toggle-btn[data-feed]").forEach((btn) => {
     document.querySelectorAll(".toggle-btn[data-feed]").forEach((b) => {
       b.classList.toggle("active", b === btn);
     });
+    savePrefs();
     renderFeed();
   });
 });
@@ -1096,6 +1216,7 @@ document.querySelectorAll(".toggle-btn[data-view]").forEach((btn) => {
     document.querySelectorAll(".toggle-btn[data-view]").forEach((b) => {
       b.classList.toggle("active", b === btn);
     });
+    savePrefs();
     if (state.lastChartPayload) drawEquityChart(state.lastChartPayload);
   });
 });
@@ -1106,12 +1227,34 @@ document.querySelectorAll(".toggle-btn[data-days]").forEach((btn) => {
     document.querySelectorAll(".toggle-btn[data-days]").forEach((b) => {
       b.classList.toggle("active", b === btn);
     });
+    savePrefs();
     // Refetch at the new window immediately rather than waiting out the
     // 60s poll interval.
     fetch(apiUrl(`/equity-curve?days=${state.chartDays}`))
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) drawEquityChart(data); })
       .catch(() => {});
+  });
+});
+
+document.getElementById("feed-sleeve").addEventListener("change", (ev) => {
+  state.feedSleeve = ev.target.value;
+  renderFeed();
+});
+document.getElementById("feed-side").addEventListener("change", (ev) => {
+  state.feedSide = ev.target.value;
+  renderFeed();
+});
+
+document.querySelectorAll("#positions-table th[data-sort]").forEach((th) => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if (state.positionsSort.key === key) {
+      state.positionsSort.dir *= -1;
+    } else {
+      state.positionsSort = { key, dir: key === "symbol" || key === "sleeve" ? 1 : -1 };
+    }
+    renderPositions(state.lastPositions);
   });
 });
 
@@ -1134,5 +1277,19 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
+// Restore persisted UI state: toggle actives from prefs, profile from
+// the URL hash (wins over the stored pref — a shared #2x link should
+// open on 2x regardless of what this browser last viewed).
+document.querySelectorAll(".toggle-btn[data-feed]").forEach((b) => {
+  b.classList.toggle("active", b.dataset.feed === state.feedMode);
+});
+document.querySelectorAll(".toggle-btn[data-view]").forEach((b) => {
+  b.classList.toggle("active", b.dataset.view === state.chartView);
+});
+document.querySelectorAll(".toggle-btn[data-days]").forEach((b) => {
+  b.classList.toggle("active", parseInt(b.dataset.days, 10) === state.chartDays);
+});
+
 setupChartHover();
-selectProfile("base");
+const hashProfile = window.location.hash.replace("#", "");
+selectProfile(hashProfile === "2x" || hashProfile === "base" ? hashProfile : state.profile);
