@@ -76,3 +76,20 @@ def rejections(profile: str):
 def options(profile: str):
     days = max(1, min(int(request.args.get("days", 7)), 90))
     return jsonify(dashboard_db.options_payload(_repo_root(), profile, days))
+
+
+@bp.get("/api/<profile:profile>/research")
+def research(profile: str):
+    return jsonify(dashboard_db.research_payload(_repo_root(), profile))
+
+
+@bp.get("/api/<profile:profile>/notes")
+def notes(profile: str):
+    return jsonify(dashboard_db.notes_payload(_repo_root(), profile))
+
+
+@bp.get("/api/<profile:profile>/notes/<name>")
+def note(profile: str, name: str):
+    # name is allowlist-validated inside notes_payload before any path
+    # logic — an invalid name returns a shape-complete error, not a 500.
+    return jsonify(dashboard_db.notes_payload(_repo_root(), profile, name))

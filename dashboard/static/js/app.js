@@ -577,6 +577,78 @@ function renderRoundTrips(data) {
   });
 }
 
+// ---- research: shadow collectors + review bars ---------------------------
+
+function renderResearch(data) {
+  const badges = document.getElementById("research-experiments");
+  clearChildren(badges);
+  (data.experiments || []).forEach((exp) => {
+    const wrap = document.createElement("div");
+    wrap.className = "overlay-progress review-bar";
+    const observed = exp.observed ?? 0;
+    const minObs = exp.minimum_observations;
+    const pct = minObs ? Math.min(100, (observed / minObs) * 100) : 0;
+    const expText = exp.minimum_expirations
+      ? ` · expirations ${exp.expirations_observed ?? 0}/${exp.minimum_expirations}` : "";
+    wrap.innerHTML = `
+      <div class="label"><span>${esc(exp.name)} review bar</span>
+        <span>${esc(observed)}${minObs ? " / " + esc(minObs) : ""} observations${expText}</span></div>
+      <div class="budget-track"><div class="budget-fill" style="width:${pct}%"></div></div>
+    `;
+    badges.appendChild(wrap);
+  });
+
+  const tbody = document.querySelector("#research-table tbody");
+  clearChildren(tbody);
+  const collectors = Object.entries(data.collectors || {});
+  if (!collectors.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">no collectors configured</td></tr>';
+    return;
+  }
+  collectors.forEach(([name, c]) => {
+    const tr = document.createElement("tr");
+    let status = "no data yet";
+    let cls = "muted";
+    if (c.exists && c.stale) { status = "STALE — may have died"; cls = "near-stop"; }
+    else if (c.exists) { status = "collecting"; cls = "side-buy"; }
+    tr.innerHTML = `
+      <td>${esc(name)}</td>
+      <td>${esc(c.observation_count)}</td>
+      <td>${c.latest_ts ? fmtTime(c.latest_ts) : "—"}</td>
+      <td>${c.age_days !== null && c.age_days !== undefined ? c.age_days.toFixed(1) + "d" : "—"}</td>
+      <td class="${cls}">${esc(status)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---- daily run notes -----------------------------------------------------
+
+function renderNotes(data) {
+  const select = document.getElementById("notes-select");
+  const text = document.getElementById("notes-text");
+  const current = select.value;
+  clearChildren(select);
+  (data.available || []).forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+  const note = data.note || {};
+  if (note.exists) {
+    if (note.path) select.value = note.path.split("/").pop();
+    text.className = "notes-text";
+    text.textContent = note.text + (note.truncated ? "\n… (truncated)" : "");
+  } else {
+    text.className = "notes-text muted";
+    text.textContent = (data.available || []).length
+      ? "select a note"
+      : "no run notes yet (reports/ may not be mounted)";
+  }
+  if (current && select.value !== current) select.value = current;
+}
+
 // ---- trade feed ----------------------------------------------------------
 
 function orderKey(o) {
@@ -981,6 +1053,8 @@ function startPollers() {
   state.timers.push(poll(() => apiUrl("/rejections?days=7"), 60000, renderRejections));
   state.timers.push(poll(() => apiUrl("/trends?days=30"), 60000, renderTrends));
   state.timers.push(poll(() => apiUrl("/round-trips?limit=100"), 60000, renderRoundTrips));
+  state.timers.push(poll(() => apiUrl("/research"), 120000, renderResearch));
+  state.timers.push(poll(() => apiUrl("/notes"), 300000, renderNotes));
 
   if (state.profile !== "base") {
     state.timers.push(poll(() => apiUrl("/options"), 30000, renderOptions));
@@ -1039,6 +1113,15 @@ document.querySelectorAll(".toggle-btn[data-days]").forEach((btn) => {
       .then((data) => { if (data) drawEquityChart(data); })
       .catch(() => {});
   });
+});
+
+document.getElementById("notes-select").addEventListener("change", (ev) => {
+  const name = ev.target.value;
+  if (!name) return;
+  fetch(apiUrl(`/notes/${encodeURIComponent(name)}`))
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => { if (data) renderNotes(data); })
+    .catch(() => {});
 });
 
 let resizeTimer = null;

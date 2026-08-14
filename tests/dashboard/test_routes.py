@@ -276,6 +276,7 @@ def test_routes_tolerate_an_unmigrated_database_without_500ing(tmp_path: Path):
             "/api/base/summary", "/api/base/equity-curve", "/api/base/orders",
             "/api/base/positions", "/api/base/exposure", "/api/base/rejections",
             "/api/base/options", "/api/base/trends", "/api/base/round-trips",
+            "/api/base/research", "/api/base/notes",
         ):
             resp = c.get(path)
             assert resp.status_code == 200, f"{path} returned {resp.status_code}"
