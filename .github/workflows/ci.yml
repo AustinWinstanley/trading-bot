@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: {}
 
 # Cancel superseded runs on the same branch/PR — this suite (pytest +
 # 4 docker builds) is not cheap, and a rapid sequence of pushes to the
