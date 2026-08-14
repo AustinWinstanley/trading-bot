@@ -123,6 +123,40 @@ def test_unstopped_set_does_not_excuse_other_positions():
     assert not any("MU" in p for p in problems)
 
 
+def test_option_position_is_not_flagged_for_missing_stop():
+    """Option contracts are defined-risk by their spread structure's own
+    maximum_loss, never by an equity-style stop order — scripts/
+    options_daily.py has no stop-submission path for legs at all. Flagging
+    them here was pure noise from day one of live options trading."""
+    problems = assess_health(
+        account_status="ACTIVE",
+        positions=[{"symbol": "SPY260918P00751000", "asset_class": "us_option"}],
+        open_orders=[],
+        fallback_stops=set(),
+        last_snapshot=NOW,
+        now=NOW,
+        max_age_hours=72,
+    )
+    assert problems == []
+
+
+def test_option_exemption_does_not_excuse_an_equity_position():
+    problems = assess_health(
+        account_status="ACTIVE",
+        positions=[
+            {"symbol": "SPY260918P00751000", "asset_class": "us_option"},
+            {"symbol": "QQQ", "asset_class": "us_equity"},
+        ],
+        open_orders=[],
+        fallback_stops=set(),
+        last_snapshot=NOW,
+        now=NOW,
+        max_age_hours=72,
+    )
+    assert any("QQQ" in p for p in problems)
+    assert not any("SPY260918P00751000" in p for p in problems)
+
+
 def test_unstopped_from_journal_uses_the_latest_entry():
     import sqlite3
 
