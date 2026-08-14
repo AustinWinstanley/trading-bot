@@ -28,9 +28,10 @@ def test_all_expected_tools_are_registered(mcp_server):
     names = {t.name for t in tools}
     assert names == {
         "get_summary", "get_equity_curve", "get_orders", "get_positions",
-        "get_exposure", "get_rejections", "get_options", "query_database",
-        "read_state_file", "list_state_files", "read_config", "read_report",
-        "list_reports", "tail_trading_log",
+        "get_exposure", "get_rejections", "get_options", "get_trends",
+        "get_round_trips", "query_database", "read_state_file",
+        "list_state_files", "read_config", "read_report", "list_reports",
+        "tail_trading_log",
     }
 
 
