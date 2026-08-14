@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import os
 import sqlite3
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from engine.config import load_config
@@ -38,6 +39,31 @@ def unstopped_from_journal(conn: sqlite3.Connection, exempt_sleeves: frozenset[s
         "          AND o2.side IN ('buy','short'))"
     ).fetchall()
     return {str(sym) for sym, sleeve in rows if str(sleeve) in exempt_sleeves}
+
+
+def open_option_structures(db_path: Path) -> list[dict]:
+    """Open options structures for reconciliation, or [] if none journaled.
+
+    scripts.options_daily runs its schema setup before every journal write,
+    so a missing file — or a file with no `structures` table (a bare
+    ``sqlite3.connect`` creates a 0-byte schema-less file as a side effect
+    of connecting, which is exactly how a read-only consumer once broke
+    this check) — means options trading has never journaled a structure:
+    nothing to reconcile, which is healthy. Opened read-only so this check
+    can never itself create or modify the journal.
+    """
+    if not db_path.exists():
+        return []
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        has_table = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='structures'"
+        ).fetchone()
+        if not has_table:
+            return []
+        return fetch_open_structures(conn, OPTIONS_EXPERIMENT_NAME)
+    finally:
+        conn.close()
 
 
 def assess_health(
@@ -173,9 +199,8 @@ def main() -> None:
     # assignment-detection anomaly is caught twice a day, not once, for
     # free. options_2x.db may not exist yet on a profile that has never run
     # scripts.options_daily; that is healthy, not a problem.
-    if args.profile == "2x" and OPTIONS_DB.exists():
-        options_conn = sqlite3.connect(OPTIONS_DB)
-        open_structures = fetch_open_structures(options_conn, OPTIONS_EXPERIMENT_NAME)
+    if args.profile == "2x":
+        open_structures = open_option_structures(OPTIONS_DB)
         problems += reconcile_option_structures(positions, open_structures)
 
     # Persisted for the read-only dashboard (dashboard/), which must never
