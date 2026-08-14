@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.0...v1.0.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* Dependabot commitlint compatibility + 3 action version bumps ([#21](https://github.com/AustinWinstanley/trading-bot/issues/21)) ([c681b3d](https://github.com/AustinWinstanley/trading-bot/commit/c681b3d6c8fc43b57b969eadcb296c1bfc48f8ac))
+* **deps:** resolve pip-dependencies group conflicts from [#23](https://github.com/AustinWinstanley/trading-bot/issues/23) ([#24](https://github.com/AustinWinstanley/trading-bot/issues/24)) ([88ff7d6](https://github.com/AustinWinstanley/trading-bot/commit/88ff7d621d03338775da7d67edae2afb8af1f5dd))
+
 ## 1.0.0 (2026-08-14)
 
 
