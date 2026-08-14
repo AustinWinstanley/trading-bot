@@ -1,5 +1,5 @@
 mcp>=2.0,<3
-PyYAML>=6,<7
+PyYAML>=6.0.3,<7
 # cryptography>=43's Rust/OpenSSL backend crashes with SIGILL on load
 # (`from cryptography.hazmat.primitives import hashes`) under Docker
 # Desktop for Mac's arm64 VM — reproduces even with a vanilla
