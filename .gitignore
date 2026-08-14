@@ -18,6 +18,7 @@ logs/
 state/edgar/*.zip
 state/edgar/*.parquet
 state/history/
+state/history_assets/
 state/history_deep/
 state/xsec/
 state/xsec_delisted/
@@ -25,7 +26,10 @@ state/universe_*.json
 state/cboe/
 state/crypto/
 state/fundamentals/
-state/thirteenf/*.zip
+state/thirteenf/
 state/earnings_llm/
 state/french/
 state/options/
+
+# Local Claude Code settings (developer-machine-specific, references local paths)
+.claude/
