@@ -250,6 +250,17 @@ tr:last-child td { border-bottom: none; }
 
 .status-counts { color: var(--fg-muted); }
 
+.freshness {
+  color: var(--fg-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.freshness.danger { color: var(--danger); font-weight: 600; }
+
+/* A dead backend must look dead, not merely stale. */
+body.disconnected .topbar { border-bottom-color: var(--danger); }
+body.disconnected main { opacity: 0.55; }
+
 .problem-strip {
   background: color-mix(in srgb, var(--danger) 12%, var(--bg-panel));
   border-bottom: 1px solid var(--danger);
@@ -264,6 +275,16 @@ tr:last-child td { border-bottom: none; }
   color: var(--danger);
 }
 .problem-strip li { padding: 2px 0; }
+.problem-strip li.warn { color: var(--warn); }
+
+/* ---- trade feed expandable detail rows ---- */
+
+tr.feed-row { cursor: pointer; }
+tr.feed-detail td {
+  font-size: 12px;
+  background: var(--bg-raised);
+  white-space: normal;
+}
 
 /* ---- panel head with an inline toggle ---- */
 

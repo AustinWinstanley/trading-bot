@@ -131,6 +131,11 @@ def _build_journal(db_path: Path) -> None:
             (f"{dates[2]}T09:47:02-04:00", "AAOI", "buy", "mom_ls", 1, 104.0,
              105.0, 0.0, "clean", "id-2", "filled", 104.0, 104.0, 1.0, 104.2,
              f"{dates[2]}T09:47:06-04:00"),
+            # A limit order stuck at status='new' since yesterday — feeds the
+            # stuck_new_orders attention signal (the real BE/HUT case of
+            # 2026-08-13, where two orders sat 'new' all day unnoticed).
+            (f"{dates[1]}T09:47:03-04:00", "HUT", "sell", "rebalance", 1, 91.0,
+             91.5, 0.0, "clean", "id-3", "new", 91.0, 91.0, 0.0, None, None),
         ],
     )
     conn.executemany(
@@ -157,7 +162,10 @@ def _build_journal(db_path: Path) -> None:
             '{"equity_core+trend": {"long": 0.58, "short": 0.0, "net": 0.58, '
             '"gross": 0.58, "unrealized_pl": 300.0}, "mom_ls": {"long": 0.10, '
             '"short": 0.10, "net": 0.0, "gross": 0.20, "unrealized_pl": 20.0}}',
-            "{}", "{}", '[{"symbol": "FXE", "gap": -0.0354}]',
+            # "weight_gap", matching engine/attribution.py's actual emitted
+            # key — the fixture previously said "gap", which is exactly why
+            # the NaN drift-line bug survived the test suite.
+            "{}", "{}", '[{"symbol": "FXE", "weight_gap": -0.0354}]',
         ),
     )
     conn.execute(
@@ -197,6 +205,12 @@ def repo_root(tmp_path: Path) -> Path:
     # lives only in the 2x lab today — the endpoint is profile-generic and
     # the seeded-base/empty-2x split already covers both data states.
     build_options_db(state / "options.db")
+    # Fresh mom_ls targets file (config.yaml's mom_ls_targets_file) so the
+    # default fixture doesn't fire the mom_ls_targets_missing attention
+    # signal — tests that want that signal delete or age this file.
+    (state / "mom_ls_targets.json").write_text(
+        f'{{"as_of": "{today.isoformat()}", "long": ["AAOI"], "short": ["XYZ"]}}'
+    )
     (state / "health_status.json").write_text(
         f'{{"ts": "{today.isoformat()}T09:47:08-04:00", "healthy": true, "problems": [], '
         '"equity": 10500.0, "positions": 2, "open_orders": 0}'

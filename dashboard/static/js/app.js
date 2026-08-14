@@ -56,15 +56,52 @@ function cssVar(name) {
 
 // ---- polling ---------------------------------------------------------
 
-function poll(url, intervalMs, onData) {
+// A frozen dashboard must look frozen: track consecutive failures of the
+// summary poll (the page's heartbeat) and flip a visible disconnected
+// state after a few, instead of silently rendering ever-staler data as
+// if it were live. Fetch errors used to be swallowed with no indicator.
+const connection = { failures: 0, lastSuccess: null };
+const DISCONNECT_AFTER_FAILURES = 3;
+
+function renderConnection() {
+  const el = document.getElementById("data-freshness");
+  if (!el) return;
+  const disconnected = connection.failures >= DISCONNECT_AFTER_FAILURES;
+  document.body.classList.toggle("disconnected", disconnected);
+  if (disconnected) {
+    el.textContent = connection.lastSuccess
+      ? `DISCONNECTED · last data ${connection.lastSuccess.toLocaleTimeString()}`
+      : "DISCONNECTED";
+    el.className = "freshness danger";
+  } else if (connection.lastSuccess) {
+    el.textContent = `updated ${connection.lastSuccess.toLocaleTimeString()}`;
+    el.className = "freshness";
+  }
+}
+
+function poll(url, intervalMs, onData, opts) {
+  const isHeartbeat = opts && opts.heartbeat;
   let stopped = false;
   async function fetchOnce() {
     try {
       const res = await fetch(url());
-      if (res.ok) onData(await res.json());
+      if (res.ok) {
+        onData(await res.json());
+        if (isHeartbeat) {
+          connection.failures = 0;
+          connection.lastSuccess = new Date();
+          renderConnection();
+        }
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
     } catch (e) {
-      // Transient network hiccup — next tick retries. No point spamming
-      // the console for something the user can't act on.
+      // Transient hiccups retry next tick; the heartbeat poller counts
+      // them so a dead backend becomes visible instead of a frozen page.
+      if (isHeartbeat) {
+        connection.failures += 1;
+        renderConnection();
+      }
     }
   }
   async function tick() {
@@ -96,9 +133,14 @@ function renderStatus(data) {
   const text = document.getElementById("status-text");
   const counts = document.getElementById("status-counts");
   const health = data.health;
+  const attention = (data.attention && data.attention.signals) || [];
+  const hasDanger = attention.some((s) => s.severity === "danger");
 
   let cls = "ok";
   let label = `${data.mode} · equity ${fmtMoney(data.equity)}`;
+  if (data.gross_leverage && Number(data.gross_leverage) !== 1) {
+    label += ` · ${Number(data.gross_leverage).toFixed(1)}x`;
+  }
   if (data.halted || data.mode === "halt") {
     cls = "danger";
     label = "HALTED · " + label;
@@ -109,6 +151,14 @@ function renderStatus(data) {
     cls = "danger";
     const n = (health.problems || []).length;
     label = `${n} health problem${n === 1 ? "" : "s"} · ` + label;
+  } else if (hasDanger) {
+    // A stale health file or stuck order must not hide behind a green
+    // HEALTHY verdict that may itself be the problem.
+    cls = "danger";
+    label += ` · ${attention.length} attention signal${attention.length === 1 ? "" : "s"}`;
+  } else if (attention.length) {
+    cls = "warn";
+    label += ` · HEALTHY ${fmtTime(health.ts)}`;
   } else {
     label += ` · HEALTHY ${fmtTime(health.ts)}`;
   }
@@ -121,26 +171,37 @@ function renderStatus(data) {
     counts.textContent = "";
   }
 
-  renderProblemStrip(health, state.reconProblems || []);
+  renderProblemStrip(health, state.reconProblems || [], attention);
 }
 
-function renderProblemStrip(health, reconEvents) {
+function renderProblemStrip(health, reconEvents, attention) {
   const strip = document.getElementById("problem-strip");
   const list = document.getElementById("problem-list");
-  const problems = [];
+  const problems = [];  // {text, severity}
   if (health && health.healthy === false) {
-    (health.problems || []).forEach((p) => problems.push(String(p)));
-    if (!(health.problems || []).length) problems.push(`unhealthy, no detail (as of ${fmtTime(health.ts)})`);
+    (health.problems || []).forEach((p) => problems.push({ text: String(p), severity: "danger" }));
+    if (!(health.problems || []).length) {
+      problems.push({ text: `unhealthy, no detail (as of ${fmtTime(health.ts)})`, severity: "danger" });
+    }
   }
-  reconEvents.forEach((e) => problems.push(`options reconciliation: ${e.detail}`));
+  (attention || []).forEach((s) => problems.push({ text: s.message, severity: s.severity }));
+  reconEvents.forEach((e) => {
+    const critical = String(e.severity).toUpperCase() === "CRITICAL";
+    problems.push({
+      text: `options reconciliation${critical ? "" : ` (${e.severity})`}: ${e.detail}`,
+      severity: critical ? "danger" : "warn",
+    });
+  });
   clearChildren(list);
   if (!problems.length) {
     strip.hidden = true;
     return;
   }
+  problems.sort((a, b) => (a.severity === "danger" ? 0 : 1) - (b.severity === "danger" ? 0 : 1));
   problems.forEach((p) => {
     const li = document.createElement("li");
-    li.textContent = p;
+    li.className = p.severity === "warn" ? "warn" : "";
+    li.textContent = p.text;
     list.appendChild(li);
   });
   strip.hidden = false;
@@ -234,7 +295,8 @@ function renderExperiments(experiments) {
   }
   const standdowns = (experiments && experiments.standdowns) || [];
   const pnl = (experiments && experiments.realized_pnl) || {};
-  const names = new Set([...standdowns, ...Object.keys(pnl)]);
+  const misses = (experiments && experiments.buying_power_misses) || {};
+  const names = new Set([...standdowns, ...Object.keys(pnl), ...Object.keys(misses)]);
   if (!names.size) {
     el.innerHTML = '<span class="muted">no experiment P&amp;L recorded yet</span>';
     return;
@@ -242,10 +304,12 @@ function renderExperiments(experiments) {
   [...names].sort().forEach((name) => {
     const badge = document.createElement("span");
     const stood = standdowns.includes(name);
-    badge.className = "badge " + (stood ? "danger" : "ok");
+    const missStreak = Number(misses[name] || 0);
+    badge.className = "badge " + (stood ? "danger" : missStreak > 0 ? "warn" : "ok");
     const value = pnl[name];
     badge.textContent = `${name}: ${stood ? "STOOD DOWN" : "active"}` +
-      (value !== undefined ? ` · realized ${fmtMoney(value)}` : "");
+      (value !== undefined ? ` · realized ${fmtMoney(value)}` : "") +
+      (missStreak > 0 ? ` · ${missStreak}d short of buying power` : "");
     el.appendChild(badge);
   });
 }
@@ -253,9 +317,10 @@ function renderExperiments(experiments) {
 function renderOptions(data) {
   const tbody = document.querySelector("#options-table tbody");
   clearChildren(tbody);
-  state.reconProblems = (data.reconciliation_events || []).filter(
-    (e) => String(e.severity).toUpperCase() === "CRITICAL"
-  );
+  // Keep every reconciliation event — the strip styles CRITICAL as danger
+  // and everything else as warn; previously non-CRITICAL events were
+  // silently discarded here and displayed nowhere.
+  state.reconProblems = data.reconciliation_events || [];
   const structures = data.structures || [];
   if (!structures.length) {
     const msg = state.profile === "base"
@@ -331,12 +396,23 @@ function renderPositions(positions) {
 function executionRow(label, row) {
   const tr = document.createElement("tr");
   const slip = row.adverse_slippage_bps;
+  // Status histogram, e.g. "filled 12 · new 2" — a nonzero 'new' count is
+  // exactly where a stuck order shows up, so it gets the danger tint.
+  const statuses = Object.entries(row.statuses || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([status, n]) => {
+      const cls = status === "new" && n > 0 ? ' class="near-stop"' : "";
+      return `<span${cls}>${esc(status)} ${esc(n)}</span>`;
+    })
+    .join(" · ") || "—";
   tr.innerHTML = `
     <td>${esc(label)}</td>
     <td>${esc(row.orders)}</td>
-    <td>${esc(row.filled_orders)}</td>
+    <td>${statuses}</td>
     <td>${row.fill_pct !== null && row.fill_pct !== undefined ? fmtPct(row.fill_pct) : "—"}</td>
     <td>${row.approval_pct !== null && row.approval_pct !== undefined ? fmtPct(row.approval_pct) : "—"}</td>
+    <td>${fmtMoney(row.requested_notional)}</td>
+    <td>${fmtMoney(row.approved_notional)}</td>
     <td>${slip !== null && slip !== undefined ? Number(slip).toFixed(2) + " bp" : "pending"}</td>
   `;
   return tr;
@@ -346,7 +422,7 @@ function renderExecution(execution) {
   const tbody = document.querySelector("#execution-table tbody");
   clearChildren(tbody);
   if (!execution || !execution.overall || !execution.overall.orders) {
-    tbody.innerHTML = '<tr><td colspan="6" class="muted">no fills yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="muted">no fills yet</td></tr>';
     return;
   }
   tbody.appendChild(executionRow("(overall)", execution.overall));
@@ -398,7 +474,9 @@ function renderExposure(exposure) {
   if (gaps.length) {
     const parts = gaps.slice(0, 6).map((g) => {
       const symbol = g.symbol ?? g[0];
-      const value = g.gap ?? g[1];
+      // engine/attribution.py emits "weight_gap"; "gap"/[1] kept as
+      // fallbacks for old journal rows.
+      const value = g.weight_gap ?? g.gap ?? g[1];
       return `${symbol} ${(Number(value) * 100).toFixed(1)}pp`;
     });
     drift.textContent = "biggest symbol drift: " + parts.join(" · ");
@@ -436,7 +514,7 @@ function isToday(iso) {
 
 function orderRow(o, isNew) {
   const tr = document.createElement("tr");
-  if (isNew) tr.className = "row-new";
+  tr.className = "feed-row" + (isNew ? " row-new" : "");
   const slip = slippageBps(o);
   const latency = fillLatency(o);
   tr.innerHTML = `
@@ -452,6 +530,23 @@ function orderRow(o, isNew) {
     <td>${esc(o.status) || "—"}</td>
     <td>${esc(o.reason) || "—"}</td>
   `;
+  // Click-to-expand detail row for the columns the API returns but the
+  // table doesn't show — kept out of the header row to hold 11 columns.
+  tr.addEventListener("click", () => {
+    const existing = tr.nextElementSibling;
+    if (existing && existing.classList.contains("feed-detail")) {
+      existing.remove();
+      return;
+    }
+    const detail = document.createElement("tr");
+    detail.className = "feed-detail";
+    detail.innerHTML = `<td colspan="11" class="muted">
+      limit ${fmtMoney(o.limit_price)} · filled qty ${esc(o.filled_qty ?? "—")} ·
+      requested ${fmtMoney(o.requested_notional)} · ref px ${fmtMoney(o.reference_price)} ·
+      alpaca id ${esc(o.alpaca_id) || "—"}
+    </td>`;
+    tr.after(detail);
+  });
   return tr;
 }
 
@@ -703,7 +798,7 @@ function startPollers() {
     renderCooldown(data.reentry_cooldown || []);
     renderExperiments(data.experiments);
     renderExecution(data.execution);
-  }));
+  }, { heartbeat: true }));
 
   state.timers.push(poll(() => apiUrl(`/orders?limit=200`), 6000, ingestOrders));
 

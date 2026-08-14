@@ -331,13 +331,15 @@ def rejections_by_sleeve_side(conn: sqlite3.Connection, since: str) -> list[dict
 
 
 def experiments_status(risk_state: dict) -> dict:
-    """Experiment-tier status from risk_state*.json — the stand-down set
-    and per-experiment realized P&L the daily runners persist. A stood-down
-    experiment is a loud, human-actionable state that was previously
-    invisible in the UI."""
+    """Experiment-tier status from risk_state*.json — the stand-down set,
+    per-experiment realized P&L, and the consecutive buying-power-miss
+    counters (scripts/options_daily.py) the daily runners persist. A
+    stood-down experiment or a multi-day buying-power stall is a loud,
+    human-actionable state that was previously invisible in the UI."""
     return {
         "standdowns": sorted(risk_state.get("experiment_standdowns", []) or []),
         "realized_pnl": risk_state.get("experiment_realized_pnl", {}) or {},
+        "buying_power_misses": risk_state.get("experiment_buying_power_misses", {}) or {},
     }
 
 
@@ -391,6 +393,224 @@ def reconciliation_events(conn: sqlite3.Connection, since: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------
+# Attention signals — "something needs a look" states, each with a real
+# incident behind it (see each docstring). All feed the "attention" key
+# on /summary; each takes `now` explicitly for testability and degrades
+# to no-signal (empty list) on missing data, never an exception.
+# ---------------------------------------------------------------------
+
+
+def _parse_ts(value) -> dt.datetime | None:
+    """Tolerant ISO timestamp parse -> aware UTC datetime, or None."""
+    if not value:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def stuck_new_orders(
+    conn: sqlite3.Connection, now: dt.datetime, threshold_minutes: int = 30
+) -> list[dict]:
+    """Orders sitting at status='new' past the threshold — the 2026-08-13
+    BE/HUT case: two limit orders stuck 'new' all day while the broker-side
+    healthcheck reported open_orders: 0 (it counts broker state, this
+    counts journal state; when they disagree, someone should look)."""
+    if "status" not in table_columns(conn, "orders"):
+        return []
+    rows = conn.execute(
+        "SELECT symbol, ts FROM orders WHERE COALESCE(status,'') = 'new' ORDER BY ts"
+    ).fetchall()
+    stuck = []
+    for row in rows:
+        ts = _parse_ts(row["ts"])
+        if ts is None:
+            continue
+        age_minutes = (now.astimezone(dt.timezone.utc) - ts).total_seconds() / 60
+        if age_minutes >= threshold_minutes:
+            stuck.append((str(row["symbol"]), int(age_minutes)))
+    if not stuck:
+        return []
+    detail = ", ".join(f"{sym} ({age}m)" for sym, age in stuck[:8])
+    return [{
+        "id": "stuck_new_orders",
+        "severity": "danger",
+        "message": f"{len(stuck)} order(s) stuck at status 'new': {detail}",
+    }]
+
+
+def health_staleness(
+    health: dict | None, now: dt.datetime, max_age_hours: float = 26.0
+) -> list[dict]:
+    """A healthcheck that stopped running still shows its last verdict —
+    on 2026-08-14 the live dashboard rendered a >24h-old HEALTHY as a green
+    dot with no age check at all. 26h allows one full day between the
+    scheduled post-close checks plus slack."""
+    if not health:
+        return []
+    ts = _parse_ts(health.get("ts"))
+    if ts is None:
+        return []
+    age_hours = (now.astimezone(dt.timezone.utc) - ts).total_seconds() / 3600
+    if age_hours < max_age_hours:
+        return []
+    return [{
+        "id": "health_stale",
+        "severity": "danger",
+        "message": (
+            f"health check last ran {age_hours:.0f}h ago — its "
+            f"'{'healthy' if health.get('healthy') else 'unhealthy'}' verdict is stale"
+        ),
+    }]
+
+
+def _us_market_likely_open(now: dt.datetime) -> bool:
+    """Weekday 09:30-16:00 ET approximation via zoneinfo. Deliberately no
+    holiday calendar: a market holiday produces one spurious warn-level
+    staleness signal, which is the cheap side of that tradeoff."""
+    from zoneinfo import ZoneInfo
+
+    et = now.astimezone(ZoneInfo("America/New_York"))
+    if et.weekday() >= 5:
+        return False
+    minutes = et.hour * 60 + et.minute
+    return (9 * 60 + 30) <= minutes <= (16 * 60)
+
+
+def last_run_staleness(
+    last_run_ts, now: dt.datetime, max_age_hours: float = 4.0
+) -> list[dict]:
+    """During market hours, a journal whose last snapshot is hours old
+    means scheduled runs are silently not happening (cron broken, lock
+    stuck, server down). Scheduled full runs are ~3h apart (09:47/12:35 ET
+    + stops-only checks that snapshot nothing), so 4h means at least one
+    full run was missed."""
+    if not _us_market_likely_open(now):
+        return []
+    ts = _parse_ts(last_run_ts)
+    if ts is None:
+        return []
+    age_hours = (now.astimezone(dt.timezone.utc) - ts).total_seconds() / 3600
+    if age_hours < max_age_hours:
+        return []
+    return [{
+        "id": "last_run_stale",
+        "severity": "warn",
+        "message": (
+            f"last journal snapshot is {age_hours:.1f}h old during market hours — "
+            "scheduled runs may not be executing"
+        ),
+    }]
+
+
+def mom_ls_targets_staleness(repo_root: Path, cfg, now: dt.datetime) -> list[dict]:
+    """A missing or stale mom_ls targets file silently stands the whole
+    sleeve down (engine/portfolio.py:mom_ls_targets returns {}), which on
+    2026-08-13 liquidated the 2x lab's entire mom_ls book with no surface
+    anywhere. Path and max age come from the profile's own config."""
+    paper = cfg.sleeves_paper or {}
+    rel_path = paper.get("mom_ls_targets_file")
+    if not rel_path or not paper.get("sleeves", {}).get("mom_ls"):
+        return []  # sleeve not configured for this profile
+    path = repo_root / rel_path
+    if not path.exists():
+        return [{
+            "id": "mom_ls_targets_missing",
+            "severity": "danger",
+            "message": (
+                f"mom_ls targets file {rel_path} is missing — the sleeve is "
+                "silently standing down (holds no positions, closes existing ones)"
+            ),
+        }]
+    max_age_days = int(paper.get("mom_ls_max_age_days", 10))
+    data = load_json(path, default=None)
+    as_of = None if not isinstance(data, dict) else data.get("as_of")
+    if not as_of:
+        return []
+    try:
+        age_days = (now.astimezone(dt.timezone.utc).date() - dt.date.fromisoformat(as_of)).days
+    except ValueError:
+        return []
+    if age_days <= max_age_days:
+        return []
+    return [{
+        "id": "mom_ls_targets_stale",
+        "severity": "danger",
+        "message": (
+            f"mom_ls targets file is {age_days}d old (max {max_age_days}d) — "
+            "the sleeve is silently standing down"
+        ),
+    }]
+
+
+def options_db_zero_byte(paths: ProfilePaths) -> list[dict]:
+    """A 0-byte options DB means the file was touched but the first
+    options_daily run never created the schema — a different state from
+    healthy-but-idle, and currently rendered identically to it."""
+    try:
+        if paths.options_db_path.exists() and paths.options_db_path.stat().st_size == 0:
+            return [{
+                "id": "options_db_empty_file",
+                "severity": "warn",
+                "message": (
+                    f"{paths.options_db_path.name} exists but is 0 bytes — "
+                    "the options journal schema has never been created"
+                ),
+            }]
+    except OSError:
+        pass
+    return []
+
+
+def buying_power_miss_signals(experiments: dict) -> list[dict]:
+    """Consecutive buying-power misses tracked by scripts/options_daily.py
+    — a nonzero streak means the options experiment wants to trade and
+    can't afford to, which otherwise only shows in the daily log."""
+    signals = []
+    for name, misses in sorted((experiments.get("buying_power_misses") or {}).items()):
+        if misses and int(misses) > 0:
+            signals.append({
+                "id": f"buying_power_misses:{name}",
+                "severity": "warn",
+                "message": (
+                    f"experiment {name}: {int(misses)} consecutive day(s) short of "
+                    "options buying power"
+                ),
+            })
+    return signals
+
+
+def attention_signals(
+    *,
+    journal_signals: list[dict],
+    health: dict | None,
+    last_run_ts,
+    repo_root: Path,
+    cfg,
+    paths: ProfilePaths,
+    experiments: dict,
+    now: dt.datetime | None = None,
+) -> dict:
+    """Aggregate every attention signal for /summary's "attention" key.
+    journal_signals (e.g. stuck_new_orders) are computed by the caller
+    while its journal connection is still open. Order: dangers first
+    (stable within severity by check order)."""
+    now = now or dt.datetime.now(dt.timezone.utc)
+    signals: list[dict] = list(journal_signals)
+    signals += health_staleness(health, now)
+    signals += last_run_staleness(last_run_ts, now)
+    signals += mom_ls_targets_staleness(repo_root, cfg, now)
+    signals += options_db_zero_byte(paths)
+    signals += buying_power_miss_signals(experiments)
+    signals.sort(key=lambda s: 0 if s["severity"] == "danger" else 1)
+    return {"signals": signals}
+
+
+# ---------------------------------------------------------------------
 # Composed payloads — one function per API response shape, shared by
 # dashboard/routes.py and mcp_server/tools.py. See this module's
 # docstring for why these exist as a single source of truth.
@@ -418,10 +638,12 @@ def summary_payload(repo_root: Path, profile: str) -> dict:
     risk_state = load_json(paths.risk_state_path, default={})
     health = load_json(paths.health_status_path, default=None)
 
+    now = dt.datetime.now(dt.timezone.utc)
     equity = None
     last_run_ts = None
     latest_leverage = None
     execution = None
+    journal_signals: list[dict] = []
     conn = _open_ro_or_none(paths)
     if conn is not None:
         with contextlib.closing(conn):
@@ -435,6 +657,7 @@ def summary_payload(repo_root: Path, profile: str) -> dict:
             # discarded — the whole fill-quality story (fill %, approval %,
             # adverse slippage bps, overall and per sleeve) for free.
             execution = {"overall": es["overall"], "by_sleeve": es["by_sleeve"]}
+            journal_signals = stuck_new_orders(conn, now)
 
     budget = risk_budget(
         cfg.risk.daily_loss_limit_pct,
@@ -445,6 +668,7 @@ def summary_payload(repo_root: Path, profile: str) -> dict:
     )
     cooldown = reentry_cooldown(risk_state, cfg.risk.loss_reentry_block_days, dt.date.today())
     overlay_cfg = cfg.sleeves_paper.get("volatility_overlay", {}) if cfg.sleeves_paper else {}
+    experiments = experiments_status(risk_state)
 
     return {
         "profile": profile,
@@ -461,8 +685,18 @@ def summary_payload(repo_root: Path, profile: str) -> dict:
             "latest_recommendation": latest_leverage,
         },
         "execution": execution,
-        "experiments": experiments_status(risk_state),
+        "experiments": experiments,
         "health": health,
+        "attention": attention_signals(
+            journal_signals=journal_signals,
+            health=health,
+            last_run_ts=last_run_ts,
+            repo_root=repo_root,
+            cfg=cfg,
+            paths=paths,
+            experiments=experiments,
+            now=now,
+        ),
     }
 
 
