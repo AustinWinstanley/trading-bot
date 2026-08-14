@@ -32,6 +32,7 @@ SHADOW_MODULES = (
     "zero_dte_shadow.py",
     "intraday_options_shadow.py",
     "execution_timing.py",
+    "iwm_breakout_forward.py",
 )
 
 FORBIDDEN_METHOD_CALLS = frozenset({

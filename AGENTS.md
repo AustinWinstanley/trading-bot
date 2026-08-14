@@ -204,11 +204,24 @@ Probability Ratio Test (Wald SPRT) instead, on IWM compression breakout's
 post-2026-08-13 forward trades specifically — it can stop earlier if the
 effect is strong, and never needs an arbitrary trade-count floor if it's
 weak, while keeping pre-declared, honest false-positive/false-negative
-rates. Nothing runs yet: the signal-generation code to actually produce
-live trades for it to monitor does not exist, and no forward data exists
-before 2026-08-13. `alpha`/`beta`/`mu0`/`mu1`/`sigma` are fixed by that
+rates. `alpha`/`beta`/`mu0`/`mu1`/`sigma` are fixed by that
 registration document; changing any of them requires a new, separately
 reviewed registration, not an edit to the existing one.
+
+The signal generator the registration called for is
+`scripts/iwm_breakout_forward.py` (2026-08-14): a read-only recorder that
+imports the accepted `compression_breakout_signal` +
+`simulate_fixed_horizon` (no reimplementation to validate), journals the
+frozen spec's would-be trades at the registered 5bp/leg stress cost into
+`state/iwm_breakout_forward.db`, and prints `monitor()`'s decision each
+run — loudly CRITICAL on a boundary crossing, with no automatic action
+(promotion to shadow is a human-reviewed step). Because the spec is
+deterministic on completed five-minute bars, it only processes sessions
+strictly before today (ET): every session it touches is final, so the
+`iwmfwd` job in `scripts/paper.sh` is market-clock-insensitive — one
+unslotted crontab line (e.g. `30 23 * * *`), no EDT/EST pair. It records
+sessions from 2026-08-13 onward only and self-backfills any gap since its
+last run, so a missed day loses nothing.
 
 ### News headline classifier precision, hand-checked against real data
 

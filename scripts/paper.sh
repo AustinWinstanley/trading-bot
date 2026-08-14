@@ -71,6 +71,13 @@ case "$JOB" in
   # scripts' own timeouts (120+180+120+120=540) plus slack.
   shadows2x) LOCK=shadows2x; TIMEOUT=600  ;;
   weekly)    LOCK=weekly;    TIMEOUT=3000 ;;
+  # Read-only IWM compression-breakout forward recorder for the registered
+  # SPRT (reports/iwm_compression_breakout_forward_test_registration.json).
+  # Own lock, same reasoning as shadows2x: research must never borrow
+  # against a trading lock. Only processes sessions strictly before today
+  # (ET), so it has no market-clock sensitivity — single crontab line, no
+  # slot argument, any run hour is correct.
+  iwmfwd)    LOCK=iwmfwd;    TIMEOUT=300  ;;
   # Mid-week 2x-only MOM_LS rebuild — reports/mom_ls_cadence_study.json's
   # experiment-tier trial (config.yaml/base stays weekly-only). Deliberately
   # shares weekly's lock: both write state/mom_ls_targets_2x.json and must
@@ -109,6 +116,7 @@ esac
       [ "$shadow_failures" -eq 0 ]
       ;;
     weekly)   timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly ;;
+    iwmfwd)   timeout "$TIMEOUT" .venv/bin/python -m scripts.iwm_breakout_forward ;;
     momls2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly --mom-ls-only ;;
     health)   timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck ;;
     health2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck --profile 2x ;;
