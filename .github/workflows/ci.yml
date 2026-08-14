@@ -78,7 +78,7 @@ jobs:
       # Build only — no push, no tag beyond a throwaway local one. This
       # exists to catch a broken Dockerfile/COPY/dependency before it
       # ever reaches deploy/workflows/release.yml's real GHCR push.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}

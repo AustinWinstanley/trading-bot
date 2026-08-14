@@ -77,7 +77,7 @@ jobs:
       # deploy/docker-compose.dev.yml's `build:` blocks instead, which
       # build natively for whatever the developer's machine is — multi-arch
       # here would double every build for no deployment benefit.
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}
