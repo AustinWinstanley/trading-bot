@@ -1,0 +1,76 @@
+# Engine container crontab, read by supercronic (see deploy/engine.Dockerfile).
+#
+# CRON_TZ makes every schedule below interpreted in US Eastern time, DST
+# included (supercronic loads this via Go's IANA tzdata, which the
+# python:3.13-slim base image already ships). This is the whole point of
+# moving off host cron: Debian host cron has no CRON_TZ, which is why
+# scripts/paper.sh's ET slot guard and the old crontab's EDT/EST line-pair
+# convention existed at all (see docs/architecture.md and docs/operations.md
+# for that history). Under supercronic, ONE line per job at its real ET time
+# is correct year-round — no pairs, no guard needed. The slot-guard argument
+# is still passed to market-hours jobs below anyway, as a belt-and-suspenders
+# check: if this file's TZ handling is ever misconfigured, a job fires at
+# the wrong wall-clock time and the guard makes it a loud no-op instead of a
+# silent wrong-time trade, exactly as it did on the old host-cron schedule.
+CRON_TZ=America/New_York
+
+# --- Confirmed from server logs (logs/paper-20260812.log, logs/paper-20260813.log,
+#     read via the read-only MCP debug server) --------------------------------
+
+# Full rebalance: market open, then a midday re-price pass (added by the
+# cancel-and-reprice-stale-orders feature — see AGENTS.md).
+47 9  * * 1-5 /app/scripts/paper.sh daily 09:47
+35 12 * * 1-5 /app/scripts/paper.sh daily 12:35
+51 9  * * 1-5 /app/scripts/paper.sh daily2x 09:51
+39 12 * * 1-5 /app/scripts/paper.sh daily2x 12:39
+
+# Stop-only checks between the two full runs and through the close.
+47 10 * * 1-5 /app/scripts/paper.sh stops 10:47
+47 11 * * 1-5 /app/scripts/paper.sh stops 11:47
+35 14 * * 1-5 /app/scripts/paper.sh stops 14:35
+35 15 * * 1-5 /app/scripts/paper.sh stops 15:35
+55 15 * * 1-5 /app/scripts/paper.sh stops 15:55
+51 10 * * 1-5 /app/scripts/paper.sh stops2x 10:51
+51 11 * * 1-5 /app/scripts/paper.sh stops2x 11:51
+39 14 * * 1-5 /app/scripts/paper.sh stops2x 14:39
+39 15 * * 1-5 /app/scripts/paper.sh stops2x 15:39
+59 15 * * 1-5 /app/scripts/paper.sh stops2x 15:59
+
+# 2x options-experiment order submission (bull_put_delta_selected_live).
+5  10 * * 1-5 /app/scripts/paper.sh options_daily2x 10:05
+
+# Daily health checks, after the close.
+5  16 * * 1-5 /app/scripts/paper.sh health 16:05
+9  16 * * 1-5 /app/scripts/paper.sh health2x 16:09
+
+# --- Best-effort reconstruction — VERIFY against the live server's
+#     `crontab -l` before this file drives production, and correct these
+#     three entries if they differ -------------------------------------------
+
+# momls2x: unslotted (not market-hours sensitive — see scripts/paper.sh's
+# case statement). AGENTS.md documents this as a mid-week Wednesday rebuild;
+# one live firing was observed at 19:44 UTC (15:44 ET) on 2026-08-13
+# (a Thursday, during a week with unusually heavy upgrade/testing churn per
+# that day's many crontab-before-upgrade-* backups) — day taken from the
+# documented convention, time from the one observed run.
+44 15 * * 3 /app/scripts/paper.sh momls2x
+
+# weekly: unslotted. Documented (AGENTS.md, README) as "the Sunday run" but
+# no exact hour was observed in the available log window. Placed in the
+# evening as a placeholder pending confirmation.
+0  18 * * 0 /app/scripts/paper.sh weekly
+
+# shadows2x: unslotted, own lock (see docs/architecture.md for why). Not
+# observed in either available log day. AGENTS.md describes it as part of
+# "the 2x morning cycle" — placed shortly after options_daily2x as a
+# placeholder pending confirmation.
+15 10 * * 1-5 /app/scripts/paper.sh shadows2x
+
+# --- Not yet live on the server at all -----------------------------------
+
+# iwmfwd: added to scripts/paper.sh in this same conversion; no server
+# crontab line exists for it yet (server crontab is only ever changed
+# manually — see docs/operations.md). Only processes sessions strictly
+# before today (ET), so it is not market-hours sensitive; any evening time
+# is correct. This line is this repo's proposed schedule for it.
+30 20 * * * /app/scripts/paper.sh iwmfwd

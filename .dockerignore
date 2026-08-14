@@ -2,11 +2,22 @@
 # depth against .env ever reaching the daemon at all, and meaningfully
 # faster builds (state/ alone carries tens of MB of research data).
 #
-# Does NOT exclude engine/ — dashboard/Dockerfile's explicit
-# `COPY engine/__init__.py engine/attribution.py engine/config.py` needs
-# those files present in the build context. This file controls what's SENT
-# to the daemon; the Dockerfile's selective COPY controls what actually
-# lands IN the image. The two are complementary, not redundant.
+# Does NOT exclude engine/, backtest/, tests/, or deploy/ — three
+# Dockerfiles share this one build context (deploy/docker-compose.yml sets
+# `context: ..` for all of them). dashboard/Dockerfile and
+# mcp_server/Dockerfile each do a narrow, explicit COPY (e.g.
+# `COPY engine/__init__.py engine/attribution.py engine/config.py`) that
+# is itself the trust boundary — never `COPY . .` — so those two images
+# only ever contain the files their own Dockerfile names, regardless of
+# what's present in the context. deploy/engine.Dockerfile is the trusted
+# tier and legitimately COPYs all four directories (scripts.
+# iwm_breakout_forward, a cron job, imports backtest.intraday; tests/ ships
+# so deploy/upgrade.sh can run the suite inside a candidate image). This
+# file controls what's SENT to the daemon; each Dockerfile's own COPY
+# instructions control what actually lands IN that image — the two are
+# complementary, not redundant, and state/reports/logs/.env stay excluded
+# here because no image should ever bake them in at all (they're runtime
+# volumes or, for .env, never baked in anywhere).
 
 .git/
 .venv/
@@ -19,8 +30,5 @@
 state/
 reports/
 exports/
-backtest/
 logs/
-tests/
-deploy/
 .claude/

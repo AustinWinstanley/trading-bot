@@ -1,0 +1,14 @@
+# Read by supercronic inside deploy/journal.Dockerfile's image.
+#
+# Same TZ convention as deploy/crontab (see that file's header) — not
+# because this job is market-hours sensitive, but so both crontabs read
+# the same way and a human checking "did this run today" doesn't have to
+# convert timezones in their head.
+CRON_TZ=America/New_York
+
+# Nightly, every day (not just weekdays): the Sunday `weekly` job and the
+# Wednesday `momls2x` job both write reports too, and this is simpler than
+# trying to track which days the engine might have written something.
+# journal-commit.sh is a no-op (skip-if-clean) if there's nothing to
+# commit. 23:00 ET is comfortably after every engine job in deploy/crontab.
+0 23 * * * /usr/local/bin/journal-commit

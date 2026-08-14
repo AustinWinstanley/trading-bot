@@ -1,0 +1,160 @@
+#
+# Combined, reproducible version pins for the three requirements files
+# in this repo (requirements.txt, dashboard/requirements.txt,
+# mcp_server/requirements.txt) — Dockerfiles install with
+# 'pip install -r <requirements-file> -c constraints.txt' so container
+# images are reproducible across builds while the requirements files
+# themselves keep loose ranges for local development.
+#
+# Regenerate with:
+#   pip install pip-tools
+#   cat requirements.txt dashboard/requirements.txt mcp_server/requirements.txt \
+#     | pip-compile --output-file=constraints.txt -
+# pip-compile emits `pyjwt[crypto]==...` (mcp's own dependency on pyjwt
+# carries the [crypto] extra) — a pip constraints file cannot contain
+# extras syntax ("Constraints cannot have extras"), only name==version.
+# After regenerating, manually strip `[crypto]` from the pyjwt line; mcp's
+# requirement still applies the extra at install time, this file only
+# needs to pin the version.
+annotated-types==0.8.0
+    # via pydantic
+anyio==4.14.2
+    # via
+    #   httpx2
+    #   mcp
+    #   sse-starlette
+    #   starlette
+attrs==26.1.0
+    # via
+    #   jsonschema
+    #   referencing
+blinker==1.9.0
+    # via flask
+certifi==2026.7.22
+    # via requests
+cffi==2.1.1
+    # via cryptography
+charset-normalizer==3.5.0
+    # via requests
+click==8.4.2
+    # via
+    #   flask
+    #   uvicorn
+cryptography==42.0.8
+    # via
+    #   -r /tmp/combined-requirements.in
+    #   pyjwt
+flask==3.1.3
+    # via -r /tmp/combined-requirements.in
+gunicorn==23.0.0
+    # via -r /tmp/combined-requirements.in
+h11==0.16.0
+    # via
+    #   httpcore2
+    #   uvicorn
+httpcore2==2.10.0
+    # via httpx2
+httpx2==2.10.0
+    # via mcp
+idna==3.18
+    # via
+    #   anyio
+    #   httpx2
+    #   requests
+iniconfig==2.3.0
+    # via pytest
+itsdangerous==2.2.0
+    # via flask
+jinja2==3.1.6
+    # via flask
+jsonschema==4.26.0
+    # via mcp
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+markupsafe==3.0.3
+    # via
+    #   flask
+    #   jinja2
+    #   werkzeug
+mcp==2.0.0
+    # via -r /tmp/combined-requirements.in
+mcp-types==2.0.0
+    # via mcp
+numpy==2.5.2
+    # via
+    #   -r /tmp/combined-requirements.in
+    #   pandas
+opentelemetry-api==1.44.0
+    # via mcp
+packaging==26.3
+    # via
+    #   gunicorn
+    #   pytest
+pandas==3.0.5
+    # via -r /tmp/combined-requirements.in
+pluggy==1.6.0
+    # via pytest
+pyarrow==25.0.1
+    # via -r /tmp/combined-requirements.in
+pycparser==3.0
+    # via cffi
+pydantic==2.13.4
+    # via
+    #   mcp
+    #   mcp-types
+pydantic-core==2.46.4
+    # via pydantic
+pygments==2.20.0
+    # via pytest
+pyjwt==2.13.0
+    # via mcp (its own dependency spec pulls in the [crypto] extra; a
+    # constraints file cannot carry extras syntax, only name==version —
+    # this line pins the version, mcp's requirement still applies the extra)
+pytest==9.1.1
+    # via -r /tmp/combined-requirements.in
+python-dateutil==2.9.0.post0
+    # via pandas
+python-multipart==0.0.32
+    # via mcp
+pyyaml==6.0.3
+    # via -r /tmp/combined-requirements.in
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.34.2
+    # via -r /tmp/combined-requirements.in
+rpds-py==2026.6.3
+    # via
+    #   jsonschema
+    #   referencing
+six==1.17.0
+    # via python-dateutil
+sse-starlette==3.4.8
+    # via mcp
+starlette==1.6.0
+    # via
+    #   mcp
+    #   sse-starlette
+truststore==0.10.4
+    # via
+    #   httpcore2
+    #   httpx2
+typing-extensions==4.16.0
+    # via
+    #   mcp
+    #   mcp-types
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via
+    #   mcp
+    #   pydantic
+urllib3==2.7.0
+    # via requests
+uvicorn==0.52.3
+    # via mcp
+werkzeug==3.1.8
+    # via flask
