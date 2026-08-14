@@ -77,6 +77,26 @@ def register_tools(mcp, repo_root: Path) -> None:
         return dashboard_db.exposure_payload(repo_root, profile)
 
     @mcp.tool()
+    def get_trends(profile: str, days: int = 30) -> dict:
+        """Per-day execution/rejection quality trends: fill %, notional-
+        weighted adverse slippage bps, average fill latency, rejection
+        count, and blocked notional, bucketed by calendar day. days is
+        clamped to [1, 365]."""
+        _validate_profile(profile)
+        days = max(1, min(int(days), 365))
+        return dashboard_db.trends_payload(repo_root, profile, days)
+
+    @mcp.tool()
+    def get_round_trips(profile: str, limit: int = 100) -> dict:
+        """FIFO-matched realized P&L per closed round trip (entry fill ->
+        exit fill per symbol), with per-sleeve totals and win/loss counts.
+        Exits whose entries predate fill recording are counted in
+        "unmatched", never guessed. limit is clamped to [1, 500]."""
+        _validate_profile(profile)
+        limit = max(1, min(int(limit), 500))
+        return dashboard_db.round_trips_payload(repo_root, profile, limit)
+
+    @mcp.tool()
     def get_rejections(profile: str, days: int = 7, since: str | None = None) -> dict:
         """Risk-gate rejection stats: counts, blocked notional, whole-
         share-rounding/hard-to-borrow counts, top normalized reasons, and

@@ -55,7 +55,7 @@ def test_equity_curve_has_one_point_per_day_and_reference_lines(client):
 
 def test_orders_tail_polling_only_returns_newer_rows(client):
     first = client.get("/api/base/orders").get_json()
-    assert len(first["orders"]) == 3  # 2 filled + 1 stuck 'new' (see conftest)
+    assert len(first["orders"]) == 7  # 6 filled + 1 stuck 'new' (see conftest)
     cursor = first["latest_ts"]
     assert cursor is not None
 
@@ -110,8 +110,8 @@ def test_summary_surfaces_execution_quality_and_experiments(client):
     data = client.get("/api/base/summary").get_json()
     execution = data["execution"]
     assert execution is not None
-    assert execution["overall"]["orders"] == 3  # incl. the stuck 'new' order
-    assert execution["overall"]["filled_orders"] == 2
+    assert execution["overall"]["orders"] == 7  # incl. the stuck 'new' order
+    assert execution["overall"]["filled_orders"] == 6
     assert "mom_ls" in execution["by_sleeve"]
 
     experiments = data["experiments"]
@@ -275,7 +275,7 @@ def test_routes_tolerate_an_unmigrated_database_without_500ing(tmp_path: Path):
         for path in (
             "/api/base/summary", "/api/base/equity-curve", "/api/base/orders",
             "/api/base/positions", "/api/base/exposure", "/api/base/rejections",
-            "/api/base/options",
+            "/api/base/options", "/api/base/trends", "/api/base/round-trips",
         ):
             resp = c.get(path)
             assert resp.status_code == 200, f"{path} returned {resp.status_code}"
