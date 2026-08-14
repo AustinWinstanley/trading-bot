@@ -12,14 +12,14 @@
 # wrong-half-of-the-year copy exit as a no-op, so exactly one runs whatever the
 # offset. Omit $2 to run unconditionally.
 set -u
-# Production keeps the fixed server path. This is a mutex, not a convenience:
+# Production keeps a fixed deploy path. This is a mutex, not a convenience:
 # the lock file lives at $BOT/state/paper-$LOCK.lock, so if two checkouts
 # resolved different $BOT values they would hold independent locks and could
 # run scripts.run_daily concurrently against the SAME live Alpaca account —
 # a real correctness hazard, not just an inconvenience. Tests and one-off
 # validation may still point the wrapper at an isolated checkout without
-# writing locks under /home/austin; cron never sets this override.
-BOT=${PAPER_BOT_ROOT:-/home/austin/trading-bot}
+# writing locks under the production path; cron never sets this override.
+BOT=${PAPER_BOT_ROOT:-/opt/trading-bot}
 # Overridable so tests can exercise the slot guard without writing into the
 # production log the weekly report scrapes.
 LOG_DIR=${PAPER_LOG_DIR:-$BOT/logs}

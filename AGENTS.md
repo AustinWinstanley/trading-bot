@@ -5,11 +5,15 @@ describes what the system *is*; this describes what will mislead you about it.
 
 ## This is live, and the working tree is what runs
 
-Cron executes `scripts/paper.sh` from the server checkout directly. The wrapper
-derives the repository root from its own location, so the checkout path is not
-fixed. An edit to `config.yaml` or `engine/` is in force at the next scheduled
-run whether or not it is committed. There is no deploy step separating your
-working tree from production.
+Cron executes `scripts/paper.sh` from the server checkout directly. The
+wrapper resolves its root from `$PAPER_BOT_ROOT`, defaulting to a fixed
+production path when unset — deliberately fixed, not self-deriving: two
+checkouts resolving different roots would hold independent flock locks and
+could run `scripts.run_daily` concurrently against the same live account
+(see the mutex comment at the top of `scripts/paper.sh`). Cron never sets
+the override. An edit to `config.yaml` or `engine/` is in force at the next
+scheduled run whether or not it is committed. There is no deploy step
+separating your working tree from production.
 
 Consequences:
 
