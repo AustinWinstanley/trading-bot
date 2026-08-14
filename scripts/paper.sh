@@ -19,7 +19,17 @@ set -u
 # a real correctness hazard, not just an inconvenience. Tests and one-off
 # validation may still point the wrapper at an isolated checkout without
 # writing locks under the production path; cron never sets this override.
+# The engine container sets it explicitly (PAPER_BOT_ROOT=/app), so the
+# /opt/trading-bot default below only matters for a bare-host deployment.
+# flock is inode-scoped: as long as state/ is the same bind-mounted
+# directory, a host process and a container process still exclude each
+# other correctly, which matters during any host-cron-to-container
+# migration window.
 BOT=${PAPER_BOT_ROOT:-/opt/trading-bot}
+# The container image sets PAPER_PYTHON=/usr/local/bin/python3 (no .venv
+# inside the image — dependencies are installed into the system
+# interpreter). A bare-host deployment keeps using its .venv.
+PY=${PAPER_PYTHON:-"$BOT/.venv/bin/python"}
 # Overridable so tests can exercise the slot guard without writing into the
 # production log the weekly report scrapes.
 LOG_DIR=${PAPER_LOG_DIR:-$BOT/logs}
@@ -93,11 +103,11 @@ esac
   flock -n 200 || { echo "CRITICAL: previous run still holds the lock"; exit 1; }
   cd "$BOT"
   case "$JOB" in
-    daily)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily ;;
-    daily2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --profile 2x ;;
-    stops)    timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only ;;
-    stops2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.run_daily --stops-only --profile 2x ;;
-    options_daily2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.options_daily --profile 2x ;;
+    daily)    timeout "$TIMEOUT" "$PY" -m scripts.run_daily ;;
+    daily2x)  timeout "$TIMEOUT" "$PY" -m scripts.run_daily --profile 2x ;;
+    stops)    timeout "$TIMEOUT" "$PY" -m scripts.run_daily --stops-only ;;
+    stops2x)  timeout "$TIMEOUT" "$PY" -m scripts.run_daily --stops-only --profile 2x ;;
+    options_daily2x) timeout "$TIMEOUT" "$PY" -m scripts.options_daily --profile 2x ;;
     # Read-only research collectors. Runs independently of daily2x (own lock,
     # own schedule slot) so a hung/slow quote fetch here can never delay or
     # block a trading run or a stops2x check. Each script's own failure is
@@ -105,21 +115,21 @@ esac
     # — a silently-dead collector should not read as healthy.
     shadows2x)
       shadow_failures=0
-      timeout 120 .venv/bin/python -m scripts.options_shadow --profile 2x ||
+      timeout 120 "$PY" -m scripts.options_shadow --profile 2x ||
         { echo "CRITICAL: read-only options shadow failed"; shadow_failures=$((shadow_failures + 1)); }
-      timeout 180 .venv/bin/python -m scripts.momentum_options_shadow --profile 2x ||
+      timeout 180 "$PY" -m scripts.momentum_options_shadow --profile 2x ||
         { echo "CRITICAL: read-only momentum-options shadow failed"; shadow_failures=$((shadow_failures + 1)); }
-      timeout 120 .venv/bin/python -m scripts.event_volatility_shadow --profile 2x ||
+      timeout 120 "$PY" -m scripts.event_volatility_shadow --profile 2x ||
         { echo "CRITICAL: read-only event-volatility shadow failed"; shadow_failures=$((shadow_failures + 1)); }
-      timeout 120 .venv/bin/python -m scripts.zero_dte_shadow --profile 2x ||
+      timeout 120 "$PY" -m scripts.zero_dte_shadow --profile 2x ||
         { echo "CRITICAL: read-only 0DTE shadow failed"; shadow_failures=$((shadow_failures + 1)); }
       [ "$shadow_failures" -eq 0 ]
       ;;
-    weekly)   timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly ;;
-    iwmfwd)   timeout "$TIMEOUT" .venv/bin/python -m scripts.iwm_breakout_forward ;;
-    momls2x)  timeout "$TIMEOUT" .venv/bin/python -m scripts.weekly --mom-ls-only ;;
-    health)   timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck ;;
-    health2x) timeout "$TIMEOUT" .venv/bin/python -m scripts.healthcheck --profile 2x ;;
+    weekly)   timeout "$TIMEOUT" "$PY" -m scripts.weekly ;;
+    iwmfwd)   timeout "$TIMEOUT" "$PY" -m scripts.iwm_breakout_forward ;;
+    momls2x)  timeout "$TIMEOUT" "$PY" -m scripts.weekly --mom-ls-only ;;
+    health)   timeout "$TIMEOUT" "$PY" -m scripts.healthcheck ;;
+    health2x) timeout "$TIMEOUT" "$PY" -m scripts.healthcheck --profile 2x ;;
     *) echo "unknown job $JOB"; exit 2 ;;
   esac
   rc=$?

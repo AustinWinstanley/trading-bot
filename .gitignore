@@ -2,6 +2,7 @@
 .env
 *.pem
 *.key
+deploy/secrets/
 
 # Local state
 .venv/

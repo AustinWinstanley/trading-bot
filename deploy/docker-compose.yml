@@ -1,9 +1,77 @@
 services:
+  # The trusted tier: holds broker credentials (via env_file below — never
+  # baked into the image) and is the only service that writes to state/,
+  # reports/, or logs/. Everything else in this file is read-only and
+  # secretless; see docs/architecture.md and SECURITY.md for the full trust
+  # model. Runs supercronic against the baked-in deploy/crontab — "the image
+  # is what runs" is now literally true for the trading logic (see
+  # AGENTS.md), so an edit only takes effect through a new image tag.
+  engine:
+    image: ghcr.io/austinwinstanley/trading-bot-engine:${ENGINE_TAG:?set ENGINE_TAG in deploy/.env, e.g. v0.1.0 or latest}
+    container_name: trading-bot-engine
+    restart: unless-stopped
+    # Must match the host uid:gid that owns the bind-mounted state/reports/
+    # logs directories below — a bind mount's on-disk ownership is whatever
+    # the host already set, it does not shift to match an in-image user.
+    # `id -u`/`id -g` of the account that currently owns these directories.
+    user: "${ENGINE_UID:-1000}:${ENGINE_GID:-1000}"
+    env_file:
+      # ONLY this service gets .env — dashboard/mcp-server below stay
+      # structurally unable to read it (no env_file, no volume mount
+      # naming it). See SECURITY.md.
+      - ../.env
+    # >= the longest single job timeout in scripts/paper.sh (weekly, 3000s)
+    # plus slack: a graceful `docker compose stop`/`down` sends SIGTERM,
+    # which stops supercronic from scheduling NEW jobs but must not SIGKILL
+    # one already in flight. deploy/upgrade.sh drains the daily/daily2x/
+    # weekly locks before ever stopping this service, so in practice a stop
+    # should find nothing running — this is the backstop, not the plan.
+    stop_grace_period: 55m
+    volumes:
+      - ../state:/app/state
+      - ../reports:/app/reports
+      - ../logs:/app/logs
+    healthcheck:
+      # supercronic itself has no health endpoint; confirming the process
+      # is alive is what matters — a crashed scheduler means no future job
+      # ever fires again, silently, until something checks `docker ps`.
+      test: ["CMD", "pgrep", "-f", "supercronic"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Nightly journal committer: the only piece of "the server checkout is a
+  # git checkout" that containerization needs to preserve. reports/ stays
+  # git-tracked and public (this repo's paper-trading record) even though
+  # the engine now deploys as an image, not a git pull — this service
+  # commits the engine's runtime-written reports/paper*/ files back and
+  # pulls dev-committed research (including reports/experiments/*.json
+  # registrations the engine's config validation reads at startup — see
+  # engine/config.py) into the same checkout the engine mounts read/write.
+  # Deliberately the ONLY service with a git credential; the engine gets
+  # no git access, and this service gets no broker credentials.
+  journal:
+    image: ghcr.io/austinwinstanley/trading-bot-journal:${JOURNAL_TAG:-latest}
+    container_name: trading-bot-journal
+    restart: unless-stopped
+    user: "${ENGINE_UID:-1000}:${ENGINE_GID:-1000}"
+    environment:
+      # A repo-scoped deploy key with write access to THIS repo only —
+      # never the broad credential a human's `git push` would use.
+      # StrictHostKeyChecking stays on (the default): deploy/known_hosts.github
+      # pins GitHub's own published host keys at image build time, so this
+      # never falls back to trust-on-first-connect.
+      - GIT_SSH_COMMAND=ssh -i /run/secrets/journal_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes
+    volumes:
+      # The whole checkout, read-write: `git add`/`commit`/`push` need the
+      # working tree and .git/ both, not just reports/.
+      - ..:/repo
+    secrets:
+      - journal_deploy_key
+
   dashboard:
-    build:
-      context: ..
-      dockerfile: dashboard/Dockerfile
-    image: trading-bot-dashboard:latest
+    image: ghcr.io/austinwinstanley/trading-bot-dashboard:${DASHBOARD_TAG:-latest}
     container_name: trading-bot-dashboard
     restart: unless-stopped
     ports:
@@ -35,10 +103,7 @@ services:
       start_period: 10s
 
   mcp-server:
-    build:
-      context: ..
-      dockerfile: mcp_server/Dockerfile
-    image: trading-bot-mcp-server:latest
+    image: ghcr.io/austinwinstanley/trading-bot-mcp-server:${MCP_TAG:-latest}
     container_name: trading-bot-mcp-server
     restart: unless-stopped
     ports:
@@ -72,3 +137,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+secrets:
+  # A repo-scoped SSH deploy key (write access to THIS repo only, generated
+  # separately from any human's personal key) — NOT a copy of .env, NOT
+  # readable by the engine service. Provision the actual key file at
+  # deploy/secrets/journal_deploy_key on the server (gitignored) before
+  # bringing the journal service up; see docs/operations.md.
+  journal_deploy_key:
+    file: ./secrets/journal_deploy_key

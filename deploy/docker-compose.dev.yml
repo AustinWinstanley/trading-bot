@@ -1,0 +1,37 @@
+# Local-development override: adds back the `build:` blocks
+# deploy/docker-compose.yml deliberately omits (it references GHCR image
+# tags only, so a plain `docker compose up` never silently rebuilds from
+# a possibly-uncommitted local tree).
+#
+# Usage:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml build
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up
+#
+# The `image:` name in each service below matches its production tag
+# pattern but overrides the tag to `:dev` so a local build can never be
+# confused with — or accidentally overwrite the local docker cache's copy
+# of — a real released image.
+services:
+  engine:
+    build:
+      context: ..
+      dockerfile: deploy/engine.Dockerfile
+    image: trading-bot-engine:dev
+
+  journal:
+    build:
+      context: ..
+      dockerfile: deploy/journal.Dockerfile
+    image: trading-bot-journal:dev
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: dashboard/Dockerfile
+    image: trading-bot-dashboard:dev
+
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: mcp_server/Dockerfile
+    image: trading-bot-mcp-server:dev
