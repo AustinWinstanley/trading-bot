@@ -20,5 +20,19 @@ module.exports = {
     // locally: "chore(deps): Bump x from 2 to 3" now passes, "feat: Add A
     // New Sleeve" (start-case) still fails.
     "subject-case": [2, "never", ["start-case", "pascal-case", "upper-case"]],
+    // Dependabot's auto-generated commit bodies routinely exceed 100 chars
+    // per line — long "Bumps the X group with N updates: [pkg](url), ..."
+    // summary lines and per-package "- [Commits](long-compare-url)" links
+    // are not prose meant to be manually wrapped. Confirmed against
+    // @commitlint/config-conventional's actual published rules (both are
+    // Error-severity, 100-char defaults) that this was the real cause of a
+    // PR failure the exact wagoid/commitlint-github-action run reported
+    // ("body's lines must not be longer than 100 characters
+    // [body-max-line-length]") — disabled both body- and
+    // footer-max-line-length rather than just body-, since Dependabot's
+    // trailing YAML `updated-dependencies:` block is equally likely to trip
+    // the footer variant of the same rule.
+    "body-max-line-length": [0],
+    "footer-max-line-length": [0],
   },
 };

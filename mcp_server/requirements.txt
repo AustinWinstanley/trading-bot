@@ -7,5 +7,9 @@ PyYAML>=6,<7
 # else in this image. mcp pulls this in transitively (via pyjwt's auth
 # support, unused here — this server has no auth). Pin below 43 until
 # confirmed fixed upstream or this is deployed to hardware that doesn't
-# hit it.
+# hit it. Re-confirmed 2026-08-14 against the then-latest release
+# (50.0.0, via Dependabot proposing cryptography<51): still crashes with
+# "Illegal instruction" (SIGILL) on this same Docker backend;
+# cryptography<43 still installs and imports cleanly. Do not accept a
+# Dependabot bump to this ceiling without re-testing exactly this way.
 cryptography<43

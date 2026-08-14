@@ -9,13 +9,25 @@
 # Regenerate with:
 #   pip install pip-tools
 #   cat requirements.txt dashboard/requirements.txt mcp_server/requirements.txt \
-#     | pip-compile --output-file=constraints.txt -
+#     | pip-compile --upgrade --output-file=constraints.txt -
+# (--upgrade picks up new releases within each requirements.txt's own
+# range ceilings; omit it for a no-op idempotency check instead.)
 # pip-compile emits `pyjwt[crypto]==...` (mcp's own dependency on pyjwt
 # carries the [crypto] extra) — a pip constraints file cannot contain
 # extras syntax ("Constraints cannot have extras"), only name==version.
 # After regenerating, manually strip `[crypto]` from the pyjwt line; mcp's
 # requirement still applies the extra at install time, this file only
 # needs to pin the version.
+#
+# Before accepting ANY Dependabot bump to this file (or the ceiling in
+# mcp_server/requirements.txt's cryptography<43 line), regenerate fully
+# via the command above rather than accepting Dependabot's own partial
+# per-package edit — a partial edit only bumps the lines Dependabot's
+# dependency graph flagged as "direct", which can silently produce an
+# internally-inconsistent lock (e.g. bumping pydantic-core independently
+# of pydantic's own pin on it, which pip then refuses to resolve). See
+# the 2026-08-14 git history for a real instance of this.
+
 annotated-types==0.8.0
     # via pydantic
 anyio==4.14.2
@@ -42,12 +54,12 @@ click==8.4.2
     #   uvicorn
 cryptography==42.0.8
     # via
-    #   -r /tmp/combined-requirements.in
+    #   -r /tmp/combined-v3.in
     #   pyjwt
 flask==3.1.3
-    # via -r /tmp/combined-requirements.in
-gunicorn==23.0.0
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
+gunicorn==26.0.0
+    # via -r /tmp/combined-v3.in
 h11==0.16.0
     # via
     #   httpcore2
@@ -77,12 +89,12 @@ markupsafe==3.0.3
     #   jinja2
     #   werkzeug
 mcp==2.0.0
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 mcp-types==2.0.0
     # via mcp
 numpy==2.5.2
     # via
-    #   -r /tmp/combined-requirements.in
+    #   -r /tmp/combined-v3.in
     #   pandas
 opentelemetry-api==1.44.0
     # via mcp
@@ -91,11 +103,11 @@ packaging==26.3
     #   gunicorn
     #   pytest
 pandas==3.0.5
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 pluggy==1.6.0
     # via pytest
 pyarrow==25.0.1
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 pycparser==3.0
     # via cffi
 pydantic==2.13.4
@@ -111,19 +123,19 @@ pyjwt==2.13.0
     # constraints file cannot carry extras syntax, only name==version —
     # this line pins the version, mcp's requirement still applies the extra)
 pytest==9.1.1
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-multipart==0.0.32
     # via mcp
 pyyaml==6.0.3
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2
-    # via -r /tmp/combined-requirements.in
+    # via -r /tmp/combined-v3.in
 rpds-py==2026.6.3
     # via
     #   jsonschema

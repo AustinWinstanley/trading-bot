@@ -33,7 +33,19 @@ EXPOSE 8787
 # 127.0.0.1 here would bind only the container's OWN loopback, which
 # Docker's port-publishing NAT can never reach regardless of the host-side
 # mapping, so this must stay 0.0.0.0 even when the host side is loopback-only.
+# --no-control-socket: gunicorn 25.1.0+ added a control socket for the
+# gunicornc runtime-management CLI (worker status/reload/shutdown),
+# defaulting to $HOME/.gunicorn/gunicorn.ctl when $XDG_RUNTIME_DIR is
+# unset. This container's non-root user is deliberately created with
+# --no-create-home (see the groupadd/useradd step above), so gunicorn
+# fails to create that directory and logs "Control server error:
+# Permission denied" on every start — harmless (the HTTP server itself
+# is unaffected; verified with a real request) but noisy, and nothing
+# here ever runs gunicornc against this container anyway. Disabling it
+# is simpler and more correct than granting a home directory just to
+# host a socket nothing uses.
 CMD ["gunicorn", "--worker-class", "gthread", "--workers", "2", "--threads", "4", \
      "--bind", "0.0.0.0:8787", \
      "--access-logfile", "-", "--error-logfile", "-", \
+     "--no-control-socket", \
      "dashboard.wsgi:app"]
