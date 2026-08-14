@@ -140,3 +140,47 @@ def test_unstopped_from_journal_uses_the_latest_entry():
     )
     assert unstopped_from_journal(conn, frozenset({"mom_ls"})) == {"MU"}
     assert unstopped_from_journal(conn, frozenset()) == set()
+
+
+def test_open_option_structures_handles_missing_and_schemaless_journal(tmp_path):
+    from scripts.healthcheck import open_option_structures
+
+    # No file at all: options trading never ran — healthy, nothing to reconcile.
+    missing = tmp_path / "options_2x.db"
+    assert open_option_structures(missing) == []
+    assert not missing.exists()  # the check must not create the file
+
+    # A 0-byte schema-less file (a bare sqlite3.connect creates one as a side
+    # effect of connecting) once crashed the whole 2x healthcheck with
+    # "no such table: structures" before health_status was written.
+    schemaless = tmp_path / "schemaless.db"
+    schemaless.touch()
+    assert open_option_structures(schemaless) == []
+    assert schemaless.stat().st_size == 0  # opened read-only, never written
+
+
+def test_open_option_structures_reads_a_real_journal(tmp_path, monkeypatch):
+    import scripts.options_daily as options_daily
+    from scripts.healthcheck import open_option_structures
+
+    db_path = tmp_path / "options_2x.db"
+    monkeypatch.setattr(options_daily, "DB", db_path)
+    conn = options_daily.db()  # creates the real schema
+    conn.execute(
+        "INSERT INTO structures(structure_id, experiment, strategy, underlying, "
+        "expiration_date, contracts, requested_contracts, credit, maximum_loss, "
+        "opened_ts, status) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        ("s1", options_daily.EXPERIMENT_NAME, options_daily.STRATEGY_KEY, "SPY",
+         "2026-09-18", 1, 1, 0.85, 4.15, "2026-08-14T10:00:00", "open"),
+    )
+    conn.execute(
+        "INSERT INTO structure_legs(structure_id, symbol, side, position_intent, "
+        "ratio_qty) VALUES (?,?,?,?,?)",
+        ("s1", "SPY260918P00560000", "sell", "sell_to_open", 1),
+    )
+    conn.commit()
+    conn.close()
+
+    structures = open_option_structures(db_path)
+    assert [s["structure_id"] for s in structures] == ["s1"]
+    assert structures[0]["legs"][0]["position_intent"] == "sell_to_open"
