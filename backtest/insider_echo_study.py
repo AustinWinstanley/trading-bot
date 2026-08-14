@@ -185,7 +185,7 @@ DEPLOYABILITY = {
         ),
         "fetch_convention": (
             "fits the existing engine/edgar.py session convention "
-            "(User-Agent 'austin redacted@example.com', gzip)"
+            "(SEC_USER_AGENT env var, gzip)"
         ),
     },
     "not_needed_but_available": (
