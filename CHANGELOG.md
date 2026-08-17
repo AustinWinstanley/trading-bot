@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.4...v1.1.0) (2026-08-17)
+
+
+### Features
+
+* extend deploy/upgrade.sh to upgrade all four services, plus git pull ([#32](https://github.com/AustinWinstanley/trading-bot/issues/32)) ([b23926d](https://github.com/AustinWinstanley/trading-bot/commit/b23926d7fb250a1c167c9ad5fed18c0296818afc))
+
 ## [1.0.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.3...v1.0.4) (2026-08-17)
 
 
