@@ -3,49 +3,35 @@
 Operating notes for anyone — human or agent — picking this up cold. `README.md`
 describes what the system *is*; this describes what will mislead you about it.
 
-## This is live — but which deployment mode governs "what runs" depends on the server
+## This is live — "the image is what runs," not the working tree
 
-This repo supports two deployment modes side by side (see
-[docs/architecture.md](docs/architecture.md) and
-[docs/operations.md](docs/operations.md) for the full mechanics of each).
-**Check which one a given server is actually running before assuming either
-invariant below** — `docker compose -f deploy/docker-compose.yml ps` showing
-a running `engine` service means containerized; a `scripts/paper.sh` line in
-`crontab -l` with no such container means legacy host-cron.
-
-**Containerized (the current design, once a server has cut over):**
+Production cut over from host-cron to the containerized deployment on
+**2026-08-17** and runs entirely as four Docker Compose services
+(`deploy/docker-compose.yml`) — see [docs/architecture.md](docs/architecture.md)
+and [docs/operations.md](docs/operations.md) for the full mechanics.
 `config.yaml`/`config_2x.yaml`/`deploy/crontab` are baked into the `engine`
 image, not mounted — so **the image is what runs**, not the working tree. An
 edit to `engine/`, `scripts/`, `backtest/`, or either config file has zero
 effect on production until a new image is built, pushed, and switched to via
-`deploy/upgrade.sh`. `git stash`, an uncommitted edit, a `git pull` on the
-server checkout — none of these touch the running system at all. The
-server's git checkout still matters (it's what `journal` commits `reports/`
-into, and what `deploy/upgrade.sh` reads `deploy/docker-compose.yml`/
+`deploy/upgrade.sh`. `git stash`, an uncommitted edit — neither touches the
+running system at all. The server's git checkout still matters (it's what
+`journal` commits `reports/` into, and what `deploy/upgrade.sh` itself
+`git pull`s before every upgrade and reads `deploy/docker-compose.yml`/
 `deploy/.env` from), but it is no longer the deploy artifact.
 
-**Legacy host-cron (pre-cutover servers):** cron executes `scripts/paper.sh`
-from the server checkout directly. The wrapper resolves its root from
-`$PAPER_BOT_ROOT`, defaulting to a fixed production path when unset —
-deliberately fixed, not self-deriving: two checkouts resolving different
-roots would hold independent flock locks and could run `scripts.run_daily`
-concurrently against the same live account (see the mutex comment at the
-top of `scripts/paper.sh`). Cron never sets the override. Under this mode,
-**the working tree is what runs**: an edit to `config.yaml` or `engine/` is
-in force at the next scheduled run whether or not it is committed. There is
-no deploy step separating your working tree from production.
+Host-cron running `scripts/paper.sh` directly from the server checkout is
+**retired from production**, kept only as a documented rollback path (see
+[docs/operations.md](docs/operations.md#legacy-host-cron-deployment-rollback-only)
+and `scripts/upgrade.sh`'s own header) — not a second live deployment mode to
+design around. Don't assume any real server still runs it; if you're ever
+unsure which mode a specific server is actually on, confirm with
+`docker compose -f deploy/docker-compose.yml ps` (a running `engine` service
+means containerized) rather than guessing from this file.
 
-Consequences under legacy host-cron specifically:
-
-- A half-finished edit left in the tree will trade.
-- `git stash` changes live behaviour.
-- Changes are effective before they are pushed, so "committed" is not the
-  safety line — the edit is.
-
-**Either way**, run `python -m scripts.run_daily --dry-run` (and
-`--profile 2x`) after any change to the gate, portfolio, or config, before
-it can reach either deployment mode's production path. Dry runs are
-mutation-free: they roll back journal writes and never touch reports.
+Run `python -m scripts.run_daily --dry-run` (and `--profile 2x`) after any
+change to the gate, portfolio, or config, before it can reach production
+through a new image. Dry runs are mutation-free: they roll back journal
+writes and never touch reports.
 
 ## Read the journal, not the reports
 
@@ -60,28 +46,27 @@ sessions of real trading are journalled in those files as
 To ask what actually happened, query `orders`, `rejections` and `snapshots` in
 the profile's SQLite journal.
 
-## Crontab: one line per slot under supercronic, two under legacy host cron
+## Crontab: one line per slot under supercronic
 
-This convention differs by deployment mode — see the "which deployment mode"
-note above if you're not sure which one applies.
+`deploy/crontab` sets `CRON_TZ=America/New_York` once at the top, and
+`supercronic` (reading it inside the `engine` container) resolves DST via
+Go's IANA tzdata — **one** line per ET slot is correct year-round.
+`tests/test_deploy_crontab.py` statically checks this file (`CRON_TZ`
+present, no duplicate job/slot pairs, every slotted job's cron fields
+matching its own slot argument) — run it after editing `deploy/crontab`,
+and cut a new release + let `deploy/upgrade.sh` roll it out for the edit
+to take effect at all (see the "image is what runs" note above).
 
-**Containerized:** `deploy/crontab` sets `CRON_TZ=America/New_York` once at
-the top, and `supercronic` (reading it inside the `engine` container)
-resolves DST via Go's IANA tzdata — **one** line per ET slot is correct
-year-round. `tests/test_deploy_crontab.py` statically checks this file
-(`CRON_TZ` present, no duplicate job/slot pairs, every slotted job's cron
-fields matching its own slot argument) — run it after editing
-`deploy/crontab`, and rebuild+redeploy the `engine` image for the edit to
-take effect at all (see the "image is what runs" note above).
-
-**Legacy host cron:** the server clock is UTC and Debian cron has no
-`CRON_TZ` (that is cronie). Every ET slot therefore needs **two** crontab
-lines — one correct under EDT, one under EST. Both fire year round; the ET
-slot passed as `$2` to `paper.sh` makes the wrong-season copy exit as a
-no-op. A pair looks redundant and is not — deleting one silently breaks
-that job for half the year. Give any new market-hours job a slot argument;
-leave jobs with no market-clock sensitivity unguarded and single-line. Back
-up the crontab to `state/crontab-*.txt` (gitignored) before editing.
+If you're ever working against a restored host-cron rollback specifically
+(see [docs/operations.md](docs/operations.md#legacy-host-cron-deployment-rollback-only)):
+the server clock there is UTC and Debian cron has no `CRON_TZ` (that is
+cronie), so every ET slot needs **two** crontab lines — one correct under
+EDT, one under EST. Both fire year round; the ET slot passed as `$2` to
+`paper.sh` makes the wrong-season copy exit as a no-op. A pair looks
+redundant and is not — deleting one silently breaks that job for half the
+year. Back up the crontab to `state/crontab-*.txt` (gitignored) before
+editing. This convention only matters for that rollback path, not for
+`deploy/crontab` above.
 
 ## Research conventions
 
@@ -719,9 +704,10 @@ before assuming the signal is wrong.
 
 ## Read-only monitoring & debug surfaces
 
-Two Docker Compose services run alongside the cron jobs, both entirely
-read-only by construction — neither can place an order, touch the Alpaca
-client, or write to a journal, no matter what a bug in either does:
+Two of the four Docker Compose services run alongside `engine` and
+`journal`, both entirely read-only by construction — neither can place an
+order, touch the Alpaca client, or write to a journal, no matter what a bug
+in either does:
 
 - **`dashboard`** (`dashboard/`, port 8787) — a Flask JSON API + single-page
   UI (`dashboard/templates/index.html`) showing both profiles' equity,
@@ -767,10 +753,12 @@ File reads (`read_state_file`, `read_report`, `tail_trading_log`) are all
 path-traversal-guarded to stay under `state/`/`reports/`/`logs/`
 (`mcp_server/debug.py:_resolve_within`).
 
-Bring both up (from the server checkout):
+Bring the full stack up (from the server checkout; see
+[docs/operations.md](docs/operations.md) for first-time setup and the
+`deploy/upgrade.sh` upgrade path):
 
 ```bash
-docker compose -f deploy/docker-compose.yml up -d --build
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 Register the MCP server with Claude Code (user-level, not a

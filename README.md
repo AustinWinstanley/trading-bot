@@ -106,6 +106,25 @@ not a fresh opinion.
 
 ## Getting started
 
+Production runs entirely as four Docker Compose services
+(`deploy/docker-compose.yml`) — `engine` (scheduler + trading logic),
+`journal` (nightly `reports/` commit/push), and the read-only `dashboard`
+and `mcp-server`. Once `deploy/.env` and the journal deploy key are in
+place (see [docs/operations.md](docs/operations.md) for the full setup):
+
+```bash
+docker compose -f deploy/docker-compose.yml pull
+docker compose -f deploy/docker-compose.yml up -d
+```
+
+Upgrading later, on the server: `deploy/upgrade.sh` (no arguments) pulls
+the latest code and switches all four services to the newest released
+version, verifying `engine` — pytest, both dry-runs, both healthchecks —
+before it ever touches the live trading service.
+
+For local development (editing code, running tests, dry-running a change
+before it ships in a new image):
+
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
