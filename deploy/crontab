@@ -14,8 +14,9 @@
 # silent wrong-time trade, exactly as it did on the old host-cron schedule.
 CRON_TZ=America/New_York
 
-# --- Confirmed from server logs (logs/paper-20260812.log, logs/paper-20260813.log,
-#     read via the read-only MCP debug server) --------------------------------
+# --- Confirmed against the live server's real `crontab -l`, captured
+#     2026-08-17 (supersedes an earlier, partially-wrong log-based
+#     reconstruction — see git history if you need the old guesses) --------
 
 # Full rebalance: market open, then a midday re-price pass (added by the
 # cancel-and-reprice-stale-orders feature — see AGENTS.md).
@@ -39,38 +40,47 @@ CRON_TZ=America/New_York
 # 2x options-experiment order submission (bull_put_delta_selected_live).
 5  10 * * 1-5 /app/scripts/paper.sh options_daily2x 10:05
 
-# Daily health checks, after the close.
+# Health checks, morning (fills the gap right after the open run) and
+# after the close. The morning pair was missing from an earlier version of
+# this file — it was reconstructed from a log window that happened not to
+# span 09:55/09:59 ET, which would have silently dropped the morning health
+# check the day this file went live. Caught by diffing against real
+# `crontab -l` before cutover, not by any automated check.
+55 9  * * 1-5 /app/scripts/paper.sh health 09:55
+59 9  * * 1-5 /app/scripts/paper.sh health2x 09:59
 5  16 * * 1-5 /app/scripts/paper.sh health 16:05
 9  16 * * 1-5 /app/scripts/paper.sh health2x 16:09
 
-# --- Best-effort reconstruction — VERIFY against the live server's
-#     `crontab -l` before this file drives production, and correct these
-#     three entries if they differ -------------------------------------------
-
 # momls2x: unslotted (not market-hours sensitive — see scripts/paper.sh's
-# case statement). AGENTS.md documents this as a mid-week Wednesday rebuild;
-# one live firing was observed at 19:44 UTC (15:44 ET) on 2026-08-13
-# (a Thursday, during a week with unusually heavy upgrade/testing churn per
-# that day's many crontab-before-upgrade-* backups) — day taken from the
-# documented convention, time from the one observed run.
-44 15 * * 3 /app/scripts/paper.sh momls2x
+# case statement). Real crontab line is `0 6 * * 3` (UTC, no CRON_TZ) —
+# under EDT that's 02:00 ET Wednesday; under EST it drifts to 01:00 ET
+# since a raw UTC cron line can't track DST the way CRON_TZ does here.
+# Pinned to the EDT reading (02:00 ET) — an hour of seasonal drift is
+# immaterial for an off-hours data rebuild, same reasoning as `weekly`
+# below. (An earlier version of this file guessed Thursday 15:44 ET from a
+# single observed firing during an unusually heavy upgrade-testing week;
+# that guess was wrong on both the day and the hour — replaced here with
+# the real schedule read directly off the server.)
+0  2  * * 3 /app/scripts/paper.sh momls2x
 
-# weekly: unslotted. Documented (AGENTS.md, README) as "the Sunday run" but
-# no exact hour was observed in the available log window. Placed in the
-# evening as a placeholder pending confirmation.
+# weekly: unslotted. Real crontab line is `5 22 * * 0` UTC — 18:05 ET under
+# EDT, 17:05 ET under EST. Close enough to this file's prior 18:00 ET
+# placeholder that no change was needed; kept as-is.
 0  18 * * 0 /app/scripts/paper.sh weekly
 
-# shadows2x: unslotted, own lock (see docs/architecture.md for why). Not
-# observed in either available log day. AGENTS.md describes it as part of
-# "the 2x morning cycle" — placed shortly after options_daily2x as a
-# placeholder pending confirmation.
-15 10 * * 1-5 /app/scripts/paper.sh shadows2x
+# shadows2x (own lock; see docs/architecture.md) is a real, working job in
+# scripts/paper.sh but is deliberately NOT scheduled here: it does not
+# appear anywhere in the real server crontab, so it has never actually run
+# in production. An earlier version of this file guessed a schedule for it
+# and would have started running it for the first time as an unannounced
+# side effect of this migration. Confirmed with the operator (2026-08-17):
+# leave it off. Add a line here deliberately, as its own reviewed change,
+# if it should ever go live.
 
-# --- Not yet live on the server at all -----------------------------------
-
-# iwmfwd: added to scripts/paper.sh in this same conversion; no server
-# crontab line exists for it yet (server crontab is only ever changed
-# manually — see docs/operations.md). Only processes sessions strictly
-# before today (ET), so it is not market-hours sensitive; any evening time
-# is correct. This line is this repo's proposed schedule for it.
-30 20 * * * /app/scripts/paper.sh iwmfwd
+# iwmfwd: real crontab line is `30 23 * * *` UTC (no day restriction) —
+# 19:30 ET under EDT, 18:30 ET under EST. Not market-hours sensitive, so
+# either reading is fine; pinned to the EDT reading like momls2x above.
+# (An earlier version of this file claimed iwmfwd had no server-side
+# schedule at all and proposed inventing one at 20:30 ET — wrong: it's
+# already live, just off by about an hour from the placeholder.)
+30 19 * * * /app/scripts/paper.sh iwmfwd
