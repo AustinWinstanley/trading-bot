@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.3...v1.0.4) (2026-08-17)
+
+
+### Bug Fixes
+
+* correct deploy/crontab against the real production schedule ([#30](https://github.com/AustinWinstanley/trading-bot/issues/30)) ([acecdec](https://github.com/AustinWinstanley/trading-bot/commit/acecdec488c43b55508aee274165292b35f2158b))
+
 ## [1.0.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.2...v1.0.3) (2026-08-14)
 
 
