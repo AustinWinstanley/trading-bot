@@ -1,10 +1,11 @@
 # Architecture
 
 Everything in this repo runs as one of four Docker Compose services
-(`deploy/docker-compose.yml`). A server that hasn't yet cut over from the
-legacy host-cron deployment still runs `scripts/paper.sh` directly from
-cron for the trading logic (see "Legacy host-cron deployment" below) — the
-trust-tier model is identical either way, only the scheduler differs.
+(`deploy/docker-compose.yml`). Production cut over from host-cron to this
+deployment on 2026-08-17; host-cron running `scripts/paper.sh` directly is
+kept only as a documented rollback path (see "Legacy host-cron deployment
+(rollback only)" below), not a second live mode — the trust-tier model
+below is identical either way, only the scheduler differs.
 
 ## Trust tiers
 
@@ -53,13 +54,14 @@ your own deployment.
 
 `scripts/paper.sh` is the single entry point the scheduler calls — inside
 the `engine` container that's `supercronic` reading `deploy/crontab`; on a
-not-yet-cut-over host it's cron reading the operator's crontab. Either way,
+rolled-back host it's cron reading the operator's crontab. Either way,
 every job flocks a file under `state/paper-$LOCK.lock` before running, so a
 slow run can never overlap the next — and because `state/` is the same
 bind-mounted directory in both cases, flock's exclusion holds correctly
-even during the transition itself (a host cron job and a containerized job
-racing the same lock file still can't both proceed). Which lock a job takes
-is a deliberate correctness decision, not one-lock-per-job:
+even if a rollback ever briefly overlaps the two (a host cron job and a
+containerized job racing the same lock file still can't both proceed).
+Which lock a job takes is a deliberate correctness decision, not
+one-lock-per-job:
 
 | Job | Lock | What it does |
 | --- | --- | --- |
@@ -117,19 +119,18 @@ as a loud, logged skip instead of a silent wrong-time trade. Jobs with no
 market-clock sensitivity (`weekly`, `momls2x`, `shadows2x`, `iwmfwd`) stay
 unslotted on purpose.
 
-### Legacy host-cron deployment
+### Legacy host-cron deployment (rollback only)
 
-A server that has not yet cut over to `deploy/docker-compose.yml` still
-runs `scripts/paper.sh` directly from the operator's crontab, which — on
-Debian, with no `CRON_TZ` support — needs the original **two** lines per
+If `deploy/docker-compose.yml` is ever rolled back (see
+[docs/operations.md](operations.md#legacy-host-cron-deployment-rollback-only)),
+cron runs `scripts/paper.sh` directly from the operator's crontab, which —
+on Debian, with no `CRON_TZ` support — needs the original **two** lines per
 ET-sensitive slot: one that lands correctly under EDT (UTC−4), one under
 EST (UTC−5). Both fire year-round; the slot guard is what makes exactly one
 of each pair do real work whatever the DST offset is. Deleting one line of
 a pair silently breaks that job for half the year — see
 [`AGENTS.md`](../AGENTS.md) for the incident that motivated this guard in
-the first place. See [docs/operations.md](operations.md) for which
-deployment mode applies to a given server and how to move from one to the
-other.
+the first place.
 
 ## The journal service
 

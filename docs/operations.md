@@ -77,25 +77,38 @@ docker compose -f deploy/docker-compose.yml pull
 docker compose -f deploy/docker-compose.yml up -d
 ```
 
-Upgrading the engine to a new released version:
+Upgrading to a new released version:
 
 ```bash
-deploy/upgrade.sh v0.2.0
+deploy/upgrade.sh            # git pull, then upgrade to whatever version.txt says
+deploy/upgrade.sh v0.2.0     # git pull, then upgrade to this specific tag
 ```
 
-`deploy/upgrade.sh` pulls the candidate `engine` image, drains the
-`daily`/`daily2x`/`weekly`/`health`/`health2x` locks (the same five
-`scripts/upgrade.sh` always drained), then verifies the candidate **before**
-switching anything: runs the test suite and both mutation-free dry runs and
-both healthchecks *inside the candidate image* via `docker compose run`,
-against the real `state/`/`reports/` volumes but without ever starting its
-scheduler. Only if every check passes does it `stop` the live `engine`
-service and `up -d` it again on the new tag. On any failure, the live
-service is untouched — still running the previous tag — and the script
-prints the exact rollback command. Dashboard/mcp-server/journal upgrades are
-lower-risk (read-only, or narrow-scope) and don't need this battery: bump
-their `*_TAG` in `deploy/.env` and run
-`docker compose -f deploy/docker-compose.yml up -d`.
+`deploy/upgrade.sh` first `git pull --ff-only`s the checkout itself (so it
+always runs whatever version of the script, `deploy/crontab`, and
+`deploy/docker-compose.yml` that pull brought in, re-execing itself once to
+pick that up) and, with no argument, reads the target version off
+`version.txt` afterward. It then upgrades all four services to that one
+tag:
+
+- **`engine`** gets the full treatment: pulls the candidate image, drains
+  the `daily`/`daily2x`/`weekly`/`health`/`health2x` locks (the same five
+  `scripts/upgrade.sh` always drained), then verifies the candidate
+  **before** switching anything — runs the test suite and both
+  mutation-free dry runs and both healthchecks *inside the candidate image*
+  via `docker compose run`, against the real `state/`/`reports/` volumes
+  but without ever starting its scheduler. Only if every check passes does
+  it `stop` the live `engine` service and `up -d` it again on the new tag,
+  then poll its own healthcheck and auto-rollback to the previous tag if it
+  never reports healthy.
+- **`dashboard`/`mcp-server`/`journal`** are lower-risk (read-only, or
+  narrow-scope) and skip that test battery: each is switched to the new
+  tag, then polled against its own compose healthcheck, with the same
+  auto-rollback-on-failure if it doesn't come up healthy.
+
+On any failure, whichever service failed is left on (or rolled back to) its
+previous tag, and the script prints the exact manual rollback command for
+anything it didn't get to.
 
 Local development (build images from your own tree instead of pulling from
 GHCR):
@@ -126,11 +139,14 @@ start. It commits nightly (`deploy/journal-crontab`); see
 [docs/architecture.md](architecture.md#the-journal-service) for why this is
 a separate, narrower trust tier rather than folded into `engine`.
 
-## Legacy host-cron deployment
+## Legacy host-cron deployment (rollback only)
 
-A server that has not yet migrated to the containerized deployment above
-still runs `scripts/paper.sh` directly from the operator's crontab, updated
-via:
+Production cut over to the containerized deployment above on **2026-08-17**.
+This section is no longer describing a live alternative — it's the
+mechanism kept in reserve for rolling back if the containerized deployment
+ever needs to come down: restore the crontab backup taken at cutover
+(`crontab <backup-file>`), and cron resumes running `scripts/paper.sh`
+directly from the server checkout, updated via:
 
 ```bash
 scripts/upgrade.sh
@@ -161,7 +177,7 @@ scripts/paper.sh health2x
 
 See [docs/architecture.md](architecture.md) for the full job table and why
 several locks are deliberately shared between jobs, and
-[docs/architecture.md's "Legacy host-cron deployment"](architecture.md#legacy-host-cron-deployment)
+[docs/architecture.md's "Legacy host-cron deployment (rollback only)"](architecture.md#legacy-host-cron-deployment-rollback-only)
 section for why this mode needs two crontab lines per ET-sensitive job where
 the containerized deployment needs only one.
 
@@ -171,24 +187,25 @@ parent orders, or unprotected positions; schedule them separately so a missed
 daily job is observable. Deploy only reviewed commits, run the test suite on
 the server, then run both dry-run commands before enabling cron.
 
-### Migrating from host cron to containers
+### Rolling back to host cron
 
 `state/paper-*.lock` files are the same bind-mounted inodes either way, so
 host cron and the `engine` container can never both run a full rebalance at
-the same instant even mid-migration — but running both schedulers
-long-term would still double every job. Migrate on a quiet day (no
-weekday market-hours jobs pending): stop the crontab's `scripts/paper.sh`
-lines first, confirm no `state/paper-*.lock` is held, then bring up the
-containerized deployment as described above. Keep the old crontab backup
-(`crontab -l > ...`) for a rollback window — restoring it needs
-`PAPER_BOT_ROOT` pointed back at the host checkout path, since
+the same instant even if a rollback briefly overlaps with the containers
+still coming down — but running both schedulers for any length of time
+would still double every job, so bring the containers down first
+(`docker compose -f deploy/docker-compose.yml down`), confirm no
+`state/paper-*.lock` is held, then restore the crontab backup. Restoring it
+needs `PAPER_BOT_ROOT` pointed back at the host checkout path, since
 `scripts/paper.sh`'s container-oriented default no longer matches a
 bare-host layout.
 
 ## Making the repository public (one-time checklist)
 
-Enable, in this order, before flipping visibility — secret scanning should
-be active before the repo is public, not after:
+**Done as of 2026-08-14** — kept here as a record of what was enabled and
+in what order, and as a reference if you're deploying your own fork
+publicly. Enable, in this order, before flipping visibility — secret
+scanning should be active before the repo is public, not after:
 
 1. **Settings → Code security** → enable secret scanning and push
    protection.

@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# Fail-closed server upgrade verification.
+# Fail-closed server upgrade verification — LEGACY HOST-CRON DEPLOYMENT ONLY.
+#
+# Production cut over to the containerized deployment on 2026-08-17;
+# deploy/upgrade.sh is the upgrade path for that now (git pull, then all
+# four services). This script is kept only as the mechanism for a rollback
+# to host-cron (see docs/operations.md's "Legacy host-cron deployment"),
+# not a second live upgrade path — don't reach for it on a server actually
+# running deploy/docker-compose.yml.
 #
 # The script runs itself from a temporary copy, pauses only crontab lines that
 # invoke this project's paper wrapper, stashes tracked runtime reports, pulls
