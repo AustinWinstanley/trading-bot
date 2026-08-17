@@ -80,6 +80,18 @@ services:
       - ..:/repo
     secrets:
       - journal_deploy_key
+    healthcheck:
+      # Same reasoning and mechanism as engine's: supercronic has no health
+      # endpoint of its own, and a crashed scheduler here means reports/
+      # silently stops syncing to GitHub until someone happens to notice —
+      # exactly the failure mode a healthcheck exists to surface instead.
+      # busybox (this image's base) ships pgrep as a built-in applet, no
+      # extra package needed — confirmed by exec'ing into the built image.
+      test: ["CMD", "pgrep", "-f", "supercronic"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   dashboard:
     image: ghcr.io/austinwinstanley/trading-bot-dashboard:${DASHBOARD_TAG:-latest}
