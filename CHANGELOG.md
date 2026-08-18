@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.0...v1.1.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* reject orders shrunk below min_order_notional instead of submitting them ([#35](https://github.com/AustinWinstanley/trading-bot/issues/35)) ([3be905f](https://github.com/AustinWinstanley/trading-bot/commit/3be905ff37019d5eb778d6db1b1854cb280b309f))
+
 ## [1.1.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.0.4...v1.1.0) (2026-08-17)
 
 
