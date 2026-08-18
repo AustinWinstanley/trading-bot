@@ -689,6 +689,32 @@ in. Note the proxy only resolves the threshold, not a precise listing date:
 a genuinely old symbol's `listed_days` is a lower bound (however far back
 the window reaches), which is fine since it still clears 180 either way.
 
+### A shrink can cascade a proposal below the broker's own minimum order value
+
+Live incident, 2026-08-18: TSEM started at $76.22, got shrunk to $0.01 by
+the portfolio exposure cap, floored to $0.00 at the final cents-rounding
+step, and `engine/risk.py`'s gate approved it anyway — the only guard left
+by that point was `qty <= 0` at 1e-6-share precision, and a nonzero-but-
+negligible quantity sails past that. Alpaca 403'd the submission ("cost
+basis must be >= minimal amount of order 1"), and that one symbol's failed
+submission took the whole daily run's exit code to `CRITICAL`/`rc=1`, even
+though every other order that run had already submitted fine.
+
+Fixed by re-checking the final `approved_notional` against
+`paper_portfolio.min_order_notional` (the same threshold
+`scripts/run_daily.py` already uses to decide whether a target/held gap is
+worth proposing at all) immediately after every shrink step on **both**
+the buy and short branches — any cap (position, portfolio exposure,
+leveraged, experiment, cash headroom, or the short/gross exposure cap) can
+independently cascade a proposal down near zero, so the check has to be
+the last thing before an order is constructed, not tied to any one cap.
+Sells and covers are deliberately exempt: closing risk is never blocked
+here regardless of size, so a dust-sized exit must still go through rather
+than get stuck open forever. See
+`test_buy_shrunk_below_min_notional_is_rejected_not_submitted` and
+`test_short_shrunk_below_min_notional_is_rejected_not_submitted` in
+`tests/test_risk_gate.py`.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized
