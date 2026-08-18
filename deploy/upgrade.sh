@@ -158,7 +158,19 @@ ENGINE_TAG="$CANDIDATE_TAG" "${COMPOSE[@]}" run --rm --no-deps engine \
 
 # Release the locks now — verification is done, and the actual switch below
 # (stop + up -d) needs no exclusion beyond what compose itself provides.
-flock -u 201 202 203 204 205
+# Five separate calls, not `flock -u 201 202 203 204 205`: with no command
+# given, flock unlocks exactly one fd per invocation — anything after the
+# first numeric argument is treated as a command to exec, which is exactly
+# how this failed live on 2026-08-18 ("flock: failed to execute 202: No
+# such file or directory", after every verification step upstream had
+# already passed). Never actually exercised end-to-end before that run —
+# earlier testing of this script isolated the health-poll/rollback logic
+# rather than running the full script against real locks.
+flock -u 201
+flock -u 202
+flock -u 203
+flock -u 204
+flock -u 205
 
 echo "==> Switching the live engine service to $CANDIDATE_TAG"
 "${COMPOSE[@]}" stop engine
