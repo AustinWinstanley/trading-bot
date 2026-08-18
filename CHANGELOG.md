@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.1...v1.1.2) (2026-08-18)
+
+
+### Bug Fixes
+
+* correct deploy/upgrade.sh's flock -u syntax for releasing drained locks ([#37](https://github.com/AustinWinstanley/trading-bot/issues/37)) ([4398c18](https://github.com/AustinWinstanley/trading-bot/commit/4398c18360bcd2928aa5e15642b82f17bf8177f5))
+
 ## [1.1.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.0...v1.1.1) (2026-08-18)
 
 
