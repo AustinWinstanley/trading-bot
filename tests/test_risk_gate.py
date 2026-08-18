@@ -473,6 +473,58 @@ def test_orders_are_shrunk_to_available_cash(cfg, clean_risk, ctx):
     assert result.approved[0].notional <= 100.0
 
 
+def test_buy_shrunk_below_min_notional_is_rejected_not_submitted(cfg, clean_risk, ctx):
+    """Real incident, 2026-08-18: TSEM started at $76.22, got shrunk to
+    $0.01 by the portfolio exposure cap, floored to $0.00 at the final
+    cents-rounding step, and the gate approved it anyway — Alpaca 403'd the
+    submission ("cost basis must be >= minimal amount of order 1") and that
+    failure took the whole daily run's exit code down with it, even though
+    every other order that run had already submitted fine. Cash headroom is
+    a simpler lever than the exposure cap for reproducing the same
+    downstream code path (the final floor check fires regardless of which
+    earlier shrink step produced the low approved_notional)."""
+    account = AccountState(equity=EQUITY, cash=10.0, positions={})
+    result = evaluate([buy("XLK", notional=690.0)], account, clean_risk, ctx, cfg)
+    assert result.approved == []
+    reason = only_rejection(result)
+    assert "min_order_notional" in reason
+
+
+def test_short_shrunk_below_min_notional_is_rejected_not_submitted(cfg, clean_risk):
+    """Mirrors the buy-side incident above but via the short/gross exposure
+    cap on a cheap symbol: the pre-existing whole-share floor guarantees
+    qty >= 1, but for a cheap enough stock 1 share can still be well under
+    min_order_notional."""
+    symbols = {
+        "CHEAPSHORT": SymbolData(
+            price=6.0, atr14=0.2, avg_dollar_volume_20d=500e6, shortable=True
+        ),
+    }
+    cheap_ctx = MarketContext(
+        now=dt.datetime(2026, 7, 22, 12, 30, tzinfo=ET), is_trading_day=True, symbols=symbols
+    )
+    short_cap = cfg.risk.max_short_exposure_pct * EQUITY
+    existing_short_mv = short_cap - 6.0  # leaves exactly $6.00 of short-exposure room
+    account = AccountState(
+        equity=EQUITY,
+        cash=EQUITY,
+        positions={
+            "CHEAPSHORT": Position(
+                symbol="CHEAPSHORT",
+                qty=-(existing_short_mv / 6.0),
+                avg_entry_price=6.0,
+                current_price=6.0,
+            )
+        },
+    )
+    result = evaluate(
+        [short_prop("CHEAPSHORT", notional=500.0, limit=6.0)], account, clean_risk, cheap_ctx, cfg
+    )
+    assert result.approved == []
+    reason = only_rejection(result)
+    assert "min_order_notional" in reason
+
+
 # --------------------------------------------------------------------------
 # Execution guards
 # --------------------------------------------------------------------------

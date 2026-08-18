@@ -321,6 +321,7 @@ def evaluate(
     not coerced.
     """
     result = GateResult()
+    min_order_notional = float(cfg.sleeves_paper["min_order_notional"])
 
     # ---- Global circuit breakers, checked before any individual proposal ----
 
@@ -590,6 +591,22 @@ def evaluate(
                     RejectedProposal(symbol, f"short notional {approved_notional:,.2f} rounds below 1 whole share", raw))
                 continue
             approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
+            # The whole-share floor above guarantees qty >= 1, but for a cheap
+            # enough symbol 1 share can still be well under min_order_notional
+            # (and, separately, under whatever Alpaca's own minimum order
+            # value is) — the same class of failure fixed below for the long
+            # side, mirrored here since every shrink step above (short/gross
+            # exposure, position cap) exists on this branch too.
+            if approved_notional < min_order_notional:
+                result.rejected.append(
+                    RejectedProposal(
+                        symbol,
+                        f"short notional {approved_notional:,.2f} below min_order_notional "
+                        f"{min_order_notional:,.2f} — not worth a broker round-trip",
+                        raw,
+                    )
+                )
+                continue
             if cfg.risk.stops_apply_to(clean["sleeve"]):
                 stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
                 stop_price = round(clean["limit_price"] * (1 + stop_pct), 4)   # stop ABOVE entry
@@ -845,6 +862,27 @@ def evaluate(
         # enlarge the order past what was requested and breach the gate's
         # contract by a fraction of a cent.
         approved_notional = math.floor(qty * clean["limit_price"] * 100) / 100
+        # Any of the shrink steps above (position/exposure/leveraged/
+        # experiment caps, cash headroom) can push a proposal that started
+        # well above min_order_notional down to a fraction of a cent — the
+        # `qty <= 0` check above only catches literal zero at 1e-6-share
+        # precision, not "technically positive but economically negligible."
+        # Alpaca enforces its own minimum order value and 403s a sub-minimum
+        # order rather than silently accepting it: live on 2026-08-18, TSEM
+        # got shrunk to $0.00 by the exposure cap, the broker rejected the
+        # submission, and that failure took the whole daily run's exit code
+        # down with it even though every other order that run had already
+        # submitted fine. Reject here instead of learning it at the broker.
+        if approved_notional < min_order_notional:
+            result.rejected.append(
+                RejectedProposal(
+                    symbol,
+                    f"shrunk to {approved_notional:,.2f}, below min_order_notional "
+                    f"{min_order_notional:,.2f} — not worth a broker round-trip",
+                    raw,
+                )
+            )
+            continue
 
         if cfg.risk.stops_apply_to(clean["sleeve"]):
             stop_pct = stop_distance_pct(cfg, clean["limit_price"], data.atr14)
