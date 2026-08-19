@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.2...v1.1.3) (2026-08-19)
+
+
+### Bug Fixes
+
+* give client_order_id a per-run time component to stop same-day collisions ([#39](https://github.com/AustinWinstanley/trading-bot/issues/39)) ([ff67713](https://github.com/AustinWinstanley/trading-bot/commit/ff6771352bb42b8148bf2d1692460a43343b45a2))
+
 ## [1.1.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.1...v1.1.2) (2026-08-18)
 
 
