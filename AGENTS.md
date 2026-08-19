@@ -715,6 +715,39 @@ than get stuck open forever. See
 `test_short_shrunk_below_min_notional_is_rejected_not_submitted` in
 `tests/test_risk_gate.py`.
 
+### A same-day resubmission collided with its own earlier client_order_id
+
+Live incident, 2026-08-18: `scripts/run_daily.py` built each order's
+`client_order_id` as `bot-{date}-{symbol}-{side}` — deterministic by day,
+symbol, and side only. The stale-order cancel-and-reprice pass (`daily`'s
+midday run canceling an unfilled `OLLI` cover from the open and trying to
+resubmit it) reused the exact ID the canceled order already had, and
+Alpaca rejected the resubmission with a 422 (`client_order_id must be
+unique`) rather than silently accepting a fresh order. Same failure hit a
+completely unrelated case the same run: `FBRX` got proposed again at
+midday after already being bought that morning, colliding with its own
+earlier (successfully filled) order. Both `OLLI` (base) and `WING` (2x)
+were left genuinely stuck short — not just flagged stale — since the
+system had already canceled their exit order and then failed to replace
+it, with no further full run until the next day.
+
+A second, related bug rode along: the realized-loss/experiment-P&L
+bookkeeping right after order submission iterated `result.approved` (what
+the gate allowed) instead of what actually reached the broker, so `OLLI`
+landed in `recent_losses` as an exit that never happened, purely because
+the *proposal* to close it at a loss was approved — the submission itself
+had already failed by that point.
+
+Fixed by giving `client_order_id` a per-run time component
+(`order_client_id()`, keyed on `now_et`, which is fixed once per
+invocation — see `scripts/run_daily.py`) so a legitimate same-day
+resubmission gets a fresh ID instead of colliding with itself, and by
+tracking which orders actually succeeded (`succeeded_orders`) so the
+loss/P&L bookkeeping only fires for orders the broker actually accepted.
+`flatten_id` (kill-switch liquidation) is deliberately untouched — repeated
+flatten attempts are meant to be idempotent, not distinct, retries of the
+same "make this flat" intent.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized

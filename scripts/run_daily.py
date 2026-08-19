@@ -169,6 +169,30 @@ def is_liquidation_order(order: dict) -> bool:
     ).endswith("-flatten")
 
 
+def order_client_id(today: dt.date, now_et: dt.datetime, symbol: str, side: str) -> str:
+    """client_order_id for a regular (non-flatten) buy/short/sell/cover.
+
+    Includes the run's own HH:MM:SS, not just the date: a bare
+    bot-YYYYMMDD-SYMBOL-SIDE collides with itself the moment the same
+    symbol+side is legitimately submitted twice in one day — the
+    stale-order cancel-and-reprice pass resubmitting the same cover, or
+    mom_ls adding to a name it already bought that morning. Alpaca 403/422s
+    the resubmission ("client_order_id must be unique") and the order is
+    dropped entirely — live on 2026-08-18, this left OLLI (base) and WING
+    (2x) both stuck short with every subsequent cover attempt failing the
+    same way, never actually closed.
+
+    now_et is fixed once per run (computed at the top of main()), so this
+    stays deterministic within a single invocation — the only property the
+    original scheme needed — while no longer colliding across separate runs
+    on the same day. Unrelated to flatten_id (kill-switch liquidation),
+    which stays deliberately date-only: repeated flatten attempts are
+    meant to be idempotent, not distinct, retries of the same "make this
+    flat" intent — see docs/architecture.md's "idempotent" kill-switch
+    note."""
+    return f"bot-{today:%Y%m%d}-{now_et:%H%M%S}-{symbol}-{side}"
+
+
 def marketable_limit(price: float, side: str, slippage: float) -> float:
     """Round toward the touch so cents cannot breach the configured band."""
     if side in ("buy", "cover"):
@@ -776,6 +800,7 @@ def main() -> None:
     # ---- execute ---------------------------------------------------------
     submitted = 0
     submission_failures: list[str] = []
+    succeeded_orders: list = []
     orders_to_execute = [] if result.flatten_all else result.approved
     for order in orders_to_execute:
         tag = " ".join(order.adjustments) or "clean"
@@ -787,7 +812,7 @@ def main() -> None:
             # Alpaca has no "short"/"cover" sides: sell-when-flat opens a
             # short, buy-when-short covers.
             alpaca_side = {"short": "sell", "cover": "buy"}.get(order.side, order.side)
-            order_id = f"bot-{today:%Y%m%d}-{order.symbol}-{order.side}"
+            order_id = order_client_id(today, now_et, order.symbol, order.side)
             if order.side in ("buy", "short"):
                 o, broker_protected = t.submit_entry(
                     order.symbol, alpaca_side, order.qty, order.limit_price,
@@ -842,6 +867,7 @@ def main() -> None:
             if order.side not in ("buy", "short"):
                 conn.execute("DELETE FROM stops WHERE symbol=?", (order.symbol,))
             submitted += 1
+            succeeded_orders.append(order)
         except Exception as exc:
             print(f"    submit {order.symbol} FAILED: {exc}")
             submission_failures.append(f"{order.symbol}: {exc}")
@@ -849,8 +875,17 @@ def main() -> None:
     # record realised losses for the revenge-trade block, and realized P&L
     # for any experiment-tier sleeve exit — gains and losses both, since a
     # stand-down is judged on cumulative P&L, not just on losing trades.
+    # Iterates succeeded_orders, not result.approved: the gate approving a
+    # proposal only means it's allowed, not that the broker accepted it —
+    # a submission failure above (client_order_id collision, a rejected
+    # notional, a network error) must not still be recorded as a realized
+    # loss / experiment P&L event for a position that never actually
+    # closed. Live on 2026-08-18, OLLI's cover failed to submit but still
+    # landed in recent_losses as if it had exited, which would have wrongly
+    # blocked a future re-entry for a position that was — and still is —
+    # open.
     experiment_realized_pnl = dict(st.get("experiment_realized_pnl", {}))
-    for order in result.approved:
+    for order in succeeded_orders:
         if order.side in ("sell", "cover") and order.symbol in positions:
             pos = positions[order.symbol]
             if pos.unrealized_pct < 0:

@@ -12,6 +12,7 @@ from scripts.run_daily import (
     is_liquidation_order,
     marketable_limit,
     is_protective_order,
+    order_client_id,
     reconcile_journal_orders,
     stale_pending_orders,
     sync_broker_stops,
@@ -41,6 +42,47 @@ def test_only_dedicated_flatten_client_ids_are_liquidations():
     assert is_liquidation_order({"client_order_id": "bot-20260723-XLK-flatten"})
     assert not is_liquidation_order({"client_order_id": "bot-20260723-XLK-sell"})
     assert not is_liquidation_order({"client_order_id": "manual-flatten"})
+
+
+def test_order_client_id_differs_across_same_day_resubmissions():
+    """Real incident, 2026-08-18: a bare bot-YYYYMMDD-SYMBOL-SIDE id made a
+    same-day resubmission of the same symbol+side (the stale-order
+    cancel-and-reprice pass, or mom_ls adding to a name already bought that
+    morning) collide with the earlier order and get 403/422 rejected by
+    Alpaca as a duplicate client_order_id — silently dropping the order."""
+    today = dt.date(2026, 8, 18)
+    morning = dt.datetime(2026, 8, 18, 9, 51, 1, tzinfo=dt.timezone.utc)
+    midday = dt.datetime(2026, 8, 18, 12, 39, 1, tzinfo=dt.timezone.utc)
+    first = order_client_id(today, morning, "WING", "cover")
+    second = order_client_id(today, midday, "WING", "cover")
+    assert first != second
+    # A regular order's id must never end in "-flatten" and be mistaken for
+    # kill-switch liquidation by is_liquidation_order.
+    assert not is_liquidation_order({"client_order_id": first})
+
+
+def test_order_client_id_is_deterministic_within_one_run():
+    """now_et is computed once per run (main()'s own module docstring),
+    so two orders for different symbols in the same run must not collide
+    with each other, and the same call must be reproducible for a fixed
+    now_et — the property the original scheme actually needed."""
+    today = dt.date(2026, 8, 18)
+    now_et = dt.datetime(2026, 8, 18, 9, 51, 1, tzinfo=dt.timezone.utc)
+    assert order_client_id(today, now_et, "WING", "cover") == order_client_id(
+        today, now_et, "WING", "cover"
+    )
+    assert order_client_id(today, now_et, "WING", "cover") != order_client_id(
+        today, now_et, "KLAC", "short"
+    )
+
+
+def test_order_client_id_stays_under_alpacas_48_char_limit():
+    # Longest realistic symbol shape in this repo is an OCC option symbol
+    # (see engine/options_risk.py); "short"/"cover" are the longest sides.
+    today = dt.date(2026, 8, 18)
+    now_et = dt.datetime(2026, 8, 18, 23, 59, 59, tzinfo=dt.timezone.utc)
+    cid = order_client_id(today, now_et, "SPY260918P00751000", "cover")
+    assert len(cid) <= 48
 
 
 NOW = dt.datetime(2026, 8, 13, 18, 0, tzinfo=dt.timezone.utc)
