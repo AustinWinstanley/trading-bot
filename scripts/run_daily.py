@@ -37,7 +37,8 @@ from engine.leverage_overlay import apply_target_scale, recommend_leverage
 from engine.portfolio import build_targets
 from engine.risk import (AccountState, MarketContext, Position, RiskState,
                          SymbolData, _experiment_for_sleeve,
-                         compute_experiment_standdowns, evaluate)
+                         compute_experiment_standdowns, evaluate,
+                         stop_distance_pct)
 
 ET = ZoneInfo("America/New_York")
 
@@ -340,6 +341,70 @@ def sync_broker_stops(
     return protective_symbols
 
 
+def backfill_missing_stops(
+    conn: sqlite3.Connection,
+    trader: Trader,
+    cfg: Config,
+    positions: dict[str, Position],
+    raw_positions: list[dict],
+    held_sleeve: dict[str, str],
+    today: dt.date,
+) -> list[str]:
+    """Establish a fallback stop for any held, non-exempt position that has
+    never had one — neither a live broker stop (sync_broker_stops above
+    mirrors those into `stops` already) nor a previously-recorded fallback
+    row.
+
+    Nothing else revisits an existing position to check this: a fallback
+    stop is normally only written at entry time (submit_entry's fractional
+    path) or mirrored from a currently-open broker stop order. An entry
+    whose original order got neither — predates that fractional-entry
+    fallback path, or hit some other silent gap — stays unprotected
+    indefinitely. Live on 2x: GLD's fractional buy on 2026-07-23 got
+    neither and sat unprotected for a month before
+    scripts/healthcheck.py's "no broker or fallback stop" alert caught it
+    on 2026-08-20.
+    """
+    stopped = {r[0] for r in conn.execute("SELECT symbol FROM stops")}
+    asset_class = {
+        str(p.get("symbol")): str(p.get("asset_class", "")) for p in raw_positions
+    }
+    candidates = sorted(
+        symbol for symbol, pos in positions.items()
+        if symbol not in stopped
+        and pos.current_price > 0
+        # Options legs are defined-risk by the spread's own maximum_loss,
+        # never an equity-style stop — see scripts/healthcheck.py's
+        # matching us_option exclusion for why flagging them is noise.
+        and asset_class.get(symbol) != "us_option"
+        and cfg.risk.stops_apply_to(held_sleeve.get(symbol, ""))
+    )
+    if not candidates:
+        return []
+    history_days = max(400, cfg.universe.exclude_ipo_days * 2 + 40)
+    bars = trader.get_bars(candidates, today - dt.timedelta(days=history_days), today)
+    backfilled = []
+    for symbol in candidates:
+        pos = positions[symbol]
+        df = bars.get(symbol)
+        atr14 = (
+            float(atr(df, 14).iloc[-1]) if df is not None and len(df) >= 15
+            else pos.current_price * 0.02
+        )
+        stop_pct = stop_distance_pct(cfg, pos.current_price, atr14)
+        stop_price = round(
+            pos.current_price * (1 + stop_pct if pos.is_short else 1 - stop_pct), 4
+        )
+        if stop_price <= 0:
+            continue
+        conn.execute(
+            "INSERT OR REPLACE INTO stops VALUES (?,?,?,?,?)",
+            (symbol, stop_price, pos.avg_entry_price, today.isoformat(), "backfill"),
+        )
+        backfilled.append(symbol)
+    return backfilled
+
+
 def held_sleeve_by_symbol(conn: sqlite3.Connection, symbols) -> dict[str, str]:
     """Best-known sleeve attribution for each currently-held symbol.
 
@@ -440,12 +505,11 @@ def main() -> None:
     ts = now_et.isoformat()
 
     # ---- experiment-tier exposure / P&L / stand-down -----------------
-    # Computed unconditionally (independent of halt/--stops-only mode,
-    # like the software-stop check) so a breach is caught and flattened
-    # even on a stops-only run. No-op when the profile has no experiments
-    # configured (true for both profiles today; config_2x.yaml gains its
-    # first entries in a later phase).
-    held_sleeve = held_sleeve_by_symbol(conn, positions) if cfg.experiments else {}
+    # held_sleeve is computed unconditionally — the experiment aggregation
+    # below is a no-op without cfg.experiments, but the stop-backfill step
+    # further down (also independent of halt/--stops-only mode) needs it
+    # for every profile to know which held positions are stop-exempt.
+    held_sleeve = held_sleeve_by_symbol(conn, positions)
     exp_exposure, exp_unrealized = experiment_exposure_and_unrealized_pnl(
         positions, held_sleeve, cfg
     )
@@ -486,6 +550,12 @@ def main() -> None:
     reconciled = reconcile_journal_orders(conn, t)
     open_orders = t.open_orders()
     protective_symbols = sync_broker_stops(conn, positions, open_orders, today)
+    backfilled_stops = backfill_missing_stops(
+        conn, t, cfg, positions, raw_positions, held_sleeve, today
+    )
+    if backfilled_stops:
+        print(f"  backfilled fallback stop for {', '.join(backfilled_stops)} "
+              "(held with neither a broker nor software stop)")
     pending_symbols = {
         str(o.get("symbol")) for o in open_orders
         if o.get("symbol") and not is_protective_order(o)

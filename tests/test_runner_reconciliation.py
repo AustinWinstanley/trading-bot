@@ -4,9 +4,11 @@ import sqlite3
 
 import datetime as dt
 
+from engine.config import load_config
 from engine.risk import Position
 import scripts.run_daily as runner
 from scripts.run_daily import (
+    backfill_missing_stops,
     broker_fill_fields,
     cancel_symbol_orders,
     is_liquidation_order,
@@ -298,6 +300,96 @@ def test_cancel_symbol_orders_is_scoped_and_dry_run_safe():
     assert canceled == []
     assert cancel_symbol_orders(FakeTrader(), "XLK", orders, dry_run=False) == 1
     assert canceled == ["a"]
+
+
+class FakeBarsTrader:
+    """get_bars returns no history for every symbol — exercises the ATR
+    fallback (price * 0.02) without needing a real pandas fixture."""
+
+    def get_bars(self, symbols, start, end, timeframe="1Day", adjustment="all"):
+        return {}
+
+
+def test_backfill_establishes_a_stop_for_a_position_that_never_had_one():
+    """Real incident, 2x profile: GLD's fractional buy on 2026-07-23 got
+    neither a broker bracket stop nor a software fallback row, and sat
+    unprotected for a month until healthcheck.py caught it on 2026-08-20.
+    A position with no order history (held_sleeve has no entry for it) must
+    still be conservatively backfilled, not skipped."""
+    conn = journal()
+    positions = {"GLD": Position("GLD", 0.323557, 372.18, 423.705)}
+    raw_positions = [{"symbol": "GLD", "asset_class": "us_equity"}]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions, raw_positions,
+        held_sleeve={}, today=dt.date(2026, 8, 24),
+    )
+    assert backfilled == ["GLD"]
+    stop_price, origin = conn.execute(
+        "SELECT stop_price, sleeve FROM stops WHERE symbol='GLD'"
+    ).fetchone()
+    assert origin == "backfill"
+    # ATR fallback (2% of price) is narrower than config.yaml's stop_loss_pct
+    # floor (8%), so the floor wins: stop_distance_pct(cfg, ...) == 0.08.
+    assert stop_price == round(423.705 * 0.92, 4)
+
+
+def test_backfill_skips_stop_exempt_sleeves():
+    conn = journal()
+    positions = {"FIG": Position("FIG", -8.0, 25.83, 27.235)}
+    raw_positions = [{"symbol": "FIG", "asset_class": "us_equity"}]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions, raw_positions,
+        held_sleeve={"FIG": "mom_ls"}, today=dt.date(2026, 8, 24),
+    )
+    assert backfilled == []
+    assert conn.execute("SELECT 1 FROM stops WHERE symbol='FIG'").fetchone() is None
+
+
+def test_backfill_skips_positions_that_already_have_a_stop():
+    conn = journal()
+    conn.execute(
+        "INSERT INTO stops VALUES ('GLD', 400.0, 372.18, '2026-08-20', 'broker')"
+    )
+    positions = {"GLD": Position("GLD", 0.323557, 372.18, 423.705)}
+    raw_positions = [{"symbol": "GLD", "asset_class": "us_equity"}]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions, raw_positions,
+        held_sleeve={"GLD": "tsmom"}, today=dt.date(2026, 8, 24),
+    )
+    assert backfilled == []
+    assert conn.execute(
+        "SELECT stop_price FROM stops WHERE symbol='GLD'"
+    ).fetchone()[0] == 400.0
+
+
+def test_backfill_skips_option_legs():
+    conn = journal()
+    positions = {
+        "SPY260918P00751000": Position("SPY260918P00751000", -1.0, 5.63, 5.63),
+    }
+    raw_positions = [
+        {"symbol": "SPY260918P00751000", "asset_class": "us_option"},
+    ]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions, raw_positions,
+        held_sleeve={}, today=dt.date(2026, 8, 24),
+    )
+    assert backfilled == []
+
+
+def test_backfill_puts_a_short_stop_above_price():
+    conn = journal()
+    positions = {"BMNR": Position("BMNR", -9.12758, 21.58, 22.75)}
+    raw_positions = [{"symbol": "BMNR", "asset_class": "us_equity"}]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions, raw_positions,
+        held_sleeve={"BMNR": "tsmom"}, today=dt.date(2026, 8, 24),
+    )
+    assert backfilled == ["BMNR"]
+    stop_price = conn.execute(
+        "SELECT stop_price FROM stops WHERE symbol='BMNR'"
+    ).fetchone()[0]
+    assert stop_price > 22.75
 
 
 def test_report_keeps_every_run_of_the_day(tmp_path):
