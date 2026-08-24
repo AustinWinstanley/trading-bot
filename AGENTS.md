@@ -748,6 +748,35 @@ loss/P&L bookkeeping only fires for orders the broker actually accepted.
 flatten attempts are meant to be idempotent, not distinct, retries of the
 same "make this flat" intent.
 
+### A position can end up with no stop at all, and nothing ever revisits it
+
+Live incident, first caught 2026-08-20 (2x): `scripts/healthcheck.py` began
+flagging `GLD: position has no broker or fallback stop` on every health2x
+run. GLD's fractional buy (0.39571 sh) had landed on 2026-07-23, the same
+day `708bfd2` ("Handle Alpaca fractional entry constraints") added the
+software-fallback-stop path for fractional entries — the order appears to
+have run just ahead of that fix taking effect. It got neither a broker
+bracket stop nor a fallback row, and — unlike a triggered/expired stop —
+nothing in the system ever revisits an *existing* position to check it has
+one at all: `sync_broker_stops` only mirrors a *currently open* broker stop
+order, and the fallback-write-on-entry path only fires at the moment of a
+fresh fractional buy. The gap is silent by construction — it sat
+unprotected for a month before the health check happened to surface it.
+
+Fixed with `backfill_missing_stops()` in `scripts/run_daily.py`, run every
+invocation right after `sync_broker_stops`: for every held position with no
+row in `stops` at all, that isn't `us_option` (defined-risk by the spread,
+never an equity-style stop — see `scripts/healthcheck.py`'s matching
+exclusion) and whose sleeve isn't in `risk.stop_exempt_sleeves`, compute a
+fallback stop with the same `stop_distance_pct()` ATR formula
+`engine/risk.py` uses for a fresh entry, and write it with origin
+`"backfill"`. Runs in both full and `--stops-only` mode, same as the
+software-stop check itself, so a backfilled stop is live-checkable the same
+run it's created. Sleeve attribution reuses `held_sleeve_by_symbol()`
+(now computed unconditionally, not just when `cfg.experiments` is set); a
+symbol with no attribution at all defaults to "needs a stop" rather than
+being skipped.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized
