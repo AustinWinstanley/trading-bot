@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.3...v1.1.4) (2026-08-24)
+
+
+### Bug Fixes
+
+* backfill a fallback stop for any held position that never got one ([#43](https://github.com/AustinWinstanley/trading-bot/issues/43)) ([9cda9dd](https://github.com/AustinWinstanley/trading-bot/commit/9cda9dd9e33381f3dcb2511e21d98acd27ec7cd2))
+
 ## [1.1.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.2...v1.1.3) (2026-08-19)
 
 
