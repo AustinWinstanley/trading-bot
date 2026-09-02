@@ -28,19 +28,15 @@ risk:
   # last ~14 opportunities. 1.30 is the 120% target plus headroom.
   elevated_position_pct: 1.30
   elevated_position_sleeves: [equity_core, trend]
-  # Lab-only, evidence-driven relaxation of the otherwise-unconditional
-  # no-averaging-down rule (see reports/target_restoration_study.json:
-  # Sharpe higher and CAGR not lower in 4/4 backtested cells, at a
-  # 0.19-0.60pp max-drawdown cost in 3/4 — rejected by the hard gate's
-  # zero-tolerance drawdown rule, judged worth the lab's lighter
-  # experiment-tier bar per AGENTS.md's "experiment tier" section). Adds no
-  # new sizing logic: mom_ls's target is momentum-rank-driven with no
-  # reference to a position's P&L, so a rebalance proposal (target - held)
-  # is already capped at the same target this position would have if it
-  # were not a loser, and every other position/exposure cap still applies
-  # on top. base config.yaml deliberately does not set this — it is the
-  # unchanged control.
-  restoration_exempt_sleeves: [mom_ls]
+  # restoration_exempt_sleeves (lab-only relaxation of the no-averaging-down
+  # rule for mom_ls) reverted 2026-09-02: reports/target_restoration_study.json
+  # itself flagged the 0.19-0.60pp max-drawdown cost that failed the hard
+  # gate; three weeks live (2026-08-12 through 09-02) confirmed the cost
+  # side, not just the backtest's Sharpe/CAGR upside — 23 fills across 16
+  # symbols added $3,050.92 to already-losing mom_ls positions, ~69% of the
+  # sleeve's current gross exposure, while realized-trade performance was no
+  # better than base's (which never had the exemption). Back to matching
+  # config.yaml's unconditional rule.
 sleeves:
   momentum:
     allocation: 0.45
