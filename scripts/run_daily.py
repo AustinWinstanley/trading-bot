@@ -717,6 +717,28 @@ def main() -> None:
                     diff = max(diff, -cur_notional)              # sell at most what we hold
             if abs(diff) < min_notional:
                 continue
+            if sym not in targets and side in ("sell", "cover"):
+                # A symbol that has dropped out of every sleeve's target is being
+                # fully exited here, forever, until it succeeds — there is no
+                # later rotation that will revisit it. If the broker has since
+                # deactivated the asset (a merger/delisting — e.g. FBRX went
+                # inactive after argenx's 2026-08-27 take-private of Forte
+                # Biosciences), that exit order 422s every run with no path to
+                # ever clearing, which forced a CRITICAL/rc=1 exit daily. Skip
+                # it instead; the stub position just sits there until Alpaca
+                # processes the corporate action on its own paper book.
+                try:
+                    asset = t.get_asset(sym)
+                except Exception:
+                    asset = None
+                # A failed lookup falls through as tradable — we only ever skip
+                # on a definitive "inactive" answer, never on a network hiccup
+                # (which would otherwise silently suppress a legitimate exit).
+                if asset is not None and (
+                    asset.get("status") != "active" or not asset.get("tradable", True)
+                ):
+                    print(f"  SKIP {sym}: broker reports asset inactive/untradable — cannot {side}")
+                    continue
             limit = marketable_limit(
                 px, side, cfg.execution.max_limit_slippage_pct
             )
@@ -1068,8 +1090,19 @@ def main() -> None:
     append_report(REPORT_DIR / f"{today}.md", today, lines)
     print(f"done: {submitted} orders submitted")
     if submission_failures:
-        print(f"CRITICAL: {len(submission_failures)} broker submission(s) failed")
-        raise SystemExit(1)
+        # A failure whose broker message says the asset "is not active" (a
+        # delisting/merger) can never be resolved by us — the pre-trade guard
+        # above should already prevent this in the common case (a symbol that
+        # dropped out of every target), but a symbol that is still targeted
+        # (e.g. a new/increasing position) has no such guard, so this is the
+        # backstop: don't force an alert-fatiguing daily rc=1 for a condition
+        # no retry or human action on our side can fix.
+        actionable = [f for f in submission_failures if "is not active" not in f]
+        if actionable:
+            print(f"CRITICAL: {len(actionable)} broker submission(s) failed")
+            raise SystemExit(1)
+        print(f"WARN: {len(submission_failures)} broker submission(s) failed "
+              "(asset inactive — unactionable, not treated as CRITICAL)")
 
 
 if __name__ == "__main__":
