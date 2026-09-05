@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.5](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.4...v1.1.5) (2026-09-05)
+
+
+### Bug Fixes
+
+* **2x:** revert mom_ls averaging-down exemption ([bdd469c](https://github.com/AustinWinstanley/trading-bot/commit/bdd469c69b1abf28b1fc9b09a3df1a58e41a3c43))
+* skip broker-inactive assets instead of daily CRITICAL ([ee8547b](https://github.com/AustinWinstanley/trading-bot/commit/ee8547b1cbc96e009fecaa9a567721a635bcf349))
+
 ## [1.1.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.3...v1.1.4) (2026-08-24)
 
 
