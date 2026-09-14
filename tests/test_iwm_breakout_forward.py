@@ -113,3 +113,25 @@ def test_forward_returns_are_in_session_order(tmp_path):
 def test_forward_start_matches_the_registered_frozen_window():
     # AGENTS.md: 2026-08-13 onward is the frozen final-validation window.
     assert FORWARD_START == dt.date(2026, 8, 13)
+
+
+def test_record_with_nothing_to_journal_never_runs_the_signal(tmp_path):
+    """Regression for the 2026-09-13 (Sunday) crash: a weekend/holiday run
+    fetches no bars, prepare_bars() returns the empty frame without its
+    derived columns, and compression_breakout_signal raised
+    KeyError('session_bar'). record() must short-circuit instead."""
+    conn = db(tmp_path / "fwd.db")
+
+    # Empty fetch, exactly as main() builds it on a day with no new bars.
+    empty = prepare_bars(pd.DataFrame())
+    assert "session_bar" not in empty.columns
+    assert record(conn, empty, [], now=NOW) == []
+    assert record(conn, empty, ["2026-09-12"], now=NOW) == []
+
+    # Bars present but no eligible session (e.g. only today's, not final):
+    # nothing is journaled either.
+    bars = _bars({dt.date(2026, 8, 14): True})
+    assert record(conn, bars, [], now=NOW) == []
+
+    assert conn.execute("SELECT COUNT(*) FROM sessions_processed").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM forward_trades").fetchone()[0] == 0

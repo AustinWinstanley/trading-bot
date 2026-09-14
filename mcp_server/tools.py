@@ -14,14 +14,20 @@ from __future__ import annotations
 import contextlib
 from pathlib import Path
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from dashboard import db as dashboard_db
 
 from . import debug as mcp_debug
 
 
 def _validate_profile(profile: str) -> None:
+    # A deliberately raised ToolError keeps its message on every mcp SDK
+    # version; mcp>=2.2 wraps any *other* exception as a bare "Error
+    # executing tool <name>" with the reason only in __cause__, so a client
+    # would otherwise never learn why the call was refused.
     if profile not in dashboard_db.PROFILES:
-        raise ValueError(
+        raise ToolError(
             f"unknown profile {profile!r}; expected one of {sorted(dashboard_db.PROFILES)}"
         )
 
@@ -143,9 +149,14 @@ def register_tools(mcp, repo_root: Path) -> None:
         in the response says whether more rows existed)."""
         _validate_profile(profile)
         paths = dashboard_db.profile_paths(repo_root, profile)
-        conn = mcp_debug.open_query_target(paths, target)
-        with contextlib.closing(conn):
-            return mcp_debug.run_select(conn, sql, max_rows=max_rows)
+        try:
+            conn = mcp_debug.open_query_target(paths, target)
+            with contextlib.closing(conn):
+                return mcp_debug.run_select(conn, sql, max_rows=max_rows)
+        except ValueError as exc:
+            # Same reason as _validate_profile: surface the guard's own text
+            # ("only SELECT/WITH ...", unknown target) to the client.
+            raise ToolError(str(exc)) from exc
 
     @mcp.tool()
     def read_state_file(relative_path: str) -> dict:

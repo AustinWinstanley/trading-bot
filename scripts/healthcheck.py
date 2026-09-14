@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import os
 import sqlite3
+import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -166,9 +167,18 @@ def main() -> None:
         key=os.environ.get(f"ALPACA_API_KEY{env_suffix}"),
         secret=os.environ.get(f"ALPACA_API_SECRET{env_suffix}"),
     )
+    # Three broker round trips total, none per position. Timed so a
+    # scripts/paper.sh timeout (rc=124) can be attributed to a step.
+    elapsed: dict[str, float] = {}
+    t0 = time.monotonic()
     account = trader.get_account()
+    elapsed["account"] = time.monotonic() - t0
+    t0 = time.monotonic()
     positions = trader.get_positions()
+    elapsed["positions"] = time.monotonic() - t0
+    t0 = time.monotonic()
     orders = trader.open_orders()
+    elapsed["orders"] = time.monotonic() - t0
 
     cfg_file, _, _ = PROFILES[args.profile]
     exempt_sleeves = load_config(REPO_ROOT / cfg_file).risk.stop_exempt_sleeves
@@ -244,9 +254,10 @@ def main() -> None:
         "open_orders": len(orders),
     }))
 
+    broker_s = " ".join(f"{k}={v:.1f}s" for k, v in elapsed.items())
     print(
         f"profile={args.profile} equity={account.get('equity')} "
-        f"positions={len(positions)} open_orders={len(orders)}"
+        f"positions={len(positions)} open_orders={len(orders)} broker[{broker_s}]"
     )
     if problems:
         for problem in problems:

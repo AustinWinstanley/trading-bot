@@ -5,7 +5,12 @@ mcp/server/mcpserver/server.py's _handle_call_tool). Errors raised inside
 a tool surface here as mcp.server.mcpserver.exceptions.ToolError (the
 outer try/except that turns them into a CallToolResult(is_error=True) for
 network clients only wraps the transport-facing _handle_call_tool, not
-call_tool() itself — verified against the installed SDK).
+call_tool() itself — verified against the installed SDK). mcp 2.0 copies
+an arbitrary exception's text into the ToolError it wraps it in; mcp>=2.2
+withholds it ("Error executing tool <name>", reason only in __cause__)
+for anything that isn't a ToolError raised deliberately by the tool. The
+guards in mcp_server/tools.py therefore raise ToolError themselves, and
+the rejection tests below match on the message.
 """
 
 from __future__ import annotations
@@ -42,6 +47,8 @@ def test_get_summary_returns_real_data(mcp_server):
 
 
 def test_get_summary_unknown_profile_raises(mcp_server):
+    # Raised as a ToolError by the tool itself, so the reason survives the
+    # SDK's wrapping on every mcp version (see module docstring).
     with pytest.raises(ToolError, match="unknown profile"):
         asyncio.run(mcp_server.call_tool("get_summary", {"profile": "bogus"}))
 

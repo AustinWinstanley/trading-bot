@@ -123,7 +123,14 @@ def record(conn: sqlite3.Connection, bars, sessions: list[str], *, now: dt.datet
     `bars` is a prepare_bars() frame that may span many sessions; the
     signal and simulator run over the whole frame exactly as the study ran
     them, and only rows for `sessions` are written.
+
+    With nothing to journal there is nothing to compute: prepare_bars()
+    hands an empty fetch back without its derived columns (no "session_bar"),
+    and the frozen signal indexes that column unconditionally — on a
+    weekend/holiday run (2026-09-13) that was a KeyError, not an empty day.
     """
+    if not sessions or bars.empty or "session_bar" not in bars.columns:
+        return []
     signal = compression_breakout_signal(bars)
     trades = simulate_fixed_horizon(
         bars, signal, hold_bars=HOLD_BARS, cost_bps_per_leg=COST_BPS_PER_LEG
@@ -208,6 +215,17 @@ def main() -> None:
 
     if args.dry_run:
         print(f"DRY RUN: would process sessions {sessions}")
+        return
+
+    if not sessions:
+        # A weekend/holiday run, or every fetched session is today's
+        # (not yet final): the bar fetch returned nothing journalable.
+        # Say so and report the SPRT state exactly as the
+        # nothing-to-fetch branch above does.
+        print(f"iwm_breakout_forward: nothing to record (no completed sessions "
+              f"in {fetch_start}..{today_et})")
+        conn = db()
+        print(json.dumps(monitor(forward_returns(conn))))
         return
 
     conn = db()

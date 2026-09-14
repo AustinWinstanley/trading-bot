@@ -93,8 +93,8 @@ case "$JOB" in
   # shares weekly's lock: both write state/mom_ls_targets_2x.json and must
   # never race each other.
   momls2x)   LOCK=weekly;    TIMEOUT=900  ;;
-  health)    LOCK=health;    TIMEOUT=120  ;;
-  health2x)  LOCK=health2x;  TIMEOUT=120  ;;
+  health)    LOCK=health;    TIMEOUT=300  ;;
+  health2x)  LOCK=health2x;  TIMEOUT=300  ;;
   *) LOCK=$JOB; TIMEOUT=120 ;;   # unknown job still needs a lock name; caught below
 esac
 
