@@ -715,6 +715,68 @@ than get stuck open forever. See
 `test_short_shrunk_below_min_notional_is_rejected_not_submitted` in
 `tests/test_risk_gate.py`.
 
+### Exits were sized off the reference price and left fractional dust behind
+
+Live finding, 2026-09-14: every full exit was proposed as the position's
+market value at the *reference* price and then sized by `engine/risk.py` as
+`requested / limit_price`, with the limit sitting 0.3% through the touch —
+so a 3-share ARX short covered as 2.9917 shares (2026-09-08), a 1-share
+BSX long sold as 0.9971, and so on. `scripts/run_daily.py`'s drift loop
+then never revisited the remnant, because a held position with no target
+was still subject to `min_order_notional` ($25). By 2026-09-14 base held 15
+and 2x 23 sub-$5 orphan positions, several of them fractional *shorts*
+Alpaca itself would never have opened, all invisible to sleeve attribution.
+
+Fixed in two places, and the fix is also what lets a stood-down sleeve
+actually clear: `engine/risk._exit_quantity` sizes any exit whose
+requested notional covers the whole position as exactly `abs(held.qty)`,
+floors partial covers to whole shares (promoting to a full close when the
+floor would leave less than one share), and `_assert_gate_invariants` now
+takes the account so it can refuse an exit larger than the position or a
+fractional cover of a whole-share short. The drift loop proposes a full
+exit for any held symbol with no target regardless of size
+(`rebalance_threshold(..., full_exit=True)` is 0). Regression tests are the
+`_exit_quantity` block at the end of `tests/test_risk_gate.py`.
+
+### The rebalance band is capped as a share of equity
+
+Same day: folding `mom_ls`'s 15% into `equity_core` raised SPY's target to
+75% of equity, and the 20%-of-target rebalance band meant a ~$1,480 drift
+was required before SPY would trade — 15% of the account would have sat idle
+indefinitely. `paper_portfolio.rebalance_band_equity_cap` (0.05 in both
+configs; optional, `None` restores the pure fractional band) bounds the band
+at that share of equity, so a large sleeve trades once it drifts 5% of the
+account while a $75 slot is still governed by `min_order_notional`. The
+logic lives in `scripts/run_daily.rebalance_threshold` with unit tests in
+`tests/test_runner_reconciliation.py`. `backtest/production_portfolio.py`
+models no band at all (see "A risk control is a strategy change"), so this
+does not move the headline numbers — but any future live-gate-faithful
+simulator must model it.
+
+### A broker-refused submission now leaves a journal row
+
+Also 2026-09-14: FBRX's daily "asset is not active" 422s (2026-09-08
+onward) left no row anywhere in `orders` — the journal could not answer
+"what did we fail to sell". `scripts/run_daily.py` now writes an
+`orders` row with `status='submit_failed'`, no `alpaca_id` and no fill
+fields for every submission the broker refuses; round-trip matching and
+fill-quality stats ignore it (they key on fills), the order feed shows it.
+
+### MOM_LS was stood down on 2026-09-14 — read docs/research.md before reviving it
+
+`paper_portfolio.sleeves.mom_ls` is 0.0 in both profiles. Seven live weeks
+of mark-to-market decomposition put the sleeve at the entire loss on both
+accounts while SPY rose 3.2%; the short leg's only good year on the repo's
+own panel was 2022. The code path, weekly builder and tests are intact
+(`scripts/weekly.build_mom_ls_targets` early-returns on a 0 allocation, the
+same way `clone_allocation()` does), and every earlier `decision` on
+momentum-sleeve *variants* is superseded by the stand-down itself, not
+re-argued. The replacement programme — a `benchmark_beater` objective
+against SPY, a live-gate-faithful $10k simulator, and studies of vol-scaled
+long-only momentum, a trend-filtered leveraged-index sleeve and HAA — is
+described in docs/research.md ("Live results and the 2026-09-14
+stand-down"). The 2x lab's volatility overlay went `active` the same day.
+
 ### A same-day resubmission collided with its own earlier client_order_id
 
 Live incident, 2026-08-18: `scripts/run_daily.py` built each order's

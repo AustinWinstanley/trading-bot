@@ -69,13 +69,15 @@ def refresh_data() -> list[str]:
     return notes
 
 
-def short_slot_notional(top_n: int) -> float | None:
+def short_slot_notional(top_n: int, weight: float | None = None) -> float | None:
     """Dollars the mom_ls sleeve will allocate to one short, or None if unknown.
 
     Sized off the base profile's latest equity snapshot. The targets file is
     shared with the leveraged profiles, whose slots are strictly larger, so
     the base slot is the binding constraint — anything affordable here is
-    affordable there.
+    affordable there. `weight` defaults to the base profile's mom_ls
+    allocation; an unallocated sleeve (0.0, the shipped value since
+    2026-09-14) has no slot at all and returns None.
     """
     if not DB.exists() or top_n <= 0:
         return None
@@ -88,8 +90,11 @@ def short_slot_notional(top_n: int) -> float | None:
         conn.close()
     if not row or not row[0]:
         return None
-    from engine.config import load_config
-    weight = float(load_config().sleeves_paper["sleeves"]["mom_ls"])
+    if weight is None:
+        from engine.config import load_config
+        weight = float(load_config().sleeves_paper["sleeves"].get("mom_ls", 0.0))
+    if weight <= 0:
+        return None
     return float(row[0]) * weight / top_n
 
 
@@ -119,6 +124,15 @@ def build_mom_ls_targets(cfg) -> list[str]:
 
     notes = []
     p = cfg.sleeves_paper
+    if float(p["sleeves"].get("mom_ls", 0.0)) <= 0.0:
+        # Same pattern as clone_allocation(): an unallocated sleeve gets no
+        # data job. Rebuilding ranks for a 0-weight sleeve would still cost
+        # ~6,000 bar fetches and ~40 per-symbol borrow lookups every run,
+        # and print a whole-share-capacity CRITICAL about shorts that will
+        # never be placed. The stale targets file is left as-is; the
+        # sleeve's allocation, not the file, is what stands it down now.
+        notes.append("mom_ls sleeve unallocated (0.0): rank rebuild skipped")
+        return notes
     top_n = int(p["mom_ls_top_n"])
     min_px, min_dv = float(p["mom_ls_min_price"]), float(p["mom_ls_min_dollar_volume"])
 

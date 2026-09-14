@@ -26,7 +26,8 @@ risk:
   # See config.yaml — same gap, doubled: equity_core+trend target 120% here
   # (0.60 * 2x leverage), confirmed live rejected at the 30% cap on 14 of the
   # last ~14 opportunities. 1.30 is the 120% target plus headroom.
-  elevated_position_pct: 1.30
+  # 1.60 since 2026-09-14: 0.75 combined SPY target * 2x leverage, plus headroom.
+  elevated_position_pct: 1.60
   elevated_position_sleeves: [equity_core, trend]
   # restoration_exempt_sleeves (lab-only relaxation of the no-averaging-down
   # rule for mom_ls) reverted 2026-09-02: reports/target_restoration_study.json
@@ -105,10 +106,10 @@ execution:
   timezone: America/New_York
 paper_portfolio:
   sleeves:
-    equity_core: 0.4
+    equity_core: 0.55   # see config.yaml — mom_ls's 0.15 folded in, 2026-09-14
     tsmom: 0.25
     trend: 0.2
-    mom_ls: 0.15
+    mom_ls: 0.0         # stood down 2026-09-14, see config.yaml; 2x lost -$665 to it
   clone_top_n: 3
   # 15, not config.yaml's 20 — reports/momentum_breadth_study.json's
   # sensitivity-only "15" candidate improved max drawdown in 4/4 backtested
@@ -166,12 +167,17 @@ paper_portfolio:
   tsmom_lookback_days: 252
   tsmom_min_dollar_volume: 1000000
   rebalance_band: 0.2
+  rebalance_band_equity_cap: 0.05   # see config.yaml
   min_order_notional: 25.0
   gross_leverage: 2.0
   volatility_overlay:
     # "active" applies the bounded scale after 32 daily observations.
-    # Keep "shadow" as the checked-in control until explicitly promoted.
-    mode: "shadow"
+    # Promoted shadow -> active 2026-09-14: the shadow had 35 observations,
+    # realized vol ~21.6% against the 12% target, and recommended 1.11x
+    # while 2.00x was being applied; the lab's own review bar for the
+    # overlay (32 observations) was met. See docs/paper-attribution.md for
+    # the mechanics; returning this to "shadow" stops new scaling.
+    mode: "active"
     target_vol: 0.12
     lookback_days: 63
     min_observations: 32

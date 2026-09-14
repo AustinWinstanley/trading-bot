@@ -20,7 +20,28 @@ def test_short_slot_sized_off_latest_equity(tmp_path, monkeypatch):
     _snapshot_db(db, 10_000.0)
     monkeypatch.setattr(weekly, "DB", db)
     # 10,000 equity * 0.15 mom_ls weight / 20 slots
-    assert weekly.short_slot_notional(20) == 75.0
+    assert weekly.short_slot_notional(20, weight=0.15) == 75.0
+
+
+def test_short_slot_is_none_for_an_unallocated_sleeve(tmp_path, monkeypatch):
+    db = tmp_path / "paper.db"
+    _snapshot_db(db, 10_000.0)
+    monkeypatch.setattr(weekly, "DB", db)
+    # mom_ls stood down 2026-09-14 (allocation 0.0): no slot, not a $0 slot
+    # that would flag every short as unfillable.
+    assert weekly.short_slot_notional(20, weight=0.0) is None
+    assert weekly.short_slot_notional(20) is None      # shipped config.yaml value
+
+
+def test_build_mom_ls_targets_skips_rebuild_when_unallocated(monkeypatch):
+    from engine.config import load_config
+    cfg = load_config("config.yaml")
+    assert float(cfg.sleeves_paper["sleeves"]["mom_ls"]) == 0.0
+    # Must return before touching the broker or the universe file.
+    import engine.execute as execute
+    monkeypatch.setattr(execute, "Trader", lambda *a, **k: (_ for _ in ()).throw(AssertionError("broker touched")))
+    notes = weekly.build_mom_ls_targets(cfg)
+    assert notes == ["mom_ls sleeve unallocated (0.0): rank rebuild skipped"]
 
 
 def test_short_slot_is_none_without_a_snapshot(tmp_path, monkeypatch):

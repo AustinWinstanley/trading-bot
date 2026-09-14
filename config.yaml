@@ -45,8 +45,8 @@ risk:
   # own signal. Empty lists restore the old behaviour everywhere.
   stop_exempt_sleeves: [mom_ls]
   reentry_block_exempt_sleeves: [mom_ls]
-  # equity_core (0.40) + trend (0.20) target 60% of equity in SPY whenever
-  # trend is on — both sleeves are the same diversified index, not a
+  # equity_core (0.55 since 2026-09-14; 0.40 before) + trend (0.20) target
+  # 75% of equity in SPY whenever trend is on — both sleeves are the same diversified index, not a
   # concentrated single-name bet, so the per-name cap that exists to bound
   # idiosyncratic risk doesn't apply to their combination the way it does to
   # a MOM_LS or TSMOM name. Without this, max_position_pct silently capped
@@ -55,7 +55,9 @@ risk:
   # (2026-07-24 through 2026-08-03), holding ~15% instead of 60%. 0.65 is
   # the 60% target plus headroom so ordinary price drift between rebalances
   # doesn't immediately re-trip the cap.
-  elevated_position_pct: 0.65
+  # 0.80 since 2026-09-14: equity_core is 0.55 (mom_ls's 0.15 folded in),
+  # so the combined SPY target is 75%, plus the same drift headroom.
+  elevated_position_pct: 0.80
   elevated_position_sleeves: [equity_core, trend]
 
 sleeves:
@@ -116,10 +118,23 @@ execution:
 # Options research remains read-only/shadow; no LLM participates in trading.
 paper_portfolio:
   sleeves:
-    equity_core: 0.40   # unconditional SPY core; replaced invalidated clone study
+    equity_core: 0.55   # unconditional SPY core (0.40 + mom_ls's former 0.15, see below)
     tsmom: 0.25         # asset-class trend, long/flat, inverse-vol weights
     trend: 0.20         # SPY above 200DMA, else cash
-    mom_ls: 0.15        # market-neutral momentum: 15% long AND 15% short
+    # mom_ls stood down 2026-09-14 (was 0.15 long AND 0.15 short). Seven
+    # weeks live (2026-07-23..09-14) it was the entire loss on both accounts:
+    # a mark-to-market decomposition of the server journal put it at -$144
+    # (long -$101, short -$43) against +$49 from every other sleeve, while
+    # SPY rose 3.2% and the momentum factor itself was up strongly. It never
+    # ran market-neutral — at a ~$75 slot roughly half the shorts round
+    # below one whole share — and on the repo's own panel the short leg's
+    # entire value was 2022 (+58%), losing 44%/6%/36% in 2023/24/25. The
+    # freed 15% went to equity_core. Replacement candidates (long-only
+    # vol-scaled momentum, trend-filtered leveraged index, HAA) are being
+    # studied under a benchmark-beats-SPY objective before anything new
+    # goes live. Setting this to 0.0 (not deleting the key) keeps the
+    # sleeve's code path and tests intact.
+    mom_ls: 0.0
   clone_top_n: 3
   mom_ls_top_n: 20
   mom_ls_min_price: 5.0
@@ -144,6 +159,12 @@ paper_portfolio:
   # Trade only when a position drifts >20% from target, or >= $25 absolute —
   # tiny rebalances would be pure cost.
   rebalance_band: 0.20
+  # ...but never more than 5% of equity: a fraction-of-target band lets a
+  # large sleeve drift a long way — SPY's 75% target on $10k needs ~$1,500
+  # of gap before it trades, so 15% of equity sat idle after mom_ls's
+  # weight was folded into equity_core (2026-09-14). Small slots are
+  # unaffected (their band is already below min_order_notional).
+  rebalance_band_equity_cap: 0.05
   min_order_notional: 25.0
   # Gross exposure multiplier applied to all sleeve weights. 1.0 = unlevered.
   gross_leverage: 1.0

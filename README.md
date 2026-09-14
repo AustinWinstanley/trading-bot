@@ -51,23 +51,26 @@ why several cron locks are deliberately shared between jobs.
 
 ## Deployed portfolio
 
-The base profile targets at most 100% long, 15% short, and 115% gross
-exposure:
+The base profile targets at most 100% long and 100% gross exposure:
 
 | Sleeve | Exposure | Construction |
 | --- | ---: | --- |
-| Equity core | 40% long | SPY |
+| Equity core | 55% long | SPY |
 | TSMOM | 25% long/flat | 15 asset ETFs, 12-month trend, inverse volatility |
 | Trend | 20% long/flat | SPY above its 200-day average |
-| MOM_LS | 15% long + 15% short | Weekly 12-1 momentum, top/bottom 20 |
+| MOM_LS | 0% (stood down 2026-09-14) | Weekly 12-1 momentum, top/bottom 20 — code retained, allocation 0 |
 
-The 2× profile scales targets to at most 200% long, 30% short, and 230%
-gross, using entirely separate credentials, state, journal, and reports.
+The 2× profile doubles those targets (at most 200% long/gross), scaled down
+by its now-active 12% volatility-target overlay, using entirely separate
+credentials, state, journal, and reports.
 
-MOM_LS stands down when its weekly target file is absent or stale. Cash is
-an intentional residual position. MOM_LS alone runs without per-position
-stops or a loss re-entry cooldown — deliberate and evidence-backed, see
-[Sleeves without stops](docs/paper-attribution.md#sleeves-without-stops).
+MOM_LS was stood down on 2026-09-14 after a mark-to-market decomposition of
+seven live weeks (2026-07-23 → 09-14) showed it was the entire loss on both
+accounts (base −$144 of a −$96 total, 2× −$665 of −$565) while SPY rose
+3.2% — see the `mom_ls` note in `config.yaml` and
+[docs/research.md](docs/research.md#live-results-and-the-2026-09-14-stand-down).
+Its 15% moved to the SPY core pending a replacement sleeve that clears a
+benchmark-beats-SPY study. Cash is an intentional residual position.
 
 ### Strategy status
 

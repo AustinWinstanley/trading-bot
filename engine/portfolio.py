@@ -150,6 +150,13 @@ def mom_ls_targets(cfg: Config) -> dict[str, float]:
     from engine.data import REPO_ROOT as _ROOT
 
     p = cfg.sleeves_paper
+    sleeve = float(p["sleeves"].get("mom_ls", 0.0))
+    if sleeve <= 0.0:
+        # Stood down by allocation (config.yaml, 2026-09-14): no names at
+        # all, rather than every rank at weight 0 — a zero-weight entry would
+        # still count as "targeted" in the daily runner and skip the
+        # inactive-asset guard that only applies to untargeted exits.
+        return {}
     path = _ROOT / p["mom_ls_targets_file"]
     if not path.exists():
         return {}
@@ -157,7 +164,6 @@ def mom_ls_targets(cfg: Config) -> dict[str, float]:
     age = (dt.date.today() - dt.date.fromisoformat(data["as_of"])).days
     if age > int(p["mom_ls_max_age_days"]):
         return {}
-    sleeve = p["sleeves"].get("mom_ls", 0.0)
     longs, shorts = data.get("long", []), data.get("short", [])
     out: dict[str, float] = {}
     if longs:

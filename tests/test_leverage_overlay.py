@@ -177,13 +177,18 @@ def test_off_mode_does_not_read_or_change_leverage():
     assert result["recommended_leverage"] == pytest.approx(1.0)
 
 
-def test_checked_in_profiles_keep_active_trading_disabled_by_default():
+def test_checked_in_profile_modes_match_the_reviewed_decisions():
+    # base is the unchanged control: overlay off. The 2x lab promoted its
+    # overlay shadow -> active on 2026-09-14 after 35 shadow observations
+    # (bar: 32) recommended 1.11x against a fixed 2.00x — see
+    # config_2x.yaml. Changing either value here is a reviewed config
+    # change, not a default to drift.
     assert load_config("config.yaml").sleeves_paper[
         "volatility_overlay"
     ]["mode"] == "off"
     assert load_config("config_2x.yaml").sleeves_paper[
         "volatility_overlay"
-    ]["mode"] == "shadow"
+    ]["mode"] == "active"
 
 
 def test_config_accepts_explicit_active_overlay(tmp_path):

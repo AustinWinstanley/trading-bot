@@ -174,6 +174,56 @@ respectively. These estimates support keeping the equal split as an aggressive
 paper experiment, while treating its combined risk budget and drawdown as
 1.5× exposure.
 
+## Live results and the 2026-09-14 stand-down
+
+Seven weeks of live paper trading (2026-07-23 → 2026-09-14, 36 sessions)
+were decomposed symbol-by-symbol, run-by-run from the server journals
+(`snapshots.positions` marks plus `orders` fills, half-open windows because
+a snapshot is written before that run's fills). The decomposition
+reconciles to the penny against the snapshot equity change:
+
+| Bucket | Base | 2× |
+| --- | ---: | ---: |
+| SPY core (`equity_core`+`trend`) | +$46 | +$81 |
+| TSMOM | +$2 | +$4 |
+| MOM_LS long book | −$101 | −$360 |
+| MOM_LS short book | −$43 | −$305 |
+| Options experiment | $0 | $0 |
+| **Total equity change** | **−$96 (−0.98%)** | **−$565 (−5.50%)** |
+
+SPY rose +3.23% over the identical dates (marks taken from the same
+snapshots). Execution friction was not the cause: notional-weighted adverse
+slippage totalled $5 (base) and $25 (2×) over the whole run.
+
+MOM_LS never ran market-neutral. At a ~$75 slot roughly half of its shorts
+round below one whole share (base realized 42–63% of its short target,
+mean net exposure +7%), so the sleeve was a levered long bet on the most
+volatile 20 names in the market with a partial hedge. On 2×, where the
+shorts did fill (85%), the short book lost −$305 on its own — dominated by
+high-short-interest names that squeezed (BMNR, MSTR, RBLX, TEAM).
+
+A leg decomposition on the repo's own panel (control reproduces
+`production_portfolio.json`'s sleeve correlations to four decimals) shows
+why: the short leg's entire value was 2022 (+58%) and it lost −44% / −6% /
+−36% in 2023 / 2024 / 2025, while the long leg carried the held-out window
+(41.8% CAGR, Sharpe 1.00, 0.65 beta, 44% vol). The deployed sleeve was a
+2022 hedge being paid for every year since.
+
+Decision (2026-09-14): `paper_portfolio.sleeves.mom_ls` set to 0.0 in both
+profiles; its 15% folded into `equity_core` (0.40 → 0.55) with
+`risk.elevated_position_pct` raised to cover the 75% combined SPY target.
+The 2× lab's volatility overlay was promoted from `shadow` to `active`
+(35 observations, recommending 1.11× against 2.00× applied). Replacement
+candidates — vol-scaled long-only momentum (and MTUM), a trend-filtered
+leveraged-index sleeve, and Keller's HAA — are to be judged under a new
+`benchmark_beater` objective (must beat SPY's CAGR with drawdown inside the
+paired-bootstrap noise band) through a live-gate-faithful $10k simulator
+before any of them goes live. Prior `decision` fields on momentum-sleeve
+variants are superseded by this stand-down, not by a fresh opinion: the
+sleeve's live realization diverged from all three of its own simulators
+and the design objective (Sharpe with zero-tolerance drawdown) was never
+"beat the market".
+
 ## Rejected and deferred candidates
 
 ### Volatility de-risking overlay (2× shadow)
