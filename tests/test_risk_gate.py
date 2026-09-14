@@ -715,7 +715,10 @@ def _cfg_with(tmp_path, **overrides):
         {"risk.elevated_position_pct": 0.65, "risk.elevated_position_sleeves": None},
         {"risk.elevated_position_pct": None, "risk.elevated_position_sleeves": ["equity_core", "trend"]},
         {"risk.elevated_position_pct": 0.10, "risk.elevated_position_sleeves": ["equity_core"]},  # narrows, not widens
-        {"paper_portfolio.mom_ls_min_dollar_volume": 100},  # below the daily gate floor
+        # below the daily gate floor — the check only runs for an allocated
+        # sleeve (mom_ls is 0.0 in the shipped config since 2026-09-14), so
+        # re-allocate it here to exercise the rule
+        {"paper_portfolio.mom_ls_min_dollar_volume": 100, "paper_portfolio.sleeves.mom_ls": 0.15},
     ],
 )
 def test_dangerous_config_is_rejected_at_load(tmp_path, override):
@@ -982,3 +985,104 @@ def test_sleeve_exemption_lists_must_be_lists_of_names():
     for bad in ("mom_ls", 5, ["mom_ls", ""], [None]):
         with pytest.raises(ConfigError):
             _sleeve_set(bad, "x")
+
+
+# --------------------------------------------------------------------------
+# Exit sizing — a full close must close the held quantity exactly
+# --------------------------------------------------------------------------
+#
+# Regression for the fractional-dust leak found 2026-09-14: exits were sized
+# as reference-priced notional / a limit price 0.3% through the touch, so a
+# 3-share short covered as 2.9917 shares and a 1-share long sold as 0.9971,
+# leaving sub-$5 orphan positions (15 on base, 23 on 2x, several of them
+# fractional shorts) that nothing ever revisited.
+
+
+def _short_account(qty: float, price: float = 100.0) -> AccountState:
+    return AccountState(
+        equity=EQUITY, cash=EQUITY,
+        positions={"XLK": Position("XLK", qty=-abs(qty), avg_entry_price=price, current_price=price)},
+    )
+
+
+def _cover(notional: float, limit: float) -> dict:
+    return {"symbol": "XLK", "side": "cover", "sleeve": "mom_ls",
+            "notional": notional, "limit_price": limit, "rationale": "test"}
+
+
+def test_full_cover_uses_exact_held_quantity(cfg, clean_risk, ctx_shortable):
+    account = _short_account(3)                       # 3 sh @ $100 = $300 held
+    result = evaluate([_cover(300.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    assert len(result.approved) == 1
+    order = result.approved[0]
+    assert order.qty == 3.0                           # not 300 / 100.30 = 2.991
+    assert order.notional <= order.requested_notional + 1e-6
+
+
+def test_cover_larger_than_held_is_capped_at_held_quantity(cfg, clean_risk, ctx_shortable):
+    account = _short_account(3)
+    result = evaluate([_cover(5000.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    order = result.approved[0]
+    assert order.qty == 3.0
+    assert "capped at held quantity" in order.adjustments
+
+
+def test_partial_cover_is_whole_shares(cfg, clean_risk, ctx_shortable):
+    account = _short_account(10)
+    result = evaluate([_cover(350.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    order = result.approved[0]
+    assert order.qty == 3.0                           # floor(350 / 100.30 = 3.49)
+    assert order.qty == int(order.qty)
+
+
+def test_partial_cover_that_rounds_to_zero_is_promoted_to_full_close(cfg, clean_risk, ctx_shortable):
+    account = _short_account(3)
+    result = evaluate([_cover(90.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    order = result.approved[0]
+    assert order.qty == 3.0                           # 0.897 sh would be a fractional short leg
+    assert any("promoted to full close" in a for a in order.adjustments)
+
+
+def test_partial_cover_that_would_leave_less_than_one_share_closes_fully(cfg, clean_risk, ctx_shortable):
+    account = _short_account(3)
+    # 2.79 sh -> floor 2 leaves 1 share: allowed. 2.99 sh at a slightly
+    # different limit also floors to 2. Anything leaving < 1 must close fully.
+    result = evaluate([_cover(280.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    assert result.approved[0].qty == 2.0
+    account = _short_account(2)
+    result = evaluate([_cover(150.0, 100.30)], account, clean_risk, ctx_shortable, cfg)
+    assert result.approved[0].qty == 1.0
+
+
+def test_full_cover_of_fractional_dust_short_closes_exactly(cfg, clean_risk, ctx_shortable):
+    # A fractional short residue (the legacy dust this fix exists to clear)
+    # is closed at its exact quantity — the whole-share rule is about not
+    # *creating* fractional short legs, and closing the whole position is
+    # the one cover that cannot.
+    account = _short_account(0.008296, price=19.875)
+    result = evaluate([_cover(0.16, 19.94)], account, clean_risk, ctx_shortable, cfg)
+    assert result.approved[0].qty == pytest.approx(0.008296)
+
+
+def test_full_sell_of_fractional_long_leaves_no_dust(cfg, clean_risk, ctx):
+    account = AccountState(
+        equity=EQUITY, cash=0.0,
+        positions={"XLK": Position("XLK", qty=0.997141, avg_entry_price=100.0, current_price=100.0)},
+    )
+    sell = {"symbol": "XLK", "side": "sell", "sleeve": "rebalance",
+            "notional": 99.7141, "limit_price": 99.70, "rationale": "test"}
+    result = evaluate([sell], account, clean_risk, ctx, cfg)
+    order = result.approved[0]
+    assert order.qty == pytest.approx(0.997141)       # not 99.7141 / 99.70 = 1.00014 capped... nor 0.9968
+    assert order.notional <= order.requested_notional + 1e-6
+
+
+def test_partial_sell_is_sized_at_the_limit_price(cfg, clean_risk, ctx):
+    account = AccountState(
+        equity=EQUITY, cash=0.0,
+        positions={"XLK": Position("XLK", qty=10.0, avg_entry_price=100.0, current_price=100.0)},
+    )
+    sell = {"symbol": "XLK", "side": "sell", "sleeve": "rebalance",
+            "notional": 500.0, "limit_price": 99.70, "rationale": "test"}
+    result = evaluate([sell], account, clean_risk, ctx, cfg)
+    assert result.approved[0].qty == pytest.approx(500.0 / 99.70)

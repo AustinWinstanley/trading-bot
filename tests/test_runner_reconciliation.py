@@ -405,3 +405,37 @@ def test_report_keeps_every_run_of_the_day(tmp_path):
     assert "- submitted 14" in body                     # morning run survives
     assert "- submitted 0" in body
     assert body.index("09:47") < body.index("12:35")    # chronological
+
+
+# --------------------------------------------------------------------------
+# Rebalance threshold — fraction-of-target band, capped as a share of equity
+# --------------------------------------------------------------------------
+
+
+def test_rebalance_threshold_small_slot_is_governed_by_min_notional():
+    from scripts.run_daily import rebalance_threshold
+    # $75 mom_ls-sized slot: 20% band = $15, overridden by the $25 minimum.
+    assert rebalance_threshold(75.0, 10_000.0, band=0.20, band_cap=0.05,
+                               min_notional=25.0, full_exit=False) == 25.0
+
+
+def test_rebalance_threshold_large_sleeve_is_capped_at_equity_fraction():
+    from scripts.run_daily import rebalance_threshold
+    # SPY at a 75% target on $10k: 20% of target = $1,500, capped at 5% of
+    # equity = $500 so a target change cannot leave 15% of equity idle.
+    assert rebalance_threshold(7_500.0, 10_000.0, band=0.20, band_cap=0.05,
+                               min_notional=25.0, full_exit=False) == 500.0
+
+
+def test_rebalance_threshold_without_cap_keeps_fractional_band():
+    from scripts.run_daily import rebalance_threshold
+    assert rebalance_threshold(7_500.0, 10_000.0, band=0.20, band_cap=None,
+                               min_notional=25.0, full_exit=False) == 1_500.0
+
+
+def test_rebalance_threshold_full_exit_always_trades():
+    from scripts.run_daily import rebalance_threshold
+    # A held position with no target is exited regardless of size — the
+    # sub-$25 fractional-dust remnants must clear.
+    assert rebalance_threshold(0.0, 10_000.0, band=0.20, band_cap=0.05,
+                               min_notional=25.0, full_exit=True) == 0.0

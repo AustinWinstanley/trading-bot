@@ -194,6 +194,33 @@ def order_client_id(today: dt.date, now_et: dt.datetime, symbol: str, side: str)
     return f"bot-{today:%Y%m%d}-{now_et:%H%M%S}-{symbol}-{side}"
 
 
+def rebalance_threshold(
+    tgt_notional: float, equity: float, *, band: float, band_cap: float | None,
+    min_notional: float, full_exit: bool,
+) -> float:
+    """Dollar drift a position must show before a rebalance trade is proposed.
+
+    The band is a fraction of the *target* (20% in the shipped configs), so
+    tiny slots never churn: a $75 mom_ls slot needs $15 of drift, which the
+    $25 minimum then overrides. For a large sleeve the same fraction is
+    enormous — SPY at a 75% target on a $10k account needs ~$1,500 of drift,
+    i.e. 15% of equity can sit idle indefinitely after a target change
+    (exactly what happened when mom_ls's 15% was folded into equity_core on
+    2026-09-14: the $1,443 gap sat just under a $1,484 band). `band_cap`
+    (`paper_portfolio.rebalance_band_equity_cap`, a fraction of equity)
+    bounds the band so drift larger than that share of equity always
+    trades; None keeps the pure fractional-band behaviour. A full exit
+    (held with no target) always trades — see the comment in the drift
+    loop.
+    """
+    if full_exit:
+        return 0.0
+    band_notional = band * abs(tgt_notional)
+    if band_cap is not None:
+        band_notional = min(band_notional, band_cap * equity)
+    return max(band_notional, min_notional)
+
+
 def marketable_limit(price: float, side: str, slippage: float) -> float:
     """Round toward the touch so cents cannot breach the configured band."""
     if side in ("buy", "cover"):
@@ -623,6 +650,8 @@ def main() -> None:
     # ---- proposals -------------------------------------------------------
     p = cfg.sleeves_paper
     band, min_notional = float(p["rebalance_band"]), float(p["min_order_notional"])
+    band_cap = p.get("rebalance_band_equity_cap")
+    band_cap = float(band_cap) if band_cap is not None else None
     proposals = []
     # The gate must validate against the same quote snapshot used to construct
     # each limit. A second live quote can move by a cent between API calls and
@@ -696,7 +725,20 @@ def main() -> None:
             tgt_notional = targets.get(sym, 0.0) * equity        # negative = short target
             cur_notional = positions[sym].market_value if sym in positions else 0.0
             diff = tgt_notional - cur_notional
-            threshold = max(band * abs(tgt_notional), min_notional) if tgt_notional != 0 else min_notional
+            # A held position with no target is a full exit, and a full exit
+            # is proposed regardless of size. The rebalance band and the
+            # $25 minimum exist to stop tiny *rebalances* that would be pure
+            # cost; applied to exits they left every sub-$25 remnant (the
+            # fractional dust a reference-vs-limit-priced exit used to leave
+            # behind — see engine/risk._exit_quantity) parked forever: 15
+            # base / 23 2x orphan positions as of 2026-09-14. The gate
+            # already exempts sells/covers from min_order_notional for the
+            # same reason.
+            full_exit = tgt_notional == 0 and sym in positions
+            threshold = rebalance_threshold(
+                tgt_notional, equity, band=band, band_cap=band_cap,
+                min_notional=min_notional, full_exit=full_exit,
+            )
             if abs(diff) < threshold:
                 continue
             px = t.latest_price(sym)
@@ -715,7 +757,7 @@ def main() -> None:
                 side = "sell" if cur_notional > 0 else "short"
                 if side == "sell":
                     diff = max(diff, -cur_notional)              # sell at most what we hold
-            if abs(diff) < min_notional:
+            if abs(diff) < min_notional and not full_exit:
                 continue
             if sym not in targets and side in ("sell", "cover"):
                 # A symbol that has dropped out of every sleeve's target is being
@@ -963,6 +1005,27 @@ def main() -> None:
         except Exception as exc:
             print(f"    submit {order.symbol} FAILED: {exc}")
             submission_failures.append(f"{order.symbol}: {exc}")
+            # Journal the failure. Before this, a submission the broker
+            # refused left no row at all — FBRX's "asset is not active" 422s
+            # (2026-09-08 onward) were invisible to every journal query, so
+            # the record could not answer "what did we fail to sell". A
+            # `submit_failed` row has no alpaca_id and no fill fields, so
+            # round-trip matching and fill-quality stats ignore it, while
+            # the order feed and the daily notes now show it.
+            conn.execute(
+                "INSERT INTO orders("
+                "ts, symbol, side, sleeve, qty, notional, limit_price, "
+                "stop_price, reason, alpaca_id, status, requested_notional, "
+                "reference_price, filled_qty, filled_avg_price, filled_at"
+                ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    ts, order.symbol, order.side, order.sleeve, order.qty,
+                    order.notional, order.limit_price, order.stop_price,
+                    f"submit failed: {str(exc)[:200]}", None, "submit_failed",
+                    order.requested_notional, reference_prices.get(order.symbol),
+                    None, None, None,
+                ),
+            )
 
     # record realised losses for the revenge-trade block, and realized P&L
     # for any experiment-tier sleeve exit — gains and losses both, since a

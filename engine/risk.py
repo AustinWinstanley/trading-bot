@@ -413,14 +413,16 @@ def evaluate(
                     RejectedProposal(symbol, "cover proposed but no short position held", raw)
                 )
                 continue
+            qty, notional, adjustments = _exit_quantity(
+                requested, clean["limit_price"], held, whole_shares=True
+            )
             result.approved.append(
                 ApprovedOrder(
                     symbol=symbol, side="cover", sleeve=clean["sleeve"],
-                    notional=min(requested, abs(held.market_value)),
-                    qty=min(requested / clean["limit_price"], abs(held.qty)),
+                    notional=notional, qty=qty,
                     limit_price=clean["limit_price"], stop_price=0.0,
                     requested_notional=requested,
-                    adjustments=["capped at held quantity"] if requested > abs(held.market_value) else [],
+                    adjustments=adjustments,
                 )
             )
             continue
@@ -433,17 +435,20 @@ def evaluate(
                     RejectedProposal(symbol, "sell proposed for a symbol not held", raw)
                 )
                 continue
+            qty, notional, adjustments = _exit_quantity(
+                requested, clean["limit_price"], held, whole_shares=False
+            )
             result.approved.append(
                 ApprovedOrder(
                     symbol=symbol,
                     side="sell",
                     sleeve=clean["sleeve"],
-                    notional=min(requested, held.market_value),
-                    qty=min(requested / clean["limit_price"], held.qty),
+                    notional=notional,
+                    qty=qty,
                     limit_price=clean["limit_price"],
                     stop_price=0.0,
                     requested_notional=requested,
-                    adjustments=["capped at held quantity"] if requested > held.market_value else [],
+                    adjustments=adjustments,
                 )
             )
             continue
@@ -920,11 +925,61 @@ def evaluate(
         if data.is_leveraged or symbol in cfg.leveraged_symbols:
             leveraged_exposure += approved_notional
 
-    _assert_gate_invariants(result, cfg, risk_state)
+    _assert_gate_invariants(result, cfg, risk_state, account)
     return result
 
 
-def _assert_gate_invariants(result: GateResult, cfg: Config, risk_state: RiskState) -> None:
+def _exit_quantity(
+    requested: float, limit_price: float, held: Position, *, whole_shares: bool
+) -> tuple[float, float, list[str]]:
+    """Size a sell/cover so that a full close closes the held quantity exactly.
+
+    `requested` is the exit's notional at the *reference* price (the
+    position's market value), while `limit_price` sits up to
+    `max_limit_slippage_pct` through the touch — so `requested / limit_price`
+    never reproduces `held.qty`. Sizing exits that way left a residue on
+    every full close: a 3-share ARX short covered as 2.9917 shares
+    (2026-09-08), a 1-share BSX long sold as 0.9971, and by 2026-09-14 base
+    carried 15 and 2x 23 sub-$5 orphan positions, several of them fractional
+    *shorts* that Alpaca itself would never have opened.
+
+    Rules:
+    - requested >= held value (within float noise): full close, qty is
+      exactly `abs(held.qty)`.
+    - otherwise a partial exit sized at the limit price; covers are floored
+      to whole shares (Alpaca refuses fractional short legs) and promoted to
+      a full close when the floor would leave less than one share behind.
+    - never more than held.
+
+    `notional` stays the reference-priced value being closed, capped at
+    `requested`, so the "approved <= requested" invariant holds unchanged.
+    """
+    held_qty = abs(held.qty)
+    held_value = abs(held.market_value)
+    adjustments: list[str] = []
+    if requested >= held_value * (1 - 1e-6):
+        qty = held_qty
+        if requested > held_value * (1 + 1e-6):
+            adjustments.append("capped at held quantity")
+    else:
+        qty = requested / limit_price
+        if whole_shares:
+            floored = float(math.floor(qty))
+            if floored < 1 or held_qty - floored < 1:
+                qty = held_qty
+                adjustments.append("partial cover promoted to full close (whole-share)")
+            else:
+                qty = floored
+                adjustments.append("partial cover floored to whole shares")
+        qty = min(qty, held_qty)
+    notional = min(requested, held_value)
+    return qty, notional, adjustments
+
+
+def _assert_gate_invariants(
+    result: GateResult, cfg: Config, risk_state: RiskState,
+    account: AccountState | None = None,
+) -> None:
     """The gate's contract, enforced at runtime as well as in tests.
 
     A bug that let the gate enlarge an order or drop a stop would be the single
@@ -937,6 +992,28 @@ def _assert_gate_invariants(result: GateResult, cfg: Config, risk_state: RiskSta
                 f"GATE INVARIANT VIOLATED: {order.symbol} approved {order.notional} > "
                 f"requested {order.requested_notional}"
             )
+        if order.side in ("sell", "cover") and account is not None:
+            held = account.positions.get(order.symbol)
+            held_qty = abs(held.qty) if held is not None else 0.0
+            # An exit may never exceed the position, and a cover of a
+            # whole-share short must itself be whole shares (or the exact
+            # held quantity) — otherwise it leaves the fractional short
+            # residue _exit_quantity exists to prevent.
+            if order.qty > held_qty + 1e-9:
+                raise AssertionError(
+                    f"GATE INVARIANT VIOLATED: {order.symbol} {order.side} qty {order.qty} "
+                    f"exceeds held {held_qty}"
+                )
+            if (
+                order.side == "cover"
+                and held_qty == int(held_qty)
+                and order.qty != int(order.qty)
+                and abs(order.qty - held_qty) > 1e-9
+            ):
+                raise AssertionError(
+                    f"GATE INVARIANT VIOLATED: {order.symbol} fractional cover qty {order.qty} "
+                    f"against a whole-share short of {held_qty}"
+                )
         # A stop-exempt sleeve must carry exactly no stop. Anything else means
         # the exemption and the stop calculation disagree, which would send a
         # malformed stop to the broker — so it is still an invariant, just a
