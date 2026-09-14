@@ -53,13 +53,24 @@ def norm_index(obj: pd.Series | pd.DataFrame):
     return out[~out.index.duplicated(keep="last")]
 
 
-def returns_summary(r: pd.Series, label: str) -> dict:
+def returns_summary(
+    r: pd.Series, label: str, *, rf: pd.Series | None = None
+) -> dict:
+    """Headline statistics for a daily return series.
+
+    `sharpe` is annualized against rf = 0 and every key is unchanged from
+    the original signature, so reports written before `rf` existed remain
+    comparable. When `rf` (a daily risk-free return, e.g.
+    `backtest.riskfree.load_rf_daily()`) is given, one additional key
+    `excess_sharpe` is appended: the annualized Sharpe of `r - rf`, with rf
+    aligned to `r`'s index and any day rf does not cover taken as 0.0.
+    """
     r = r.dropna()
     equity = (1 + r).cumprod()
     years = (r.index[-1] - r.index[0]).days / 365.25
     vol = float(r.std() * np.sqrt(TD))
     downside = float(r[r < 0].std() * np.sqrt(TD))
-    return {
+    out = {
         "portfolio": label,
         "from": r.index[0].date().isoformat(),
         "to": r.index[-1].date().isoformat(),
@@ -72,6 +83,17 @@ def returns_summary(r: pd.Series, label: str) -> dict:
         "max_dd": round(float((equity / equity.cummax() - 1).min()), 4),
         "x_money": round(float(equity.iloc[-1]), 3),
     }
+    if rf is not None:
+        r_idx = pd.DatetimeIndex(r.index)
+        if r_idx.tz is not None:
+            r_idx = r_idx.tz_convert("UTC").tz_localize(None)
+        rf_aligned = norm_index(rf.astype(float)).reindex(r_idx.normalize())
+        excess = pd.Series(r.to_numpy() - rf_aligned.fillna(0.0).to_numpy(), index=r.index)
+        excess_vol = float(excess.std() * np.sqrt(TD))
+        out["excess_sharpe"] = (
+            round(float(excess.mean() * TD / excess_vol), 3) if excess_vol else 0.0
+        )
+    return out
 
 
 def trend_stream(spy: pd.Series, ma_days: int = 200) -> pd.Series:

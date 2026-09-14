@@ -308,3 +308,98 @@ class TestPairedDrawdownNoise:
     def test_rejects_too_short_series(self):
         with pytest.raises(ValueError, match="block_size"):
             paired_drawdown_noise_pp(np.zeros(10), np.zeros(10), block_size=63)
+
+
+class TestBenchmarkBeater:
+    """`control` is the BENCHMARK (SPY) summary in this class."""
+
+    BENCH = {"sharpe": 0.90, "excess_sharpe": 0.62, "cagr": 0.14, "max_dd": -0.25}
+
+    def kwargs(self, **overrides):
+        base = {"max_dd_cost_pp": 1.2}
+        base.update(overrides)
+        return base
+
+    def test_passes_when_cagr_higher_excess_sharpe_equal_and_dd_within_band(self):
+        candidate = {"sharpe": 0.80, "excess_sharpe": 0.62, "cagr": 0.15, "max_dd": -0.26}
+        result = passes_gate(self.BENCH, candidate, "benchmark_beater", **self.kwargs())
+        assert result.passed
+        assert result.checks == {
+            "cagr_beats_benchmark": True,
+            "excess_sharpe_not_lower": True,
+            "max_dd_within_noise": True,
+        }
+        assert result.inputs["sharpe_metric"] == "excess_sharpe"
+        assert result.inputs["max_dd_cost_pp"] == 1.2
+        assert result.inputs["d_excess_sharpe"] == 0
+
+    def test_equal_cagr_is_not_beating_the_benchmark(self):
+        candidate = {"sharpe": 1.0, "excess_sharpe": 0.70, "cagr": 0.14, "max_dd": -0.20}
+        result = passes_gate(self.BENCH, candidate, "benchmark_beater", **self.kwargs())
+        assert not result.passed
+        assert result.checks["cagr_beats_benchmark"] is False
+
+    def test_lower_excess_sharpe_fails_even_with_higher_raw_sharpe(self):
+        # A candidate parked in cash half the time can post a higher rf=0
+        # Sharpe than SPY while earning less than SPY over cash.
+        candidate = {"sharpe": 0.95, "excess_sharpe": 0.55, "cagr": 0.15, "max_dd": -0.20}
+        result = passes_gate(self.BENCH, candidate, "benchmark_beater", **self.kwargs())
+        assert not result.passed
+        assert result.checks["excess_sharpe_not_lower"] is False
+
+    def test_drawdown_outside_the_noise_band_fails(self):
+        candidate = {"sharpe": 1.0, "excess_sharpe": 0.70, "cagr": 0.16, "max_dd": -0.263}
+        result = passes_gate(self.BENCH, candidate, "benchmark_beater", **self.kwargs())
+        assert not result.passed
+        assert result.checks["max_dd_within_noise"] is False
+        inside = dict(candidate, max_dd=-0.261)
+        assert passes_gate(self.BENCH, inside, "benchmark_beater", **self.kwargs()).passed
+
+    def test_noise_band_is_required(self):
+        candidate = {"sharpe": 1.0, "excess_sharpe": 0.70, "cagr": 0.16, "max_dd": -0.20}
+        with pytest.raises(ValueError, match="paired_drawdown_noise_pp"):
+            passes_gate(self.BENCH, candidate, "benchmark_beater")
+
+    def test_falls_back_to_raw_sharpe_only_when_neither_side_has_excess(self):
+        bench = summary(0.90, 0.14, -0.25)
+        candidate = summary(0.90, 0.15, -0.25)
+        result = passes_gate(bench, candidate, "benchmark_beater", **self.kwargs())
+        assert result.passed
+        assert result.inputs["sharpe_metric"] == "sharpe"
+        assert result.inputs["control_excess_sharpe"] is None
+        with pytest.raises(KeyError, match="only one side"):
+            passes_gate(self.BENCH, candidate, "benchmark_beater", **self.kwargs())
+
+    def test_existing_classes_are_untouched_by_the_new_one(self):
+        control = summary(1.0, 0.10, -0.20)
+        worse_dd = summary(1.1, 0.11, -0.201)
+        assert not passes_gate(control, worse_dd, "return_enhancer").passed
+        assert not passes_gate(
+            control, worse_dd, "cost_reducer", min_turnover_reduction_pct=0.1,
+            max_sharpe_cost=0.1, control_turnover=10.0, candidate_turnover=5.0,
+        ).passed
+
+    def test_all_cells_with_benchmark_in_the_control_slot(self):
+        good = {"sharpe": 1.0, "excess_sharpe": 0.70, "cagr": 0.16, "max_dd": -0.25}
+        bad = {"sharpe": 1.0, "excess_sharpe": 0.70, "cagr": 0.13, "max_dd": -0.25}
+        cells = [
+            ("early", "base", self.BENCH, good),
+            ("heldout", "base", self.BENCH, good),
+            ("early", "2x", self.BENCH, good),
+            ("heldout", "2x", self.BENCH, bad),
+        ]
+        verdict = passes_gate_all_cells(cells, "benchmark_beater", max_dd_cost_pp=1.2)
+        assert verdict["objective_class"] == "benchmark_beater"
+        assert verdict["passed"] is False
+        assert [c["passed"] for c in verdict["cells"]] == [True, True, True, False]
+        assert all(c["inputs"]["max_dd_cost_pp"] == 1.2 for c in verdict["cells"])
+
+    def test_end_to_end_with_a_bootstrapped_band(self):
+        rng = np.random.default_rng(20260914)
+        spy = rng.normal(0.0006, 0.011, 800)
+        candidate = 0.9 * spy + rng.normal(0.0002, 0.004, 800)
+        band = paired_drawdown_noise_pp(spy, candidate)
+        assert band > 0
+        bench = summary(0.9, 0.14, -0.25)
+        cand = summary(0.9, 0.15, round(-0.25 - band / 100 / 2, 6))
+        assert passes_gate(bench, cand, "benchmark_beater", max_dd_cost_pp=band).passed

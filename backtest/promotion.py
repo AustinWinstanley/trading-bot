@@ -51,6 +51,37 @@ the bound in the pre-registration, not in the writeup after the run:
   and pre-registers the tolerance is more honest than one that treats
   every 1bp path wiggle as a real loss. As with every class here: pick it
   BEFORE looking at results.
+- `benchmark_beater` — a candidate PORTFOLIO judged against a passive
+  benchmark (SPY buy-and-hold) rather than against the incumbent
+  portfolio. Added 2026-09-14 with the MOM_LS stand-down: the deployed
+  sleeve was designed for "Sharpe with zero-tolerance drawdown" and never
+  asked "does this beat the market?", and seven live weeks answered that
+  question for it. Per cell the candidate's CAGR must EXCEED the
+  benchmark's, its excess Sharpe (`excess_sharpe` from
+  `returns_summary(..., rf=...)`; falls back to `sharpe` only when neither
+  summary carries `excess_sharpe`) must not be lower than the benchmark's,
+  and its max drawdown may be worse than the benchmark's by at most a
+  pre-declared `max_dd_cost_pp` which — exactly as for `diversifier` —
+  must come from `paired_drawdown_noise_pp(benchmark_returns,
+  candidate_returns)`, never a hand-picked number. Cells are
+  `(benchmark_summary, candidate_summary)` in the control slot, so
+  `passes_gate_all_cells` works unchanged.
+
+  This is not a loosening of the four classes above; none of them changes.
+  It is the one question a replacement for a stood-down sleeve has to
+  answer before any relative-to-incumbent comparison matters: a portfolio
+  that does not beat the thing it could have been (the index) has no
+  business being judged on finer points.
+
+  Summary of what each class gates (the other statistics are reported,
+  not gating):
+
+    class             sharpe            cagr        max_dd            extra
+    return_enhancer   > control         >= control  >= control        —
+    risk_reducer      —                 cost <= pp  improves >= pct   not worse on all 3
+    cost_reducer      cost <= budget    >= control  >= control        turnover cut >= pct
+    diversifier       > control         >= control  within noise pp   correlation <= max
+    benchmark_beater  excess >= bench   > bench     within noise pp   —
 
 Every input that decided the verdict is echoed back in the result so the
 report JSON is self-auditing — no re-deriving what a study "must have" used.
@@ -60,7 +91,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-OBJECTIVE_CLASSES = ("return_enhancer", "risk_reducer", "cost_reducer", "diversifier")
+OBJECTIVE_CLASSES = (
+    "return_enhancer",
+    "risk_reducer",
+    "cost_reducer",
+    "diversifier",
+    "benchmark_beater",
+)
 
 # Below this, d_sharpe/d_cagr/d_max_dd are treated as "the candidate produced
 # no measurable difference from the control" rather than as a genuine, if
@@ -130,7 +167,8 @@ def passes_gate(
     `control` and `candidate` are dicts shaped like
     `backtest.production_portfolio.returns_summary` output (must carry
     `sharpe`, `cagr`, `max_dd`; `max_dd` is signed non-positive, so a larger
-    magnitude is worse). Returns a `GateResult` whose `checks`/`inputs` are
+    magnitude is worse). For `benchmark_beater` the `control` slot holds the
+    BENCHMARK's summary. Returns a `GateResult` whose `checks`/`inputs` are
     meant to be embedded directly in the study's report JSON.
     """
     _require(control, "sharpe", "cagr", "max_dd")
@@ -214,6 +252,40 @@ def passes_gate(
             max_dd_cost_pp=max_dd_cost_pp,
             max_correlation=max_correlation,
             stream_correlation=round(stream_correlation, 4),
+        )
+
+    elif objective_class == "benchmark_beater":
+        if max_dd_cost_pp is None:
+            raise ValueError(
+                "benchmark_beater requires pre-declared max_dd_cost_pp from "
+                "paired_drawdown_noise_pp(benchmark_returns, candidate_returns)"
+            )
+        # `control` is the benchmark here. Excess Sharpe is the honest
+        # comparison when one side holds idle cash and the other does not;
+        # fall back to raw Sharpe only when neither side has it, and say
+        # which was used so the report is self-auditing.
+        if "excess_sharpe" in control and "excess_sharpe" in candidate:
+            sharpe_metric = "excess_sharpe"
+        elif "excess_sharpe" in control or "excess_sharpe" in candidate:
+            raise KeyError(
+                "benchmark_beater: excess_sharpe present on only one side — "
+                "compute both summaries with the same rf"
+            )
+        else:
+            sharpe_metric = "sharpe"
+        d_metric_sharpe = candidate[sharpe_metric] - control[sharpe_metric]
+        checks = {
+            "cagr_beats_benchmark": d_cagr > 0,
+            "excess_sharpe_not_lower": d_metric_sharpe >= 0,
+            # Same paired-bootstrap tie rule as `diversifier`.
+            "max_dd_within_noise": d_max_dd >= -max_dd_cost_pp / 100,
+        }
+        inputs.update(
+            sharpe_metric=sharpe_metric,
+            control_excess_sharpe=control.get("excess_sharpe"),
+            candidate_excess_sharpe=candidate.get("excess_sharpe"),
+            d_excess_sharpe=round(d_metric_sharpe, 4),
+            max_dd_cost_pp=max_dd_cost_pp,
         )
 
     else:  # cost_reducer
