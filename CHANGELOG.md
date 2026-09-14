@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.4...v1.2.0) (2026-09-14)
+
+
+### Features
+
+* **portfolio:** stand down mom_ls, fold its weight into the SPY core, activate the 2x vol overlay ([d0f8ca5](https://github.com/AustinWinstanley/trading-bot/commit/d0f8ca50ee587534de145d020ae7618fbd67b89a))
+
+
+### Bug Fixes
+
+* **2x:** revert mom_ls averaging-down exemption ([bdd469c](https://github.com/AustinWinstanley/trading-bot/commit/bdd469c69b1abf28b1fc9b09a3df1a58e41a3c43))
+* **ops:** stop the weekend iwmfwd crash, widen the health timeout, keep MCP rejection reasons ([9ad03aa](https://github.com/AustinWinstanley/trading-bot/commit/9ad03aa36fe3ee0fdd425cb2089a5e4d2138b06f))
+* **risk:** size full exits at the held quantity and always exit untargeted positions ([b15f1db](https://github.com/AustinWinstanley/trading-bot/commit/b15f1db701962b9070205390c454549e095a1461))
+* skip broker-inactive assets instead of daily CRITICAL ([ee8547b](https://github.com/AustinWinstanley/trading-bot/commit/ee8547b1cbc96e009fecaa9a567721a635bcf349))
+
 ## [1.1.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.3...v1.1.4) (2026-08-24)
 
 
