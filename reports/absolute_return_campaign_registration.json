@@ -1,0 +1,88 @@
+{
+  "registration": "absolute_return_campaign_2026-09-14",
+  "registered_at": "2026-09-14T19:30:00-04:00",
+  "status": "pre_registered_before_any_candidate_was_run",
+  "motivation": "docs/research.md 'Live results and the 2026-09-14 stand-down': mom_ls was the entire live loss; the incumbent portfolio's own backtest trails SPY (13.46% vs 16.64% CAGR); the promotion gate never asked whether a portfolio beats the market. The user's goal is absolute paper returns that beat SPY before any real money.",
+  "objective_class": "benchmark_beater",
+  "benchmark": {
+    "definition": "SPY buy-and-hold total return from state/history/SPY.parquet (Tiingo adjusted close), zero cost, same rf as the candidate",
+    "rf": "backtest.riskfree.load_rf_daily() (BIL daily total return)"
+  },
+  "windows": {
+    "source": "backtest/windows.py",
+    "screen": {
+      "early_2020_2022": ["2020-07-28", "2022-12-30"],
+      "heldout_2023_plus": ["2023-01-03", "2026-08-12"]
+    },
+    "full": "each candidate's data-limited start (stated per report) through 2026-08-12",
+    "stress": "backtest.windows.STRESS_WINDOWS where the candidate's instruments exist; reported, and judged only on the drawdown-within-band check",
+    "frozen": "2026-08-13 onward is never read by any study in this campaign; it is reserved for the paper-validation protocol (Phase 4)"
+  },
+  "simulator": {
+    "module": "backtest.deployable_sim.simulate_targets",
+    "settings": {
+      "equity": 10000.0,
+      "gross_leverage": [1.0, 2.0],
+      "rebalance_band": 0.20,
+      "band_equity_cap": 0.05,
+      "min_order_notional": 25.0,
+      "position_cap_pct": {"base": 0.15, "2x": 0.30},
+      "elevated_cap": "index/asset-ETF sleeves get {base: 0.80, 2x: 1.60} (mirrors risk.elevated_position_pct); single stocks never",
+      "leveraged_cap_pct": {"base": 0.20, "2x": 0.40},
+      "cost_bps": {"etf_turnover": 8.0, "stock_turnover": 15.0, "stress": 20.0},
+      "leveraged_etf_expense": "embedded in the real ETF bars (SSO/QLD 2006+, UPRO 2009+, TQQQ 2010+); pre-inception synthetic series are labelled synthetic and used ONLY for stress-window drawdown, never for the judged cells",
+      "borrow_rate": 0.03,
+      "margin_rate": 0.05,
+      "deployable_compat": false
+    }
+  },
+  "candidate_sleeves": {
+    "lev_trend": {
+      "module": "backtest/trend_leveraged_index_study.py",
+      "signal": "index close[t-1] > 200-day SMA[t-1] (same iloc[-2] convention as engine.portfolio.trend_targets), evaluated daily",
+      "grid": {"index": ["SPY", "QQQ"], "vehicle": {"SPY": ["SSO", "UPRO"], "QQQ": ["QLD", "TQQQ"]}, "off_vehicle": ["BIL"]},
+      "note": "the vehicle is a leveraged ETF so the sleeve's dollar weight must respect leveraged_cap_pct; sleeve weight in mixes <= 0.20 at 1x"
+    },
+    "mom_long": {
+      "module": "backtest/long_only_momentum_study.py",
+      "signal": "12-1 momentum (close.shift(21)/close.shift(252)-1) on backtest.xsec_data.load()'s panel, price >= $5, 20d dollar volume >= $5M; long-only equal weight top-N",
+      "grid": {"top_n": [10, 20], "rebalance_days": 21, "rebalance_offsets": "all 21 offsets, report mean and min/max across offsets", "rank_buffer": "hold an incumbent until its rank exceeds 2N", "vol_target": 0.20, "vol_lookback_days": 63, "vol_scale_bounds": [0.25, 1.0]},
+      "etf_alternative": "MTUM buy-and-hold from 2013-04-18 (state/history/MTUM.parquet) as the same sleeve's ETF vehicle",
+      "caveats": "panel starts 2020-07-27, survivors-only; long-only positives are an upper bound; no crash-era evidence beyond the French proxy"
+    },
+    "haa": {
+      "module": "backtest/haa_study.py",
+      "signal": "Keller & Keuning (2022) Hybrid Asset Allocation, balanced variant: offensive SPY/IWM/EFA/EEM/VNQ/DBC/IEF/TLT, canary TIP, defensive best of BIL/IEF; momentum = mean of 1/3/6/12-month returns; if canary momentum > 0 hold the top-4 offensive by momentum (equal weight, any with momentum <= 0 goes to the defensive pick) else 100% defensive; monthly on the last trading day",
+      "grid": {"top_k": [4], "variants": ["balanced"]},
+      "caveats": "published 2022 -> post-publication decay filter: must hold up in heldout_2023_plus on its own"
+    }
+  },
+  "mixes": {
+    "module": "backtest/portfolio_mix_study.py",
+    "rule": "at most these six, declared here; no others may be added after results are seen",
+    "list": {
+      "M1": {"equity_core": 0.40, "lev_trend": 0.20, "mom_long": 0.20, "haa": 0.20},
+      "M2": {"equity_core": 0.55, "lev_trend": 0.20, "haa": 0.25},
+      "M3": {"equity_core": 0.60, "lev_trend": 0.20, "mom_long": 0.20},
+      "M4": {"equity_core": 0.50, "lev_trend": 0.20, "mom_long": 0.15, "haa": 0.15},
+      "M5": {"haa": 0.50, "lev_trend": 0.20, "mom_long": 0.30},
+      "M6": {"equity_core": 0.80, "lev_trend": 0.20}
+    },
+    "baseline_only": {"current_2026-09-14": {"equity_core": 0.55, "tsmom": 0.25, "trend": 0.20}, "note": "the shipped portfolio is reported alongside for comparison; tsmom is not a candidate ingredient (user decision 2026-09-14)"},
+    "vehicle_choice_inside_mixes": "each mix is run with lev_trend on SPY/SSO and, separately, QQQ/QLD; 3x vehicles are reported standalone only (their 2009/2010 inception leaves no GFC evidence)",
+    "sleeve_variants_inside_mixes": "mom_long uses top-20 (the offset-mean series); the top-10 and MTUM variants are reported standalone and as a sensitivity on M3 only"
+  },
+  "pass_rule": {
+    "per_cell": "backtest.promotion.passes_gate(objective_class='benchmark_beater') with max_dd_cost_pp = paired_drawdown_noise_pp(spy_returns, candidate_returns) computed on that cell",
+    "cells_required": ["full", "heldout_2023_plus", "early_2020_2022 (when the mix's earliest instrument allows the full window; otherwise the cell is reported as not_evaluable, not as a pass)"],
+    "stress": "GFC and COVID rows reported for every mix whose instruments exist there; a mix whose GFC max drawdown is worse than SPY's by more than the paired band is flagged 'fails_stress' and cannot be promoted regardless of the screen cells",
+    "profiles": "judged at gross 1.0 (base). Gross 2.0 (2x lab) is reported; the lab runs the overlay-scaled version of whatever base adopts"
+  },
+  "selection_rule": "among mixes passing every required cell and not flagged fails_stress, choose the highest heldout_2023_plus excess Sharpe; ties within 0.02 go to the lower full-sample max drawdown. If none pass, the campaign's decision is 'no_candidate_passed' and the portfolio stays as shipped on 2026-09-14",
+  "what_happens_next": "the chosen mix goes to Phase 3 (engine sleeves + config) and Phase 4 (pre-registered 3-month paper validation with kill rules) — never straight to a config change",
+  "researcher_degrees_of_freedom_declared": [
+    "grids above are fixed; any parameter not listed takes the value used by the corresponding production sleeve",
+    "the six mixes were chosen before any candidate sleeve was simulated",
+    "offset averaging is mandatory for the monthly momentum sleeve because the 2026-09-14 leg study showed single-path monthly numbers that looked like rebalance-date luck"
+  ]
+}
