@@ -676,6 +676,22 @@ def evaluate(
                     "tsmom_min_dollar_volume", min_dollar_volume
                 )
             )
+        elif _sleeve_contains(clean["sleeve"], "lev_trend"):
+            # Live incident, 2026-09-15: Alpaca's IEX feed sees QLD at
+            # ~$3.0M and SSO at ~$2.3M 20-day dollar volume, both under the
+            # generic $3M universe floor, even though Tiingo's consolidated
+            # tape shows $300-400M/day for both (AGENTS.md: "IEX is roughly
+            # 8-10% of consolidated volume" — for these two it's under 1%,
+            # thinner than that ratio suggests). QLD is the sleeve's ONLY
+            # buy target, so the generic floor would have stranded the
+            # entire 20%-weight lev_trend sleeve in cash indefinitely on
+            # its very first live day. Same pattern as tsmom's own
+            # substitution above and the already-documented FXE case.
+            min_dollar_volume = float(
+                cfg.sleeves_paper.get(
+                    "lev_trend_min_dollar_volume", min_dollar_volume
+                )
+            )
         if data.avg_dollar_volume_20d < min_dollar_volume:
             result.rejected.append(
                 RejectedProposal(

@@ -1093,3 +1093,30 @@ def test_partial_sell_is_sized_at_the_limit_price(cfg, clean_risk, ctx):
             "notional": 500.0, "limit_price": 99.70, "rationale": "test"}
     result = evaluate([sell], account, clean_risk, ctx, cfg)
     assert result.approved[0].qty == pytest.approx(500.0 / 99.70)
+
+
+def test_lev_trend_uses_its_smaller_liquidity_floor(cfg, account, clean_risk, ctx):
+    # Live incident, 2026-09-15: Alpaca IEX sees QLD/SSO under the generic
+    # $3M universe floor even though both are $300-400M/day on the
+    # consolidated tape (Tiingo) — same pattern as tsmom's own floor above.
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="lev_trend")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert len(result.approved) == 1
+
+
+def test_lev_trend_liquidity_floor_requires_exact_sleeve_membership(cfg, account, clean_risk, ctx):
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="not_lev_trend_at_all")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert only_rejection(result).startswith("20d avg dollar volume")
+
+
+def test_lev_trend_floor_applies_when_combined_with_another_sleeve(cfg, account, clean_risk, ctx):
+    result = evaluate(
+        [buy("THIN", limit=50.0, sleeve="lev_trend+equity_core")],
+        account, clean_risk, ctx, cfg,
+    )
+    assert len(result.approved) == 1

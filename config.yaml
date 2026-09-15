@@ -178,6 +178,15 @@ paper_portfolio:
   lev_trend_vehicle: QLD
   lev_trend_reserve_symbol: BIL
   lev_trend_ma_days: 200
+  # Live incident, 2026-09-15: Alpaca's IEX feed shows QLD ~$3.0M and SSO
+  # ~$2.3M 20d dollar volume, both under the generic $3M universe floor,
+  # against $300-400M/day on Tiingo's consolidated tape. QLD is the
+  # sleeve's only buy target, so the generic floor rejected every QLD
+  # entry on the sleeve's first live day. Order sizes here (a few thousand
+  # dollars) are immaterial against even the IEX-only volume, so $1M
+  # (matching tsmom_min_dollar_volume's precedent) is a safe floor, not a
+  # loosened one. See engine/risk.py's matching substitution.
+  lev_trend_min_dollar_volume: 1000000
   tsmom_lookback_days: 252
   tsmom_min_dollar_volume: 1000000
   # Trade only when a position drifts >20% from target, or >= $25 absolute —
