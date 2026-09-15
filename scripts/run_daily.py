@@ -928,6 +928,7 @@ def main() -> None:
                         filled_avg, filled_at,
                     ),
                 )
+                conn.commit()  # see the submission loop's own commit for why
             except Exception as exc:
                 print(f"    flatten {sym} failed: {exc}")
 
@@ -1002,6 +1003,24 @@ def main() -> None:
                 conn.execute("DELETE FROM stops WHERE symbol=?", (order.symbol,))
             submitted += 1
             succeeded_orders.append(order)
+            # Commit THIS order (and its paired stop row) the instant it's
+            # journaled, not at the end of the whole run. Live incident,
+            # 2026-09-15: a 59-order 2x rotation left every fill uncommitted
+            # — invisible to any other connection, SQLite transactions being
+            # all-or-nothing — for the run's full duration. health2x, 8
+            # minutes into that run, read the orders table and legitimately
+            # saw none of today's fills, so equity_qty_explained_by_orders
+            # summed only stale prior-day orders; the resulting mismatch
+            # against the broker's already-updated position read as a false
+            # "possible option assignment" CRITICAL and made options_daily2x
+            # skip its entry pass. Worse than any one day's false positive:
+            # until this commit, a crash after real broker fills but before
+            # the final end-of-run commit would have rolled every one of
+            # them back out of the local journal, leaving broker-side trades
+            # with no record here at all. Committing per-order costs one
+            # fsync per order (tens of orders on a heavy day) against a
+            # 1500s job timeout — immaterial.
+            conn.commit()
         except Exception as exc:
             print(f"    submit {order.symbol} FAILED: {exc}")
             submission_failures.append(f"{order.symbol}: {exc}")
@@ -1026,6 +1045,7 @@ def main() -> None:
                     None, None, None,
                 ),
             )
+            conn.commit()
 
     # record realised losses for the revenge-trade block, and realized P&L
     # for any experiment-tier sleeve exit — gains and losses both, since a

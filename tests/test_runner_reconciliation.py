@@ -439,3 +439,49 @@ def test_rebalance_threshold_full_exit_always_trades():
     # sub-$25 fractional-dust remnants must clear.
     assert rebalance_threshold(0.0, 10_000.0, band=0.20, band_cap=0.05,
                                min_notional=25.0, full_exit=True) == 0.0
+
+
+# --------------------------------------------------------------------------
+# Order journal durability — every broker-order write must commit
+# immediately, not wait for main()'s single end-of-run commit
+# --------------------------------------------------------------------------
+
+
+def test_order_writes_commit_immediately_not_deferred_to_end_of_run():
+    """Regression for the 2026-09-15 false 'possible option assignment'
+    CRITICAL: a 59-order 2x rotation left every fill uncommitted (SQLite
+    transactions are all-or-nothing across connections) until main()'s
+    single end-of-run commit. health2x opened its own read-only connection
+    8 minutes into that still-running daily2x job and legitimately saw
+    none of that run's orders, so equity_qty_explained_by_orders summed
+    only stale prior-day rows; the mismatch against the broker's
+    already-updated position read as a possible option assignment and
+    made options_daily2x skip its entry pass. Worse than any single day's
+    false positive: a crash after real broker fills but before the old
+    end-of-run commit would have rolled those fills back out of the local
+    journal entirely, with the broker's account left in a state the
+    journal had no record of at all.
+
+    Each of the three broker-order-write sites (kill-switch flatten,
+    submission success, submission failure) must commit before the loop
+    can make another broker call, so a fill is durable and visible to any
+    other connection (dashboard, MCP server, healthcheck, options_daily)
+    within milliseconds, not for the remainder of a potentially
+    multi-minute run.
+    """
+    import inspect
+
+    src = inspect.getsource(runner)
+    sites = {
+        "kill-switch flatten": 'result.halt_reason or "flatten", o.get("id"),',
+        "submission success": "succeeded_orders.append(order)",
+        "submission failure": 'f"submit failed: {str(exc)[:200]}", None, "submit_failed",',
+    }
+    for label, marker in sites.items():
+        idx = src.index(marker)
+        window = src[idx: idx + 1500]  # generous: covers the explanatory comment above each commit()
+        assert "conn.commit()" in window, (
+            f"{label} order write has no conn.commit() shortly after it — "
+            "a fill submitted here would sit uncommitted (invisible to every "
+            "other reader) until the run's final commit"
+        )
