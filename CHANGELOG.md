@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.3.1...v1.4.0) (2026-09-15)
+
+
+### Features
+
+* **weekly:** Phase 4 paper-validation monitoring — per-sleeve P&L vs SPY and kill rules ([94668ee](https://github.com/AustinWinstanley/trading-bot/commit/94668eed0e7c92432642f8cd8d25d0cc33ae23e4))
+
 ## [1.3.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.3.0...v1.3.1) (2026-09-15)
 
 
