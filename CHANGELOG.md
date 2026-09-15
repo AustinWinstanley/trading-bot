@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.2.0...v1.3.0) (2026-09-15)
+
+
+### Features
+
+* **backtest:** benchmark-beater objective, BIL risk-free series, shared windows, live-gate-faithful simulator ([5a15f57](https://github.com/AustinWinstanley/trading-bot/commit/5a15f574160b80c2019e47a5085319db6d5c772d))
+* **backtest:** long-only momentum and HAA sleeve studies (both rejected against SPY) ([43a6bc2](https://github.com/AustinWinstanley/trading-bot/commit/43a6bc23118e2a053c28ed12b85a10e87dd5be48))
+* **backtest:** pre-registered portfolio mix study selects M6 (0.80 SPY + 0.20 QLD/BIL trend) ([0e262d2](https://github.com/AustinWinstanley/trading-bot/commit/0e262d2555f86f89fdd1838649cb6d2a5a229b3b))
+* **backtest:** trend-filtered leveraged-index sleeve study (screened via QQQ/QLD in an 80/20 mix) ([af29f81](https://github.com/AustinWinstanley/trading-bot/commit/af29f8118e9f568889a448e97cc36d4710a91f60))
+* **portfolio:** adopt mix M6 — SPY core 0.80 plus a QQQ-trend QLD/BIL sleeve — under paper validation ([4db718c](https://github.com/AustinWinstanley/trading-bot/commit/4db718cbe11f6200201d0ea44f4269ab1d239887))
+
 ## [1.2.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.1.4...v1.2.0) (2026-09-14)
 
 
