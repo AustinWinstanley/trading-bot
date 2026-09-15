@@ -1,0 +1,1785 @@
+{
+  "study": "haa",
+  "pre_registration": "reports/absolute_return_campaign_registration.json",
+  "objective_class": "benchmark_beater",
+  "benchmark": "raw SPY close-to-close total return (state/history/SPY.parquet), zero cost",
+  "instruments": [
+    "BIL",
+    "DBC",
+    "EEM",
+    "EFA",
+    "IEF",
+    "IWM",
+    "SPY",
+    "TIP",
+    "TLT",
+    "VNQ"
+  ],
+  "first_live_day": "2003-08-01",
+  "first_bar": {
+    "BIL": "2007-05-30",
+    "DBC": "2006-02-03",
+    "EEM": "2003-04-14",
+    "EFA": "2001-08-17",
+    "IEF": "2002-07-26",
+    "IWM": "2000-05-26",
+    "SPY": "2000-01-03",
+    "TIP": "2003-12-05",
+    "TLT": "2002-07-26",
+    "VNQ": "2004-09-29"
+  },
+  "forms": {
+    "haa_balanced_8bps": {
+      "cost_bps": 8.0,
+      "cells": {
+        "full": {
+          "observations": 5794,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2003-08-01",
+            "to": "2026-08-12",
+            "years": 23.03,
+            "cagr": 0.1133,
+            "ann_return": 0.1247,
+            "vol": 0.1854,
+            "sharpe": 0.673,
+            "sortino": 0.823,
+            "max_dd": -0.552,
+            "x_money": 11.848,
+            "excess_sharpe": 0.609
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2003-08-01",
+            "to": "2026-08-12",
+            "years": 23.03,
+            "cagr": 0.0934,
+            "ann_return": 0.0957,
+            "vol": 0.111,
+            "sharpe": 0.862,
+            "sortino": 1.039,
+            "max_dd": -0.1683,
+            "x_money": 7.826,
+            "excess_sharpe": 0.757
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.673,
+              "candidate_sharpe": 0.862,
+              "control_cagr": 0.1133,
+              "candidate_cagr": 0.0934,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1683,
+              "d_sharpe": 0.189,
+              "d_cagr": -0.0199,
+              "d_max_dd": 0.3837,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.609,
+              "candidate_excess_sharpe": 0.757,
+              "d_excess_sharpe": 0.148,
+              "max_dd_cost_pp": 9.509517615578899
+            }
+          }
+        },
+        "early_2020_2022": {
+          "observations": 613,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2020-07-28",
+            "to": "2022-12-30",
+            "years": 2.42,
+            "cagr": 0.0888,
+            "ann_return": 0.1028,
+            "vol": 0.1903,
+            "sharpe": 0.54,
+            "sortino": 0.768,
+            "max_dd": -0.245,
+            "x_money": 1.229,
+            "excess_sharpe": 0.512
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2020-07-28",
+            "to": "2022-12-30",
+            "years": 2.42,
+            "cagr": 0.1523,
+            "ann_return": 0.1476,
+            "vol": 0.113,
+            "sharpe": 1.306,
+            "sortino": 1.484,
+            "max_dd": -0.0845,
+            "x_money": 1.41,
+            "excess_sharpe": 1.259
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.54,
+              "candidate_sharpe": 1.306,
+              "control_cagr": 0.0888,
+              "candidate_cagr": 0.1523,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0845,
+              "d_sharpe": 0.766,
+              "d_cagr": 0.0635,
+              "d_max_dd": 0.1605,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.512,
+              "candidate_excess_sharpe": 1.259,
+              "d_excess_sharpe": 0.747,
+              "max_dd_cost_pp": 7.50438885638198
+            }
+          }
+        },
+        "heldout_2023_plus": {
+          "observations": 905,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2023-01-03",
+            "to": "2026-08-12",
+            "years": 3.61,
+            "cagr": 0.2305,
+            "ann_return": 0.2197,
+            "vol": 0.1509,
+            "sharpe": 1.456,
+            "sortino": 1.991,
+            "max_dd": -0.1876,
+            "x_money": 2.113,
+            "excess_sharpe": 1.157
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2023-01-03",
+            "to": "2026-08-12",
+            "years": 3.61,
+            "cagr": 0.1064,
+            "ann_return": 0.108,
+            "vol": 0.1144,
+            "sharpe": 0.944,
+            "sortino": 1.124,
+            "max_dd": -0.1683,
+            "x_money": 1.44,
+            "excess_sharpe": 0.552
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 1.456,
+              "candidate_sharpe": 0.944,
+              "control_cagr": 0.2305,
+              "candidate_cagr": 0.1064,
+              "control_max_dd": -0.1876,
+              "candidate_max_dd": -0.1683,
+              "d_sharpe": -0.512,
+              "d_cagr": -0.1241,
+              "d_max_dd": 0.0193,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 1.157,
+              "candidate_excess_sharpe": 0.552,
+              "d_excess_sharpe": -0.605,
+              "max_dd_cost_pp": 3.295329749530148
+            }
+          }
+        },
+        "stress:GFC": {
+          "observations": 356,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2007-10-09",
+            "to": "2009-03-09",
+            "years": 1.42,
+            "cagr": -0.4292,
+            "ann_return": -0.4891,
+            "vol": 0.3809,
+            "sharpe": -1.284,
+            "sortino": -1.781,
+            "max_dd": -0.552,
+            "x_money": 0.452,
+            "excess_sharpe": -1.32
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2007-10-09",
+            "to": "2009-03-09",
+            "years": 1.42,
+            "cagr": 0.0251,
+            "ann_return": 0.0323,
+            "vol": 0.1227,
+            "sharpe": 0.264,
+            "sortino": 0.379,
+            "max_dd": -0.1253,
+            "x_money": 1.036,
+            "excess_sharpe": 0.111
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.284,
+              "candidate_sharpe": 0.264,
+              "control_cagr": -0.4292,
+              "candidate_cagr": 0.0251,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1253,
+              "d_sharpe": 1.548,
+              "d_cagr": 0.4543,
+              "d_max_dd": 0.4267,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.32,
+              "candidate_excess_sharpe": 0.111,
+              "d_excess_sharpe": 1.431,
+              "max_dd_cost_pp": 11.37772850103546
+            }
+          }
+        },
+        "stress:momentum crash rebound": {
+          "observations": 79,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2009-03-10",
+            "to": "2009-06-30",
+            "years": 0.31,
+            "cagr": 1.7755,
+            "ann_return": 1.048,
+            "vol": 0.312,
+            "sharpe": 3.359,
+            "sortino": 6.388,
+            "max_dd": -0.0557,
+            "x_money": 1.368,
+            "excess_sharpe": 3.351
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2009-03-10",
+            "to": "2009-06-30",
+            "years": 0.31,
+            "cagr": -0.1777,
+            "ann_return": -0.1802,
+            "vol": 0.1496,
+            "sharpe": -1.205,
+            "sortino": -1.55,
+            "max_dd": -0.1139,
+            "x_money": 0.942,
+            "excess_sharpe": -1.204
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": false
+            },
+            "inputs": {
+              "control_sharpe": 3.359,
+              "candidate_sharpe": -1.205,
+              "control_cagr": 1.7755,
+              "candidate_cagr": -0.1777,
+              "control_max_dd": -0.0557,
+              "candidate_max_dd": -0.1139,
+              "d_sharpe": -4.564,
+              "d_cagr": -1.9532,
+              "d_max_dd": -0.0582,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 3.351,
+              "candidate_excess_sharpe": -1.204,
+              "d_excess_sharpe": -4.555,
+              "max_dd_cost_pp": 1.7165898301760647
+            }
+          }
+        },
+        "stress:Eurozone / US downgrade": {
+          "observations": 108,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2011-05-02",
+            "to": "2011-10-03",
+            "years": 0.42,
+            "cagr": -0.3864,
+            "ann_return": -0.4436,
+            "vol": 0.2701,
+            "sharpe": -1.642,
+            "sortino": -2.08,
+            "max_dd": -0.1848,
+            "x_money": 0.814,
+            "excess_sharpe": -1.644
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2011-05-02",
+            "to": "2011-10-03",
+            "years": 0.42,
+            "cagr": -0.1999,
+            "ann_return": -0.2073,
+            "vol": 0.1558,
+            "sharpe": -1.33,
+            "sortino": -1.839,
+            "max_dd": -0.1216,
+            "x_money": 0.91,
+            "excess_sharpe": -1.33
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.642,
+              "candidate_sharpe": -1.33,
+              "control_cagr": -0.3864,
+              "candidate_cagr": -0.1999,
+              "control_max_dd": -0.1848,
+              "candidate_max_dd": -0.1216,
+              "d_sharpe": 0.312,
+              "d_cagr": 0.1865,
+              "d_max_dd": 0.0632,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.644,
+              "candidate_excess_sharpe": -1.33,
+              "d_excess_sharpe": 0.314,
+              "max_dd_cost_pp": 3.3396398910553335
+            }
+          }
+        },
+        "stress:China / energy selloff": {
+          "observations": 156,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2015-07-01",
+            "to": "2016-02-11",
+            "years": 0.62,
+            "cagr": -0.1599,
+            "ann_return": -0.1555,
+            "vol": 0.1888,
+            "sharpe": -0.824,
+            "sortino": -1.175,
+            "max_dd": -0.1302,
+            "x_money": 0.898,
+            "excess_sharpe": -0.818
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2015-07-01",
+            "to": "2016-02-11",
+            "years": 0.62,
+            "cagr": 0.068,
+            "ann_return": 0.0663,
+            "vol": 0.0408,
+            "sharpe": 1.624,
+            "sortino": 2.316,
+            "max_dd": -0.0232,
+            "x_money": 1.041,
+            "excess_sharpe": 1.646
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -0.824,
+              "candidate_sharpe": 1.624,
+              "control_cagr": -0.1599,
+              "candidate_cagr": 0.068,
+              "control_max_dd": -0.1302,
+              "candidate_max_dd": -0.0232,
+              "d_sharpe": 2.448,
+              "d_cagr": 0.2279,
+              "d_max_dd": 0.107,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -0.818,
+              "candidate_excess_sharpe": 1.646,
+              "d_excess_sharpe": 2.464,
+              "max_dd_cost_pp": 5.691718910691648
+            }
+          }
+        },
+        "stress:2018 volatility and Q4": {
+          "observations": 230,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2018-01-26",
+            "to": "2018-12-24",
+            "years": 0.91,
+            "cagr": -0.1713,
+            "ann_return": -0.173,
+            "vol": 0.1676,
+            "sharpe": -1.032,
+            "sortino": -1.228,
+            "max_dd": -0.1934,
+            "x_money": 0.843,
+            "excess_sharpe": -1.134
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2018-01-26",
+            "to": "2018-12-24",
+            "years": 0.91,
+            "cagr": 0.0137,
+            "ann_return": 0.0184,
+            "vol": 0.0989,
+            "sharpe": 0.186,
+            "sortino": 0.18,
+            "max_dd": -0.0934,
+            "x_money": 1.012,
+            "excess_sharpe": 0.012
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.032,
+              "candidate_sharpe": 0.186,
+              "control_cagr": -0.1713,
+              "candidate_cagr": 0.0137,
+              "control_max_dd": -0.1934,
+              "candidate_max_dd": -0.0934,
+              "d_sharpe": 1.218,
+              "d_cagr": 0.185,
+              "d_max_dd": 0.1,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.134,
+              "candidate_excess_sharpe": 0.012,
+              "d_excess_sharpe": 1.146,
+              "max_dd_cost_pp": 8.747874652293412
+            }
+          }
+        },
+        "stress:COVID crash": {
+          "observations": 24,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2020-02-19",
+            "to": "2020-03-23",
+            "years": 0.09,
+            "cagr": -0.9888,
+            "ann_return": -3.9542,
+            "vol": 0.7527,
+            "sharpe": -5.254,
+            "sortino": -8.025,
+            "max_dd": -0.337,
+            "x_money": 0.666,
+            "excess_sharpe": -5.287
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2020-02-19",
+            "to": "2020-03-23",
+            "years": 0.09,
+            "cagr": 0.2037,
+            "ann_return": 0.2193,
+            "vol": 0.3009,
+            "sharpe": 0.729,
+            "sortino": 1.239,
+            "max_dd": -0.0782,
+            "x_money": 1.017,
+            "excess_sharpe": 0.639
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "verdict": "not_evaluable",
+            "reason": "24 observations < block_size 63; paired drawdown band undefined",
+            "d_max_dd": 0.2588
+          }
+        },
+        "stress:inflation bear": {
+          "observations": 196,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2022-01-03",
+            "to": "2022-10-12",
+            "years": 0.77,
+            "cagr": -0.2999,
+            "ann_return": -0.3245,
+            "vol": 0.2417,
+            "sharpe": -1.343,
+            "sortino": -2.038,
+            "max_dd": -0.245,
+            "x_money": 0.759,
+            "excess_sharpe": -1.375
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_8bps",
+            "from": "2022-01-03",
+            "to": "2022-10-12",
+            "years": 0.77,
+            "cagr": 0.0093,
+            "ann_return": 0.0106,
+            "vol": 0.0542,
+            "sharpe": 0.196,
+            "sortino": 0.189,
+            "max_dd": -0.0572,
+            "x_money": 1.007,
+            "excess_sharpe": 0.055
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.343,
+              "candidate_sharpe": 0.196,
+              "control_cagr": -0.2999,
+              "candidate_cagr": 0.0093,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0572,
+              "d_sharpe": 1.539,
+              "d_cagr": 0.3092,
+              "d_max_dd": 0.1878,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.375,
+              "candidate_excess_sharpe": 0.055,
+              "d_excess_sharpe": 1.43,
+              "max_dd_cost_pp": 6.989207222158527
+            }
+          }
+        }
+      },
+      "gate_all_cells": {
+        "objective_class": "benchmark_beater",
+        "passed": false,
+        "any_no_effect": false,
+        "all_no_effect": false,
+        "cells": [
+          {
+            "window": "full",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.673,
+              "candidate_sharpe": 0.862,
+              "control_cagr": 0.1133,
+              "candidate_cagr": 0.0934,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1683,
+              "d_sharpe": 0.189,
+              "d_cagr": -0.0199,
+              "d_max_dd": 0.3837,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.609,
+              "candidate_excess_sharpe": 0.757,
+              "d_excess_sharpe": 0.148,
+              "max_dd_cost_pp": 9.509517615578899
+            }
+          },
+          {
+            "window": "heldout_2023_plus",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 1.456,
+              "candidate_sharpe": 0.944,
+              "control_cagr": 0.2305,
+              "candidate_cagr": 0.1064,
+              "control_max_dd": -0.1876,
+              "candidate_max_dd": -0.1683,
+              "d_sharpe": -0.512,
+              "d_cagr": -0.1241,
+              "d_max_dd": 0.0193,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 1.157,
+              "candidate_excess_sharpe": 0.552,
+              "d_excess_sharpe": -0.605,
+              "max_dd_cost_pp": 3.295329749530148
+            }
+          },
+          {
+            "window": "early_2020_2022",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.54,
+              "candidate_sharpe": 1.306,
+              "control_cagr": 0.0888,
+              "candidate_cagr": 0.1523,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0845,
+              "d_sharpe": 0.766,
+              "d_cagr": 0.0635,
+              "d_max_dd": 0.1605,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.512,
+              "candidate_excess_sharpe": 1.259,
+              "d_excess_sharpe": 0.747,
+              "max_dd_cost_pp": 7.50438885638198
+            }
+          }
+        ],
+        "cells_not_evaluable": [],
+        "note": "each cell's max_dd_cost_pp is its own paired_drawdown_noise_pp(spy_returns, candidate_returns); aggregation mirrors backtest.promotion.passes_gate_all_cells"
+      },
+      "stress": {
+        "gfc_evaluable": true,
+        "fails_stress": false,
+        "max_dd_within_noise": true,
+        "benchmark_max_dd": -0.552,
+        "candidate_max_dd": -0.1253,
+        "max_dd_cost_pp": 11.37772850103546
+      },
+      "diagnostics": {
+        "months_fully_defensive_pct": 0.2924,
+        "avg_defensive_weight": 0.3668,
+        "annual_turnover_one_way": 5.33,
+        "realized_vol_annualized": 0.111,
+        "beta_to_spy": 0.246,
+        "calendar_years": {
+          "2003": {
+            "sleeve": 0.0292,
+            "spy": 0.1293
+          },
+          "2004": {
+            "sleeve": 0.0333,
+            "spy": 0.107
+          },
+          "2005": {
+            "sleeve": 0.1011,
+            "spy": 0.0483
+          },
+          "2006": {
+            "sleeve": 0.2674,
+            "spy": 0.1585
+          },
+          "2007": {
+            "sleeve": 0.0925,
+            "spy": 0.0514
+          },
+          "2008": {
+            "sleeve": 0.0505,
+            "spy": -0.3681
+          },
+          "2009": {
+            "sleeve": 0.1024,
+            "spy": 0.2637
+          },
+          "2010": {
+            "sleeve": 0.1511,
+            "spy": 0.1506
+          },
+          "2011": {
+            "sleeve": 0.0174,
+            "spy": 0.0189
+          },
+          "2012": {
+            "sleeve": 0.1161,
+            "spy": 0.1599
+          },
+          "2013": {
+            "sleeve": 0.107,
+            "spy": 0.3231
+          },
+          "2014": {
+            "sleeve": -0.0184,
+            "spy": 0.1346
+          },
+          "2015": {
+            "sleeve": -0.031,
+            "spy": 0.0125
+          },
+          "2016": {
+            "sleeve": 0.0719,
+            "spy": 0.12
+          },
+          "2017": {
+            "sleeve": 0.125,
+            "spy": 0.217
+          },
+          "2018": {
+            "sleeve": 0.0737,
+            "spy": -0.0456
+          },
+          "2019": {
+            "sleeve": 0.0775,
+            "spy": 0.3122
+          },
+          "2020": {
+            "sleeve": 0.2103,
+            "spy": 0.1837
+          },
+          "2021": {
+            "sleeve": 0.2293,
+            "spy": 0.2875
+          },
+          "2022": {
+            "sleeve": 0.0136,
+            "spy": -0.1817
+          },
+          "2023": {
+            "sleeve": 0.0661,
+            "spy": 0.2619
+          },
+          "2024": {
+            "sleeve": 0.0122,
+            "spy": 0.2489
+          },
+          "2025": {
+            "sleeve": 0.1068,
+            "spy": 0.1772
+          },
+          "2026": {
+            "sleeve": 0.2055,
+            "spy": 0.1389
+          }
+        },
+        "avg_offensive_holdings": 2.89
+      }
+    },
+    "haa_balanced_20bps": {
+      "cost_bps": 20.0,
+      "cells": {
+        "full": {
+          "observations": 5794,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2003-08-01",
+            "to": "2026-08-12",
+            "years": 23.03,
+            "cagr": 0.1133,
+            "ann_return": 0.1247,
+            "vol": 0.1854,
+            "sharpe": 0.673,
+            "sortino": 0.823,
+            "max_dd": -0.552,
+            "x_money": 11.848,
+            "excess_sharpe": 0.609
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2003-08-01",
+            "to": "2026-08-12",
+            "years": 23.03,
+            "cagr": 0.0874,
+            "ann_return": 0.09,
+            "vol": 0.1099,
+            "sharpe": 0.819,
+            "sortino": 0.995,
+            "max_dd": -0.1739,
+            "x_money": 6.883,
+            "excess_sharpe": 0.713
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.673,
+              "candidate_sharpe": 0.819,
+              "control_cagr": 0.1133,
+              "candidate_cagr": 0.0874,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1739,
+              "d_sharpe": 0.146,
+              "d_cagr": -0.0259,
+              "d_max_dd": 0.3781,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.609,
+              "candidate_excess_sharpe": 0.713,
+              "d_excess_sharpe": 0.104,
+              "max_dd_cost_pp": 9.559194192240275
+            }
+          }
+        },
+        "early_2020_2022": {
+          "observations": 613,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2020-07-28",
+            "to": "2022-12-30",
+            "years": 2.42,
+            "cagr": 0.0888,
+            "ann_return": 0.1028,
+            "vol": 0.1903,
+            "sharpe": 0.54,
+            "sortino": 0.768,
+            "max_dd": -0.245,
+            "x_money": 1.229,
+            "excess_sharpe": 0.512
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2020-07-28",
+            "to": "2022-12-30",
+            "years": 2.42,
+            "cagr": 0.1472,
+            "ann_return": 0.1432,
+            "vol": 0.113,
+            "sharpe": 1.267,
+            "sortino": 1.441,
+            "max_dd": -0.0859,
+            "x_money": 1.395,
+            "excess_sharpe": 1.221
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.54,
+              "candidate_sharpe": 1.267,
+              "control_cagr": 0.0888,
+              "candidate_cagr": 0.1472,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0859,
+              "d_sharpe": 0.727,
+              "d_cagr": 0.0584,
+              "d_max_dd": 0.1591,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.512,
+              "candidate_excess_sharpe": 1.221,
+              "d_excess_sharpe": 0.709,
+              "max_dd_cost_pp": 7.518283981424792
+            }
+          }
+        },
+        "heldout_2023_plus": {
+          "observations": 905,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2023-01-03",
+            "to": "2026-08-12",
+            "years": 3.61,
+            "cagr": 0.2305,
+            "ann_return": 0.2197,
+            "vol": 0.1509,
+            "sharpe": 1.456,
+            "sortino": 1.991,
+            "max_dd": -0.1876,
+            "x_money": 2.113,
+            "excess_sharpe": 1.157
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2023-01-03",
+            "to": "2026-08-12",
+            "years": 3.61,
+            "cagr": 0.0991,
+            "ann_return": 0.1015,
+            "vol": 0.1147,
+            "sharpe": 0.885,
+            "sortino": 1.06,
+            "max_dd": -0.1739,
+            "x_money": 1.406,
+            "excess_sharpe": 0.493
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 1.456,
+              "candidate_sharpe": 0.885,
+              "control_cagr": 0.2305,
+              "candidate_cagr": 0.0991,
+              "control_max_dd": -0.1876,
+              "candidate_max_dd": -0.1739,
+              "d_sharpe": -0.571,
+              "d_cagr": -0.1314,
+              "d_max_dd": 0.0137,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 1.157,
+              "candidate_excess_sharpe": 0.493,
+              "d_excess_sharpe": -0.664,
+              "max_dd_cost_pp": 3.448752607076632
+            }
+          }
+        },
+        "stress:GFC": {
+          "observations": 356,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2007-10-09",
+            "to": "2009-03-09",
+            "years": 1.42,
+            "cagr": -0.4292,
+            "ann_return": -0.4891,
+            "vol": 0.3809,
+            "sharpe": -1.284,
+            "sortino": -1.781,
+            "max_dd": -0.552,
+            "x_money": 0.452,
+            "excess_sharpe": -1.32
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2007-10-09",
+            "to": "2009-03-09",
+            "years": 1.42,
+            "cagr": 0.0206,
+            "ann_return": 0.028,
+            "vol": 0.1228,
+            "sharpe": 0.228,
+            "sortino": 0.328,
+            "max_dd": -0.1283,
+            "x_money": 1.029,
+            "excess_sharpe": 0.075
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.284,
+              "candidate_sharpe": 0.228,
+              "control_cagr": -0.4292,
+              "candidate_cagr": 0.0206,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1283,
+              "d_sharpe": 1.512,
+              "d_cagr": 0.4498,
+              "d_max_dd": 0.4237,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.32,
+              "candidate_excess_sharpe": 0.075,
+              "d_excess_sharpe": 1.395,
+              "max_dd_cost_pp": 11.381837549172657
+            }
+          }
+        },
+        "stress:momentum crash rebound": {
+          "observations": 79,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2009-03-10",
+            "to": "2009-06-30",
+            "years": 0.31,
+            "cagr": 1.7755,
+            "ann_return": 1.048,
+            "vol": 0.312,
+            "sharpe": 3.359,
+            "sortino": 6.388,
+            "max_dd": -0.0557,
+            "x_money": 1.368,
+            "excess_sharpe": 3.351
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2009-03-10",
+            "to": "2009-06-30",
+            "years": 0.31,
+            "cagr": -0.1844,
+            "ann_return": -0.1882,
+            "vol": 0.1497,
+            "sharpe": -1.257,
+            "sortino": -1.622,
+            "max_dd": -0.1162,
+            "x_money": 0.939,
+            "excess_sharpe": -1.256
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": false
+            },
+            "inputs": {
+              "control_sharpe": 3.359,
+              "candidate_sharpe": -1.257,
+              "control_cagr": 1.7755,
+              "candidate_cagr": -0.1844,
+              "control_max_dd": -0.0557,
+              "candidate_max_dd": -0.1162,
+              "d_sharpe": -4.616,
+              "d_cagr": -1.9599,
+              "d_max_dd": -0.0605,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 3.351,
+              "candidate_excess_sharpe": -1.256,
+              "d_excess_sharpe": -4.607,
+              "max_dd_cost_pp": 1.7504224613883717
+            }
+          }
+        },
+        "stress:Eurozone / US downgrade": {
+          "observations": 108,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2011-05-02",
+            "to": "2011-10-03",
+            "years": 0.42,
+            "cagr": -0.3864,
+            "ann_return": -0.4436,
+            "vol": 0.2701,
+            "sharpe": -1.642,
+            "sortino": -2.08,
+            "max_dd": -0.1848,
+            "x_money": 0.814,
+            "excess_sharpe": -1.644
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2011-05-02",
+            "to": "2011-10-03",
+            "years": 0.42,
+            "cagr": -0.1716,
+            "ann_return": -0.1771,
+            "vol": 0.1277,
+            "sharpe": -1.387,
+            "sortino": -1.99,
+            "max_dd": -0.1081,
+            "x_money": 0.924,
+            "excess_sharpe": -1.387
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.642,
+              "candidate_sharpe": -1.387,
+              "control_cagr": -0.3864,
+              "candidate_cagr": -0.1716,
+              "control_max_dd": -0.1848,
+              "candidate_max_dd": -0.1081,
+              "d_sharpe": 0.255,
+              "d_cagr": 0.2148,
+              "d_max_dd": 0.0767,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.644,
+              "candidate_excess_sharpe": -1.387,
+              "d_excess_sharpe": 0.257,
+              "max_dd_cost_pp": 3.1744666198497007
+            }
+          }
+        },
+        "stress:China / energy selloff": {
+          "observations": 156,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2015-07-01",
+            "to": "2016-02-11",
+            "years": 0.62,
+            "cagr": -0.1599,
+            "ann_return": -0.1555,
+            "vol": 0.1888,
+            "sharpe": -0.824,
+            "sortino": -1.175,
+            "max_dd": -0.1302,
+            "x_money": 0.898,
+            "excess_sharpe": -0.818
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2015-07-01",
+            "to": "2016-02-11",
+            "years": 0.62,
+            "cagr": 0.063,
+            "ann_return": 0.0617,
+            "vol": 0.041,
+            "sharpe": 1.505,
+            "sortino": 2.169,
+            "max_dd": -0.0233,
+            "x_money": 1.038,
+            "excess_sharpe": 1.527
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -0.824,
+              "candidate_sharpe": 1.505,
+              "control_cagr": -0.1599,
+              "candidate_cagr": 0.063,
+              "control_max_dd": -0.1302,
+              "candidate_max_dd": -0.0233,
+              "d_sharpe": 2.329,
+              "d_cagr": 0.2229,
+              "d_max_dd": 0.1069,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -0.818,
+              "candidate_excess_sharpe": 1.527,
+              "d_excess_sharpe": 2.345,
+              "max_dd_cost_pp": 5.6892296514340135
+            }
+          }
+        },
+        "stress:2018 volatility and Q4": {
+          "observations": 230,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2018-01-26",
+            "to": "2018-12-24",
+            "years": 0.91,
+            "cagr": -0.1713,
+            "ann_return": -0.173,
+            "vol": 0.1676,
+            "sharpe": -1.032,
+            "sortino": -1.228,
+            "max_dd": -0.1934,
+            "x_money": 0.843,
+            "excess_sharpe": -1.134
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2018-01-26",
+            "to": "2018-12-24",
+            "years": 0.91,
+            "cagr": 0.0043,
+            "ann_return": 0.0092,
+            "vol": 0.0992,
+            "sharpe": 0.093,
+            "sortino": 0.09,
+            "max_dd": -0.094,
+            "x_money": 1.004,
+            "excess_sharpe": -0.081
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.032,
+              "candidate_sharpe": 0.093,
+              "control_cagr": -0.1713,
+              "candidate_cagr": 0.0043,
+              "control_max_dd": -0.1934,
+              "candidate_max_dd": -0.094,
+              "d_sharpe": 1.125,
+              "d_cagr": 0.1756,
+              "d_max_dd": 0.0994,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.134,
+              "candidate_excess_sharpe": -0.081,
+              "d_excess_sharpe": 1.053,
+              "max_dd_cost_pp": 8.687474668025201
+            }
+          }
+        },
+        "stress:COVID crash": {
+          "observations": 24,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2020-02-19",
+            "to": "2020-03-23",
+            "years": 0.09,
+            "cagr": -0.9888,
+            "ann_return": -3.9542,
+            "vol": 0.7527,
+            "sharpe": -5.254,
+            "sortino": -8.025,
+            "max_dd": -0.337,
+            "x_money": 0.666,
+            "excess_sharpe": -5.287
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2020-02-19",
+            "to": "2020-03-23",
+            "years": 0.09,
+            "cagr": 0.1869,
+            "ann_return": 0.2059,
+            "vol": 0.3007,
+            "sharpe": 0.685,
+            "sortino": 1.162,
+            "max_dd": -0.0782,
+            "x_money": 1.016,
+            "excess_sharpe": 0.595
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "verdict": "not_evaluable",
+            "reason": "24 observations < block_size 63; paired drawdown band undefined",
+            "d_max_dd": 0.2588
+          }
+        },
+        "stress:inflation bear": {
+          "observations": 196,
+          "benchmark": {
+            "portfolio": "SPY",
+            "from": "2022-01-03",
+            "to": "2022-10-12",
+            "years": 0.77,
+            "cagr": -0.2999,
+            "ann_return": -0.3245,
+            "vol": 0.2417,
+            "sharpe": -1.343,
+            "sortino": -2.038,
+            "max_dd": -0.245,
+            "x_money": 0.759,
+            "excess_sharpe": -1.375
+          },
+          "candidate": {
+            "portfolio": "haa_balanced_20bps",
+            "from": "2022-01-03",
+            "to": "2022-10-12",
+            "years": 0.77,
+            "cagr": 0.0016,
+            "ann_return": 0.003,
+            "vol": 0.054,
+            "sharpe": 0.056,
+            "sortino": 0.054,
+            "max_dd": -0.0574,
+            "x_money": 1.001,
+            "excess_sharpe": -0.086
+          },
+          "gate": {
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": -1.343,
+              "candidate_sharpe": 0.056,
+              "control_cagr": -0.2999,
+              "candidate_cagr": 0.0016,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0574,
+              "d_sharpe": 1.399,
+              "d_cagr": 0.3015,
+              "d_max_dd": 0.1876,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": -1.375,
+              "candidate_excess_sharpe": -0.086,
+              "d_excess_sharpe": 1.289,
+              "max_dd_cost_pp": 6.937874576047015
+            }
+          }
+        }
+      },
+      "gate_all_cells": {
+        "objective_class": "benchmark_beater",
+        "passed": false,
+        "any_no_effect": false,
+        "all_no_effect": false,
+        "cells": [
+          {
+            "window": "full",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.673,
+              "candidate_sharpe": 0.819,
+              "control_cagr": 0.1133,
+              "candidate_cagr": 0.0874,
+              "control_max_dd": -0.552,
+              "candidate_max_dd": -0.1739,
+              "d_sharpe": 0.146,
+              "d_cagr": -0.0259,
+              "d_max_dd": 0.3781,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.609,
+              "candidate_excess_sharpe": 0.713,
+              "d_excess_sharpe": 0.104,
+              "max_dd_cost_pp": 9.559194192240275
+            }
+          },
+          {
+            "window": "heldout_2023_plus",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": false,
+            "no_effect": false,
+            "verdict": "failed",
+            "checks": {
+              "cagr_beats_benchmark": false,
+              "excess_sharpe_not_lower": false,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 1.456,
+              "candidate_sharpe": 0.885,
+              "control_cagr": 0.2305,
+              "candidate_cagr": 0.0991,
+              "control_max_dd": -0.1876,
+              "candidate_max_dd": -0.1739,
+              "d_sharpe": -0.571,
+              "d_cagr": -0.1314,
+              "d_max_dd": 0.0137,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 1.157,
+              "candidate_excess_sharpe": 0.493,
+              "d_excess_sharpe": -0.664,
+              "max_dd_cost_pp": 3.448752607076632
+            }
+          },
+          {
+            "window": "early_2020_2022",
+            "profile": "base",
+            "objective_class": "benchmark_beater",
+            "passed": true,
+            "no_effect": false,
+            "verdict": "passed",
+            "checks": {
+              "cagr_beats_benchmark": true,
+              "excess_sharpe_not_lower": true,
+              "max_dd_within_noise": true
+            },
+            "inputs": {
+              "control_sharpe": 0.54,
+              "candidate_sharpe": 1.267,
+              "control_cagr": 0.0888,
+              "candidate_cagr": 0.1472,
+              "control_max_dd": -0.245,
+              "candidate_max_dd": -0.0859,
+              "d_sharpe": 0.727,
+              "d_cagr": 0.0584,
+              "d_max_dd": 0.1591,
+              "sharpe_metric": "excess_sharpe",
+              "control_excess_sharpe": 0.512,
+              "candidate_excess_sharpe": 1.221,
+              "d_excess_sharpe": 0.709,
+              "max_dd_cost_pp": 7.518283981424792
+            }
+          }
+        ],
+        "cells_not_evaluable": [],
+        "note": "each cell's max_dd_cost_pp is its own paired_drawdown_noise_pp(spy_returns, candidate_returns); aggregation mirrors backtest.promotion.passes_gate_all_cells"
+      },
+      "stress": {
+        "gfc_evaluable": true,
+        "fails_stress": false,
+        "max_dd_within_noise": true,
+        "benchmark_max_dd": -0.552,
+        "candidate_max_dd": -0.1283,
+        "max_dd_cost_pp": 11.381837549172657
+      },
+      "diagnostics": {
+        "months_fully_defensive_pct": 0.2924,
+        "avg_defensive_weight": 0.3668,
+        "annual_turnover_one_way": 5.31,
+        "realized_vol_annualized": 0.1099,
+        "beta_to_spy": 0.243,
+        "calendar_years": {
+          "2003": {
+            "sleeve": 0.0282,
+            "spy": 0.1293
+          },
+          "2004": {
+            "sleeve": 0.0333,
+            "spy": 0.107
+          },
+          "2005": {
+            "sleeve": 0.0926,
+            "spy": 0.0483
+          },
+          "2006": {
+            "sleeve": 0.2696,
+            "spy": 0.1585
+          },
+          "2007": {
+            "sleeve": 0.0827,
+            "spy": 0.0514
+          },
+          "2008": {
+            "sleeve": 0.0457,
+            "spy": -0.3681
+          },
+          "2009": {
+            "sleeve": 0.0958,
+            "spy": 0.2637
+          },
+          "2010": {
+            "sleeve": 0.141,
+            "spy": 0.1506
+          },
+          "2011": {
+            "sleeve": 0.0287,
+            "spy": 0.0189
+          },
+          "2012": {
+            "sleeve": 0.1088,
+            "spy": 0.1599
+          },
+          "2013": {
+            "sleeve": 0.1045,
+            "spy": 0.3231
+          },
+          "2014": {
+            "sleeve": -0.0308,
+            "spy": 0.1346
+          },
+          "2015": {
+            "sleeve": -0.039,
+            "spy": 0.0125
+          },
+          "2016": {
+            "sleeve": 0.0648,
+            "spy": 0.12
+          },
+          "2017": {
+            "sleeve": 0.1124,
+            "spy": 0.217
+          },
+          "2018": {
+            "sleeve": 0.064,
+            "spy": -0.0456
+          },
+          "2019": {
+            "sleeve": 0.0682,
+            "spy": 0.3122
+          },
+          "2020": {
+            "sleeve": 0.2013,
+            "spy": 0.1837
+          },
+          "2021": {
+            "sleeve": 0.2269,
+            "spy": 0.2875
+          },
+          "2022": {
+            "sleeve": 0.0077,
+            "spy": -0.1817
+          },
+          "2023": {
+            "sleeve": 0.0586,
+            "spy": 0.2619
+          },
+          "2024": {
+            "sleeve": 0.005,
+            "spy": 0.2489
+          },
+          "2025": {
+            "sleeve": 0.0968,
+            "spy": 0.1772
+          },
+          "2026": {
+            "sleeve": 0.2051,
+            "spy": 0.1389
+          }
+        },
+        "avg_offensive_holdings": 2.89
+      }
+    }
+  },
+  "simulated_spy_diagnostic": {
+    "full": {
+      "portfolio": "SPY_simulated",
+      "from": "2003-08-01",
+      "to": "2026-08-12",
+      "years": 23.03,
+      "cagr": 0.104,
+      "ann_return": 0.1126,
+      "vol": 0.1641,
+      "sharpe": 0.686,
+      "sortino": 0.841,
+      "max_dd": -0.482,
+      "x_money": 9.763,
+      "excess_sharpe": 0.614
+    },
+    "early_2020_2022": {
+      "portfolio": "SPY_simulated",
+      "from": "2020-07-28",
+      "to": "2022-12-30",
+      "years": 2.42,
+      "cagr": 0.0844,
+      "ann_return": 0.0974,
+      "vol": 0.1824,
+      "sharpe": 0.534,
+      "sortino": 0.758,
+      "max_dd": -0.2365,
+      "x_money": 1.217,
+      "excess_sharpe": 0.505
+    },
+    "heldout_2023_plus": {
+      "portfolio": "SPY_simulated",
+      "from": "2023-01-03",
+      "to": "2026-08-12",
+      "years": 3.61,
+      "cagr": 0.2229,
+      "ann_return": 0.2127,
+      "vol": 0.1464,
+      "sharpe": 1.453,
+      "sortino": 1.986,
+      "max_dd": -0.1827,
+      "x_money": 2.066,
+      "excess_sharpe": 1.146
+    }
+  },
+  "tsmom_comparison": {
+    "available": true,
+    "construction": "backtest.production_portfolio.build_streams()['tsmom'] (15 assets, 252d sign, inverse vol, 8 bps)",
+    "full_haa_period": {
+      "tsmom": {
+        "portfolio": "tsmom",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.0247,
+        "ann_return": 0.0265,
+        "vol": 0.0641,
+        "sharpe": 0.414,
+        "sortino": 0.514,
+        "max_dd": -0.1748,
+        "x_money": 1.157,
+        "excess_sharpe": -0.036
+      },
+      "haa": {
+        "portfolio": "haa",
+        "from": "2020-07-28",
+        "to": "2026-07-22",
+        "years": 5.98,
+        "cagr": 0.1179,
+        "ann_return": 0.1182,
+        "vol": 0.1134,
+        "sharpe": 1.042,
+        "sortino": 1.21,
+        "max_dd": -0.1683,
+        "x_money": 1.947,
+        "excess_sharpe": 0.788
+      },
+      "correlation": 0.414
+    },
+    "early_2020_2022": {
+      "tsmom": {
+        "portfolio": "tsmom",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.0097,
+        "ann_return": 0.0127,
+        "vol": 0.0792,
+        "sharpe": 0.161,
+        "sortino": 0.194,
+        "max_dd": -0.1086,
+        "x_money": 1.024,
+        "excess_sharpe": 0.094
+      },
+      "haa": {
+        "portfolio": "haa",
+        "from": "2020-07-28",
+        "to": "2022-12-30",
+        "years": 2.42,
+        "cagr": 0.1523,
+        "ann_return": 0.1476,
+        "vol": 0.113,
+        "sharpe": 1.306,
+        "sortino": 1.484,
+        "max_dd": -0.0845,
+        "x_money": 1.41,
+        "excess_sharpe": 1.259
+      },
+      "correlation": 0.384
+    },
+    "heldout_2023_plus": {
+      "tsmom": {
+        "portfolio": "tsmom",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0351,
+        "ann_return": 0.036,
+        "vol": 0.0512,
+        "sharpe": 0.703,
+        "sortino": 0.98,
+        "max_dd": -0.084,
+        "x_money": 1.13,
+        "excess_sharpe": -0.177
+      },
+      "haa": {
+        "portfolio": "haa",
+        "from": "2023-01-03",
+        "to": "2026-07-22",
+        "years": 3.55,
+        "cagr": 0.0953,
+        "ann_return": 0.098,
+        "vol": 0.1137,
+        "sharpe": 0.862,
+        "sortino": 1.016,
+        "max_dd": -0.1683,
+        "x_money": 1.381,
+        "excess_sharpe": 0.465
+      },
+      "correlation": 0.467
+    }
+  },
+  "post_publication_check": {
+    "published": 2022,
+    "window": [
+      "2023-01-03",
+      "2026-08-12"
+    ],
+    "beat_spy_cagr": false,
+    "candidate": {
+      "cagr": 0.1064,
+      "sharpe": 0.944,
+      "excess_sharpe": 0.552,
+      "max_dd": -0.1683
+    },
+    "benchmark": {
+      "cagr": 0.2305,
+      "sharpe": 1.456,
+      "excess_sharpe": 1.157,
+      "max_dd": -0.1876
+    },
+    "gate": {
+      "objective_class": "benchmark_beater",
+      "passed": false,
+      "no_effect": false,
+      "verdict": "failed",
+      "checks": {
+        "cagr_beats_benchmark": false,
+        "excess_sharpe_not_lower": false,
+        "max_dd_within_noise": true
+      },
+      "inputs": {
+        "control_sharpe": 1.456,
+        "candidate_sharpe": 0.944,
+        "control_cagr": 0.2305,
+        "candidate_cagr": 0.1064,
+        "control_max_dd": -0.1876,
+        "candidate_max_dd": -0.1683,
+        "d_sharpe": -0.512,
+        "d_cagr": -0.1241,
+        "d_max_dd": 0.0193,
+        "sharpe_metric": "excess_sharpe",
+        "control_excess_sharpe": 1.157,
+        "candidate_excess_sharpe": 0.552,
+        "d_excess_sharpe": -0.605,
+        "max_dd_cost_pp": 3.295329749530148
+      }
+    }
+  },
+  "decision": "sleeve_rejected",
+  "decision_rule": "screened iff the balanced HAA form passes benchmark_beater in full + heldout_2023_plus + early_2020_2022 at 8 bps against raw SPY and its GFC max drawdown is inside the paired band",
+  "limitations": [
+    "Published 2022 (Keller & Keuning); heldout_2023_plus is the only post-publication evidence \u2014 see post_publication_check.",
+    "Full-sample start is bounded by the youngest instrument's first bar (see first_bar); GFC coverage begins at that date, not at the window start, if later.",
+    "Monthly decision on the last trading day, applied next day; the engine runs daily and would trade the same target the next full run.",
+    "Equal-weight top-4 concentration: 25% single-ETF slots; the simulator applies the 0.80 index-ETF elevated cap, never binding at 25%.",
+    "Trading-day lookbacks (21/63/126/252) stand in for the paper's calendar months.",
+    "Costs 8 bps per unit turnover (registration ETF rate), 20 bps stress reported."
+  ],
+  "reproduce": [
+    ".venv/bin/python -m backtest.haa_study",
+    ".venv/bin/python -m pytest tests/test_haa_study.py -q"
+  ]
+}
