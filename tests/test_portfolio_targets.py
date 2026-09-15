@@ -130,3 +130,52 @@ def test_trend_targets_reserve_never_applies_when_trend_is_on():
     bars = _trend_bars(above_ma=True, reserve_symbol="BIL")
     targets = trend_targets(_trend_cfg(reserve_symbol="BIL"), bars)
     assert targets == {"SPY": 0.20}
+
+
+# --------------------------------------------------------------------------
+# lev_trend — trend filter on the index, holding in its leveraged ETF
+# --------------------------------------------------------------------------
+
+from engine.portfolio import lev_trend_targets  # noqa: E402
+
+
+def _lev_cfg(weight=0.20, reserve="BIL"):
+    return SimpleNamespace(sleeves_paper={
+        "sleeves": {"lev_trend": weight},
+        "lev_trend_index": "QQQ",
+        "lev_trend_vehicle": "QLD",
+        "lev_trend_ma_days": 200,
+        **({"lev_trend_reserve_symbol": reserve} if reserve else {}),
+    })
+
+
+def _lev_bars(*, above_ma: bool, vehicle_bars=True, reserve_bars=True):
+    bars = _trend_bars(above_ma=above_ma)
+    bars["QQQ"] = bars.pop("SPY")
+    dates = bars["QQQ"].index
+    if vehicle_bars:
+        bars["QLD"] = pd.DataFrame({"close": [50.0] * len(dates), "volume": 1e6}, index=dates)
+    if reserve_bars:
+        bars["BIL"] = pd.DataFrame({"close": [91.0] * len(dates), "volume": 1e6}, index=dates)
+    return bars
+
+
+def test_lev_trend_holds_vehicle_when_index_above_its_average():
+    assert lev_trend_targets(_lev_cfg(), _lev_bars(above_ma=True)) == {"QLD": 0.20}
+
+
+def test_lev_trend_holds_reserve_when_index_below_its_average():
+    assert lev_trend_targets(_lev_cfg(), _lev_bars(above_ma=False)) == {"BIL": 0.20}
+
+
+def test_lev_trend_is_cash_without_reserve_bars_or_vehicle_bars_or_allocation():
+    assert lev_trend_targets(_lev_cfg(), _lev_bars(above_ma=False, reserve_bars=False)) == {}
+    assert lev_trend_targets(_lev_cfg(), _lev_bars(above_ma=True, vehicle_bars=False)) == {}
+    assert lev_trend_targets(_lev_cfg(weight=0.0), _lev_bars(above_ma=True)) == {}
+
+
+def test_lev_trend_signal_uses_yesterdays_close_not_todays():
+    bars = _lev_bars(above_ma=True)
+    # A collapse in today's (incomplete) bar must not flip the signal.
+    bars["QQQ"].iloc[-1, bars["QQQ"].columns.get_loc("close")] = 1.0
+    assert lev_trend_targets(_lev_cfg(), bars) == {"QLD": 0.20}

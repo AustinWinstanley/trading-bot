@@ -762,6 +762,27 @@ onward) left no row anywhere in `orders` — the journal could not answer
 fields for every submission the broker refuses; round-trip matching and
 fill-quality stats ignore it (they key on fills), the order feed shows it.
 
+### The live portfolio is mix M6 (0.80 SPY + 0.20 QLD/BIL trend) since 2026-09-14
+
+`paper_portfolio.sleeves` is `{equity_core: 0.80, lev_trend: 0.20}` with
+`tsmom`, `trend` and `mom_ls` at 0.0 in both profiles. `lev_trend`
+(`engine/portfolio.lev_trend_targets`) holds `lev_trend_vehicle` (QLD) while
+`lev_trend_index` (QQQ) is above its 200-day SMA, else
+`lev_trend_reserve_symbol` (BIL); the vehicle must be listed in
+`sleeves.leveraged.symbols` and `weight x gross_leverage` must fit
+`risk.max_leveraged_exposure_pct`, both enforced at config load. The
+evidence chain is `reports/absolute_return_campaign_registration.json` →
+the three sleeve studies → `reports/portfolio_mix_study.json` (decision
+`select:M6[QQQ/QLD]`), all judged as `benchmark_beater` through
+`backtest/deployable_sim.py`; that simulator carries no per-position stop,
+so `equity_core` and `lev_trend` are stop- and re-entry-exempt (a risk
+control is a strategy change). The book is under the pre-registered paper
+validation in `reports/absolute_return_paper_validation_registration.json`
+— its kill rules, not a fresh opinion, decide whether it stays. A
+zero-weight sleeve emits no targets (each `*_targets` early-returns), so a
+stood-down sleeve's names are exited as untargeted full exits and never
+count as "targeted" for the inactive-asset guard.
+
 ### MOM_LS was stood down on 2026-09-14 — read docs/research.md before reviving it
 
 `paper_portfolio.sleeves.mom_ls` is 0.0 in both profiles. Seven live weeks

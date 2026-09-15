@@ -21,14 +21,16 @@ risk:
   loss_reentry_block_days: 5
   max_short_exposure_pct: 0.3
   # See config.yaml — the overlay cost 1.38-1.44pp of CAGR on this profile.
-  stop_exempt_sleeves: [mom_ls]
-  reentry_block_exempt_sleeves: [mom_ls]
+  # See config.yaml — equity_core/lev_trend exempt since the 2026-09-14 M6 adoption.
+  stop_exempt_sleeves: [mom_ls, equity_core, lev_trend]
+  reentry_block_exempt_sleeves: [mom_ls, equity_core, lev_trend]
   # See config.yaml — same gap, doubled: equity_core+trend target 120% here
   # (0.60 * 2x leverage), confirmed live rejected at the 30% cap on 14 of the
   # last ~14 opportunities. 1.30 is the 120% target plus headroom.
-  # 1.60 since 2026-09-14: 0.75 combined SPY target * 2x leverage, plus headroom.
-  elevated_position_pct: 1.60
-  elevated_position_sleeves: [equity_core, trend]
+  # 1.70 since the 2026-09-14 M6 adoption: 0.80 SPY * 2x leverage, plus headroom
+  # (the active volatility overlay scales the whole book down from there).
+  elevated_position_pct: 1.70
+  elevated_position_sleeves: [equity_core, trend, lev_trend]
   # restoration_exempt_sleeves (lab-only relaxation of the no-averaging-down
   # rule for mom_ls) reverted 2026-09-02: reports/target_restoration_study.json
   # itself flagged the 0.19-0.60pp max-drawdown cost that failed the hard
@@ -84,6 +86,8 @@ sleeves:
     - TQQQ
     - SOXL
     - UPRO
+    - QLD    # lev_trend vehicle (2026-09-14)
+    - SSO
     max_vix: 22.0
     trend_symbol: QQQ
 universe:
@@ -106,9 +110,12 @@ execution:
   timezone: America/New_York
 paper_portfolio:
   sleeves:
-    equity_core: 0.55   # see config.yaml — mom_ls's 0.15 folded in, 2026-09-14
-    tsmom: 0.25
-    trend: 0.2
+    # See config.yaml — mix M6 (2026-09-14). At 2x gross this is 1.60 SPY +
+    # 0.40 QLD/BIL before the active overlay's scale.
+    equity_core: 0.80
+    tsmom: 0.0          # stood down 2026-09-14
+    trend: 0.0          # stood down 2026-09-14
+    lev_trend: 0.20
     mom_ls: 0.0         # stood down 2026-09-14, see config.yaml; 2x lost -$665 to it
   clone_top_n: 3
   # 15, not config.yaml's 20 — reports/momentum_breadth_study.json's
@@ -154,6 +161,10 @@ paper_portfolio:
   - FXY
   trend_symbol: SPY
   trend_ma_days: 200
+  lev_trend_index: QQQ        # see config.yaml
+  lev_trend_vehicle: QLD
+  lev_trend_reserve_symbol: BIL
+  lev_trend_ma_days: 200
   # Idle-cash reserve, 2x-lab only — reports/cash_reserve_study.json's BIL
   # candidate improved Sharpe AND CAGR in both screening windows; the only
   # failure was a 1bp-worse max drawdown in early_2020_2022 (-0.1254 vs

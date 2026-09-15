@@ -224,6 +224,53 @@ sleeve's live realization diverged from all three of its own simulators
 and the design objective (Sharpe with zero-tolerance drawdown) was never
 "beat the market".
 
+## The absolute-return campaign (2026-09-14) and the M6 portfolio
+
+Pre-registered in `reports/absolute_return_campaign_registration.json`
+before any candidate was run: three candidate sleeves, six fixed mixes, a
+new `benchmark_beater` objective (beat SPY's CAGR, excess Sharpe not lower,
+max drawdown within `paired_drawdown_noise_pp`, judged per cell in full +
+`heldout_2023_plus` + `early_2020_2022`, stress windows on drawdown only),
+every candidate pushed through `backtest/deployable_sim.py` — the
+live-gate-faithful $10k simulator that reproduces `deployable_momentum`
+to 1e-17 in compatibility mode — with `rf` from BIL. 2026-08-13 onward
+was never read.
+
+| Candidate | Standalone verdict | Why |
+| --- | --- | --- |
+| Trend-filtered leveraged index (`trend_leveraged_index_study.json`) | screened | Standalone fails 2023+ on excess Sharpe (bull-market whipsaws); inside an 80/20 SPY mix, QQQ/QLD clears every cell |
+| Vol-scaled long-only momentum (`long_only_momentum_study.json`) | rejected | 10.6% CAGR / 0.45 excess Sharpe vs SPY 12.5% / 0.57 from 2021-08-26; unscaled reaches 34.5% in 2023+ at −29.9% DD; MTUM fails raw-vs-raw |
+| Keller HAA (`haa_study.json`) | rejected | Superb drawdowns (GFC −12.5% vs −55.2%) but 10.6% vs 23.1% in 2023+; dominates TSMOM in every window (11.8% vs 2.5% CAGR) |
+
+Mixes (`portfolio_mix_study.json`, base gross 1.0): every mix containing the
+stock-momentum sleeve fails `early_2020_2022`; every SPY/SSO mix fails
+2023+ on excess Sharpe; M2 (0.55 SPY + 0.20 QLD-trend + 0.25 HAA) misses
+2023+ by 0.08 Sharpe. **M6 [QQQ/QLD] — 0.80 SPY + 0.20 (QLD while QQQ >
+200-DMA, else BIL) — is the only passer**:
+
+| Cell | M6 | SPY |
+| --- | ---: | ---: |
+| Full 2006-06-21 → 2026-08-12 | 13.9% / 0.70 / −49.9% | 11.5% / 0.59 / −55.2% |
+| early_2020_2022 | 12.4% / 0.68 / −23.7% | 8.9% / 0.51 / −24.5% |
+| heldout_2023_plus | 26.3% / 1.18 / −17.8% | 23.1% / 1.16 / −18.8% |
+| GFC (drawdown only) | −49.9% | −55.2% (inside band) |
+
+(CAGR / excess Sharpe / max drawdown.) Ahead of SPY in 16 of 21 calendar
+years; behind in 2010, 2011, 2015, 2016 and 2006 (whipsaw years). Realized
+vol 19.5%, one-way turnover 1.7×/yr. The shipped 2026-09-14 baseline
+(0.55 SPY / 0.25 TSMOM / 0.20 trend, idealised streams) is 12.7% vs SPY
+16.6% over 2020-07 → 2026-08, confirming the old design trails the market.
+
+**Read this honestly.** M6 is leveraged index beta with a trend filter: a
+20% slot in a daily-reset 2× ETF. Its edge is +2.4 pp/yr over the full
+sample with a *thin* 2023+ risk-adjusted margin (0.02 Sharpe), and it
+carries SPY-like drawdowns. Over a sample dominated by the 2023–26 bull
+market, nothing else registered beat SPY on both return and risk-adjusted
+return — that is a finding about the bar, not just about the candidates.
+Promotion to real money is not on the table; M6 went live on paper under
+`reports/absolute_return_paper_validation_registration.json` (kill rules
+K1–K4, 63-session primary window, 126-session extension).
+
 ## Rejected and deferred candidates
 
 ### Volatility de-risking overlay (2× shadow)

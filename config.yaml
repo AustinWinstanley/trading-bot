@@ -43,8 +43,14 @@ risk:
   # the ranks anyway, so only a stop-out leaves one ranked and then barred.
   # A sleeve that rebalances weekly does not also need to be stopped out of its
   # own signal. Empty lists restore the old behaviour everywhere.
-  stop_exempt_sleeves: [mom_ls]
-  reentry_block_exempt_sleeves: [mom_ls]
+  # equity_core and lev_trend added 2026-09-14: the evidence for the M6
+  # portfolio (reports/portfolio_mix_study.json) comes from
+  # backtest/deployable_sim.py, which carries no per-position stop — an
+  # 8% ATR stop on an 80% SPY core with a 5-day re-entry block would be an
+  # un-modelled control on most of the book (AGENTS.md: a risk control is a
+  # strategy change). The kill switches below are untouched.
+  stop_exempt_sleeves: [mom_ls, equity_core, lev_trend]
+  reentry_block_exempt_sleeves: [mom_ls, equity_core, lev_trend]
   # equity_core (0.55 since 2026-09-14; 0.40 before) + trend (0.20) target
   # 75% of equity in SPY whenever trend is on — both sleeves are the same diversified index, not a
   # concentrated single-name bet, so the per-name cap that exists to bound
@@ -55,10 +61,12 @@ risk:
   # (2026-07-24 through 2026-08-03), holding ~15% instead of 60%. 0.65 is
   # the 60% target plus headroom so ordinary price drift between rebalances
   # doesn't immediately re-trip the cap.
-  # 0.80 since 2026-09-14: equity_core is 0.55 (mom_ls's 0.15 folded in),
-  # so the combined SPY target is 75%, plus the same drift headroom.
-  elevated_position_pct: 0.80
-  elevated_position_sleeves: [equity_core, trend]
+  # 0.85 since the 2026-09-14 M6 adoption: equity_core alone is 0.80 of
+  # equity, plus drift headroom. lev_trend's QLD (0.20 target) is above the
+  # 15% single-name cap too and is bounded by max_leveraged_exposure_pct
+  # instead — the same "diversified index, not a single name" reasoning.
+  elevated_position_pct: 0.85
+  elevated_position_sleeves: [equity_core, trend, lev_trend]
 
 sleeves:
   momentum:
@@ -86,7 +94,7 @@ sleeves:
     stop_pct: 0.06
   leveraged:
     allocation: 0.15
-    symbols: [TQQQ, SOXL, UPRO]
+    symbols: [TQQQ, SOXL, UPRO, QLD, SSO]   # QLD/SSO: lev_trend vehicles (2026-09-14)
     max_vix: 22.0
     trend_symbol: QQQ
 
@@ -118,9 +126,18 @@ execution:
 # Options research remains read-only/shadow; no LLM participates in trading.
 paper_portfolio:
   sleeves:
-    equity_core: 0.55   # unconditional SPY core (0.40 + mom_ls's former 0.15, see below)
-    tsmom: 0.25         # asset-class trend, long/flat, inverse-vol weights
-    trend: 0.20         # SPY above 200DMA, else cash
+    # Mix M6 from reports/portfolio_mix_study.json (pre-registered campaign,
+    # 2026-09-14): the only registered mix to beat SPY on CAGR and excess
+    # Sharpe in full (2006-06+), early_2020_2022 and heldout_2023_plus with
+    # drawdown inside the paired-bootstrap band. 0.80 SPY + 0.20 lev_trend
+    # (QLD while QQQ > 200DMA, else BIL). tsmom (2.45% CAGR since 2007,
+    # dominated by HAA in every window) and the SPY-only trend sleeve are
+    # stood down: the trend filter now lives in lev_trend. Under paper
+    # validation per reports/absolute_return_paper_validation_registration.json.
+    equity_core: 0.80   # unconditional SPY core
+    tsmom: 0.0          # stood down 2026-09-14 (was 0.25)
+    trend: 0.0          # stood down 2026-09-14 (was 0.20; superseded by lev_trend)
+    lev_trend: 0.20     # QQQ > 200DMA -> QLD, else BIL
     # mom_ls stood down 2026-09-14 (was 0.15 long AND 0.15 short). Seven
     # weeks live (2026-07-23..09-14) it was the entire loss on both accounts:
     # a mark-to-market decomposition of the server journal put it at -$144
@@ -154,6 +171,13 @@ paper_portfolio:
   tsmom_universe: [GLD, SLV, DBC, USO, UNG, DBA, TLT, IEF, LQD, HYG, EMB, VNQ, UUP, FXE, FXY]
   trend_symbol: SPY
   trend_ma_days: 200
+  # lev_trend sleeve (backtest/trend_leveraged_index_study.py): signal on the
+  # index, holding in its 2x daily-reset ETF, reserve in T-bills. The vehicle
+  # must be listed in sleeves.leveraged.symbols (validated at load).
+  lev_trend_index: QQQ
+  lev_trend_vehicle: QLD
+  lev_trend_reserve_symbol: BIL
+  lev_trend_ma_days: 200
   tsmom_lookback_days: 252
   tsmom_min_dollar_volume: 1000000
   # Trade only when a position drifts >20% from target, or >= $25 absolute —

@@ -506,6 +506,28 @@ def load_config(
                 _require(overlay, "min_scale", "paper_portfolio.volatility_overlay"),
                 "paper_portfolio.volatility_overlay.min_scale",
             )
+        lev_trend_weight = float(alloc.get("lev_trend", 0.0))
+        if lev_trend_weight > 0:
+            for key in ("lev_trend_index", "lev_trend_vehicle", "lev_trend_ma_days"):
+                _require(paper, key, "paper_portfolio")
+            vehicle = str(paper["lev_trend_vehicle"])
+            if vehicle not in leveraged_symbols:
+                raise ConfigError(
+                    f"paper_portfolio.lev_trend_vehicle {vehicle!r} must be listed in "
+                    "sleeves.leveraged.symbols so the risk gate counts it against "
+                    "risk.max_leveraged_exposure_pct"
+                )
+            if vehicle == str(paper["lev_trend_index"]):
+                raise ConfigError("paper_portfolio.lev_trend_vehicle must differ from lev_trend_index")
+            _positive_int(paper["lev_trend_ma_days"], "paper_portfolio.lev_trend_ma_days")
+            gross = float(paper.get("gross_leverage", 1.0))
+            if lev_trend_weight * gross > risk.max_leveraged_exposure_pct + 1e-9:
+                raise ConfigError(
+                    f"paper_portfolio.sleeves.lev_trend ({lev_trend_weight}) x gross_leverage "
+                    f"({gross}) = {lev_trend_weight * gross:.2f} exceeds "
+                    f"risk.max_leveraged_exposure_pct ({risk.max_leveraged_exposure_pct}); the "
+                    "gate would shrink every entry, so the target is unreachable by construction"
+                )
         mom_ls_floor = alloc.get("mom_ls")
         if mom_ls_floor and "mom_ls_min_dollar_volume" in paper:
             mom_ls_dv = float(paper["mom_ls_min_dollar_volume"])

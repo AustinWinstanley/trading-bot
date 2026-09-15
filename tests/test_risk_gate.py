@@ -719,6 +719,13 @@ def _cfg_with(tmp_path, **overrides):
         # sleeve (mom_ls is 0.0 in the shipped config since 2026-09-14), so
         # re-allocate it here to exercise the rule
         {"paper_portfolio.mom_ls_min_dollar_volume": 100, "paper_portfolio.sleeves.mom_ls": 0.15},
+        # lev_trend (2026-09-14): its vehicle must be a declared leveraged
+        # symbol, and weight x gross leverage must fit the leveraged cap —
+        # otherwise the gate shrinks every entry and the target is
+        # unreachable by construction.
+        {"paper_portfolio.lev_trend_vehicle": "SPY"},
+        {"paper_portfolio.sleeves.lev_trend": 0.25},                      # 0.25 x 1.0 > 0.20 cap
+        {"paper_portfolio.lev_trend_vehicle": "QQQ", "paper_portfolio.lev_trend_index": "QQQ"},
     ],
 )
 def test_dangerous_config_is_rejected_at_load(tmp_path, override):

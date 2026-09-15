@@ -55,13 +55,22 @@ The base profile targets at most 100% long and 100% gross exposure:
 
 | Sleeve | Exposure | Construction |
 | --- | ---: | --- |
-| Equity core | 55% long | SPY |
-| TSMOM | 25% long/flat | 15 asset ETFs, 12-month trend, inverse volatility |
-| Trend | 20% long/flat | SPY above its 200-day average |
-| MOM_LS | 0% (stood down 2026-09-14) | Weekly 12-1 momentum, top/bottom 20 — code retained, allocation 0 |
+| Equity core | 80% long | SPY |
+| Lev-trend | 20% | QLD (2× QQQ) while QQQ is above its 200-day average, else BIL |
+| TSMOM, Trend, MOM_LS | 0% (stood down 2026-09-14) | Code and tests retained; allocation 0 |
+
+This is mix **M6** of the pre-registered absolute-return campaign
+([`reports/absolute_return_campaign_registration.json`](reports/absolute_return_campaign_registration.json),
+[`reports/portfolio_mix_study.json`](reports/portfolio_mix_study.json)) — the only
+registered mix to beat SPY on CAGR and excess Sharpe in every required
+window (2006-06 → 2026-08-12: 13.9% vs 11.5% CAGR; 2023+: 26.3% vs 23.1%)
+with drawdown inside the paired-bootstrap band (GFC −49.9% vs −55.2%). It is
+under a pre-registered paper validation
+([`reports/absolute_return_paper_validation_registration.json`](reports/absolute_return_paper_validation_registration.json))
+with kill rules; nothing here is a real-money recommendation.
 
 The 2× profile doubles those targets (at most 200% long/gross), scaled down
-by its now-active 12% volatility-target overlay, using entirely separate
+by its active 12% volatility-target overlay, using entirely separate
 credentials, state, journal, and reports.
 
 MOM_LS was stood down on 2026-09-14 after a mark-to-market decomposition of

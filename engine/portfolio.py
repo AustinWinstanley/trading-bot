@@ -60,6 +60,8 @@ def tsmom_targets(
     held: frozenset[str] = frozenset(),
 ) -> dict[str, float]:
     p = cfg.sleeves_paper
+    if float(p["sleeves"].get("tsmom", 0.0)) <= 0.0:
+        return {}  # stood down 2026-09-14 (reports/portfolio_mix_study.json); no zero-weight targets
     sleeve = p["sleeves"]["tsmom"]
     lookback = int(p["tsmom_lookback_days"])
 
@@ -122,6 +124,8 @@ def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     no-data-means-no-position discipline as everywhere else in this file.
     """
     p = cfg.sleeves_paper
+    if float(p["sleeves"].get("trend", 0.0)) <= 0.0:
+        return {}  # stood down 2026-09-14 (superseded by lev_trend); no zero-weight targets
     sym = p["trend_symbol"]
     ma_days = int(p["trend_ma_days"])
     df = bars.get(sym)
@@ -134,6 +138,46 @@ def trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float
     if last > ma:
         return {sym: weight}
     reserve_symbol = p.get("trend_reserve_symbol")
+    if reserve_symbol and bars.get(reserve_symbol) is not None:
+        return {reserve_symbol: weight}
+    return {}
+
+
+def lev_trend_targets(cfg: Config, bars: dict[str, pd.DataFrame]) -> dict[str, float]:
+    """Trend-filtered leveraged index: the sleeve weight in
+    `lev_trend_vehicle` (a daily-reset 2x ETF, e.g. QLD) while
+    `lev_trend_index` (e.g. QQQ) is above its `lev_trend_ma_days`-day
+    moving average, else in `lev_trend_reserve_symbol` (BIL), else idle cash
+    if the reserve's bars are unavailable — the same yesterday's-close /
+    yesterday's-MA / no-data-means-no-position discipline as
+    `trend_targets`, which this generalizes (signal on one symbol, holding
+    in another).
+
+    Adopted 2026-09-14 from the pre-registered absolute-return campaign:
+    `reports/portfolio_mix_study.json` selected mix M6 (0.80 SPY + 0.20 of
+    this sleeve on QQQ/QLD) as the only registered mix to beat SPY on CAGR
+    and excess Sharpe in every required cell with drawdown inside the paired
+    band. `backtest/trend_leveraged_index_study.py` is the sleeve's study
+    and `backtest/deployable_sim.simulate_targets` the evidence's simulator;
+    that simulator carries no stop-loss, so the sleeve is stop-exempt in
+    config (a risk control is a strategy change — AGENTS.md).
+    """
+    p = cfg.sleeves_paper
+    weight = float(p["sleeves"].get("lev_trend", 0.0))
+    if weight <= 0.0:
+        return {}
+    index_sym = p["lev_trend_index"]
+    vehicle = p["lev_trend_vehicle"]
+    ma_days = int(p["lev_trend_ma_days"])
+    df = bars.get(index_sym)
+    if df is None or len(df) < ma_days + 1 or bars.get(vehicle) is None:
+        return {}
+    close = df["close"]
+    ma = float(sma(close, ma_days).iloc[-2])          # yesterday's MA, no peeking
+    last = float(close.iloc[-2])
+    if last > ma:
+        return {vehicle: weight}
+    reserve_symbol = p.get("lev_trend_reserve_symbol")
     if reserve_symbol and bars.get(reserve_symbol) is not None:
         return {reserve_symbol: weight}
     return {}
@@ -194,6 +238,10 @@ def build_targets(
     need = set(p["tsmom_universe"]) | {p["trend_symbol"]}
     if p.get("trend_reserve_symbol"):
         need.add(p["trend_reserve_symbol"])
+    if float(p["sleeves"].get("lev_trend", 0.0)) > 0.0:
+        need |= {p["lev_trend_index"], p["lev_trend_vehicle"]}
+        if p.get("lev_trend_reserve_symbol"):
+            need.add(p["lev_trend_reserve_symbol"])
     need = sorted(need)
     start = dt.date.today() - dt.timedelta(days=int(lookback * 1.9) + 30)
     bars = client.get_bars(need, start, dt.date.today())
@@ -217,6 +265,7 @@ def build_targets(
         "equity_core": equity_core_targets(cfg),
         "tsmom": tsmom_targets(cfg, bars, held),
         "trend": trend_targets(cfg, bars),
+        "lev_trend": lev_trend_targets(cfg, bars),
         "mom_ls": mom_ls_targets(cfg),
     }
     if clone_allocation > 0:
