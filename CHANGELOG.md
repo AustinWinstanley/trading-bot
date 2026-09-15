@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.3.0...v1.3.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **risk:** commit each order to the journal immediately, not at end-of-run ([7bbf363](https://github.com/AustinWinstanley/trading-bot/commit/7bbf363d30ae33f122e6a44dec79530bcc15db5e))
+* **risk:** sleeve-scoped liquidity floor for lev_trend (QLD/SSO fail the generic $3M IEX floor) ([d2863ec](https://github.com/AustinWinstanley/trading-bot/commit/d2863ec0e0c403a57cefff76d86c48653e19559c))
+
 ## [1.3.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.2.0...v1.3.0) (2026-09-15)
 
 
