@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 from engine.attribution import execution_summary
 from engine.data import REPO_ROOT
 from engine.execution_timing import timing_summary
+from engine.sleeve_pnl import sleeve_pnl, validation_kill_rule_status
 
 # Every ts column in these journals is written as dt.datetime.now(ET).isoformat()
 # (e.g. "...T09:51:00-04:00"), never UTC. SQLite compares TEXT columns as
@@ -35,6 +36,7 @@ MOMENTUM_OPTIONS_SHADOW_2X = REPO_ROOT / "state" / "momentum_options_shadow_2x.d
 EVENT_VOLATILITY_SHADOW_2X = REPO_ROOT / "state" / "event_volatility_shadow_2x.db"
 ZERO_DTE_SHADOW_2X = REPO_ROOT / "state" / "zero_dte_shadow_2x.db"
 REPORT_DIR = REPO_ROOT / "reports" / "paper"
+VALIDATION_REGISTRATION = REPO_ROOT / "reports" / "absolute_return_paper_validation_registration.json"
 
 
 def clone_allocation() -> float:
@@ -294,6 +296,57 @@ def summarize_week(db_path: Path = DB) -> list[str]:
     return lines
 
 
+def summarize_paper_validation(db_path: Path, profile: str) -> list[str]:
+    """Phase 4 of the 2026-09-14/15 absolute-return overhaul
+    (docs/research.md, "Live results and the 2026-09-14 stand-down";
+    reports/absolute_return_paper_validation_registration.json): per-sleeve
+    mark-to-market P&L against SPY since the M6 portfolio went live, plus
+    the automated kill rules (K1-K3; K4 is not automated, see
+    engine.sleeve_pnl.validation_kill_rule_status), so the registration's
+    promises are actually checked every week rather than needing a manual
+    query. `drawdown_limit_pct` is the profile's own limit (10% base, 20%
+    2x) from the registration document.
+    """
+    if not VALIDATION_REGISTRATION.exists() or not db_path.exists():
+        return []
+    registration = json.loads(VALIDATION_REGISTRATION.read_text())
+    since = registration.get("start_confirmed")
+    if not since:
+        return ["validation start not yet confirmed — see the registration document"]
+    kill_rules = registration["kill_rules"]
+    drawdown_limit_pct = kill_rules["drawdown_limit_pct"][profile]
+
+    conn = sqlite3.connect(db_path)
+    pnl = sleeve_pnl(conn, since=since)
+    if not pnl:
+        return [f"no snapshots at or after the confirmed start ({since}) yet"]
+
+    lines = [
+        f"window: {pnl['sessions']} sessions, {pnl['since']} -> {pnl['through']}",
+        f"portfolio {pnl['portfolio_return']:+.2%} vs SPY {pnl['spy_return']:+.2%} "
+        f"(excess {pnl['excess_return']:+.2%})" if pnl["spy_return"] is not None
+        else f"portfolio {pnl['portfolio_return']:+.2%} (SPY benchmark not priced this window)",
+        "P&L by sleeve since validation start:",
+    ]
+    for bucket, value in sorted(pnl["cumulative_by_bucket"].items(), key=lambda kv: -kv[1]):
+        lines.append(f"  {bucket}: ${value:+,.2f}")
+
+    exec_row = execution_summary(conn, since)["overall"]
+    status = validation_kill_rule_status(
+        pnl, slippage_bps=exec_row.get("adverse_slippage_bps"),
+        drawdown_limit_pct=drawdown_limit_pct,
+        return_floor_pct=kill_rules["return_floor_pp"],
+        slippage_limit_bps=kill_rules["slippage_limit_bps"],
+        min_sessions=kill_rules["min_sessions"],
+    )
+    lines.append(f"kill-rule status: {status['status']} "
+                 f"(session {status['sessions']} of {status['min_sessions']} minimum)")
+    for name, rule in status["rules"].items():
+        if rule["breached"]:
+            lines.append(f"  CRITICAL: {name} breached — {rule}")
+    return lines
+
+
 def summarize_execution_timing(
     base_path: Path = DB,
     leveraged_path: Path = DB_2X,
@@ -497,6 +550,10 @@ def main() -> None:
     body += [f"- {l}" for l in summarize_week(DB)]
     body += ["", "## 2× account"]
     body += [f"- {l}" for l in summarize_week(DB_2X)]
+    body += ["", "## Absolute-return paper validation (M6, base)"]
+    body += [f"- {l}" for l in summarize_paper_validation(DB, "base")]
+    body += ["", "## Absolute-return paper validation (M6, 2×)"]
+    body += [f"- {l}" for l in summarize_paper_validation(DB_2X, "2x")]
     body += ["", "## Execution timing experiment"]
     body += [f"- {l}" for l in summarize_execution_timing()]
     body += ["", "## Options experiments (read-only shadow)"]

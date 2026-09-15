@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import sqlite3
 import subprocess
 
@@ -327,3 +328,74 @@ def test_mom_ls_params_reflects_config_divergence():
         base.sleeves_paper["mom_ls_targets_file"]
         != two_x.sleeves_paper["mom_ls_targets_file"]
     )
+
+
+# --------------------------------------------------------------------------
+# summarize_paper_validation — Phase 4 of the 2026-09-14/15 overhaul
+# --------------------------------------------------------------------------
+
+
+def _validation_db(path, snapshots):
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE snapshots(ts TEXT, equity REAL, cash REAL, positions TEXT, diag TEXT)")
+    conn.execute(
+        "CREATE TABLE orders(ts TEXT, symbol TEXT, side TEXT, sleeve TEXT, qty REAL, "
+        "notional REAL, limit_price REAL, stop_price REAL, reason TEXT, alpaca_id TEXT, "
+        "status TEXT, requested_notional REAL, reference_price REAL, filled_qty REAL, "
+        "filled_avg_price REAL, filled_at TEXT)"
+    )
+    for ts, equity, positions, origin in snapshots:
+        conn.execute(
+            "INSERT INTO snapshots VALUES (?,?,?,?,?)",
+            (ts, equity, 0.0, json.dumps(positions),
+             json.dumps({"origin": origin})),
+        )
+    conn.commit()
+    conn.close()
+
+
+def _registration(path, *, start_confirmed):
+    json.dump({
+        "start_confirmed": start_confirmed,
+        "kill_rules": {
+            "min_sessions": 20,
+            "return_floor_pp": -4.0,
+            "drawdown_limit_pct": {"base": 10.0, "2x": 20.0},
+            "slippage_limit_bps": 25.0,
+        },
+    }, open(path, "w"))
+
+
+def test_summarize_paper_validation_reports_pnl_and_kill_rule_status(tmp_path, monkeypatch):
+    db = tmp_path / "paper.db"
+    _validation_db(db, [
+        ("T0", 10000.0, {"SPY": {"qty": 10.0, "px": 100.0}}, {"SPY": "equity_core"}),
+        ("T1", 10050.0, {"SPY": {"qty": 10.0, "px": 105.0}}, {"SPY": "equity_core"}),
+    ])
+    reg = tmp_path / "registration.json"
+    _registration(reg, start_confirmed="T0")
+    monkeypatch.setattr(weekly, "VALIDATION_REGISTRATION", reg)
+
+    lines = weekly.summarize_paper_validation(db, "base")
+    text = "\n".join(lines)
+    assert "2 sessions" in text
+    assert "equity_core" in text
+    assert "kill-rule status: insufficient_history" in text
+    assert "session 2 of 20 minimum" in text
+
+
+def test_summarize_paper_validation_missing_registration_is_silent(tmp_path, monkeypatch):
+    db = tmp_path / "paper.db"
+    _validation_db(db, [("T0", 10000.0, {}, {})])
+    monkeypatch.setattr(weekly, "VALIDATION_REGISTRATION", tmp_path / "absent.json")
+    assert weekly.summarize_paper_validation(db, "base") == []
+
+
+def test_summarize_paper_validation_before_confirmed_start_says_so(tmp_path, monkeypatch):
+    db = tmp_path / "paper.db"
+    _validation_db(db, [("T0", 10000.0, {}, {})])
+    reg = tmp_path / "registration.json"
+    json.dump({"kill_rules": {}}, open(reg, "w"))  # no start_confirmed yet
+    monkeypatch.setattr(weekly, "VALIDATION_REGISTRATION", reg)
+    lines = weekly.summarize_paper_validation(db, "base")
+    assert lines == ["validation start not yet confirmed — see the registration document"]

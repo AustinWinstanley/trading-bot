@@ -9,10 +9,17 @@
     "evidence": ["reports/absolute_return_campaign_registration.json", "reports/trend_leveraged_index_study.json", "reports/portfolio_mix_study.json"]
   },
   "start": "the first full session on the image that carries the M6 config (expected 2026-09-16 or the next trading day after deploy); the start equity is that session's first snapshot",
+  "start_confirmed": "2026-09-15T09:00:00-04:00",
+  "start_confirmed_note": "v1.3.0 (the M6 config) went live on the server 2026-09-15 ~09:29 ET, ahead of that day's 09:47/09:51 ET full runs, which executed the M6 rotation the same day rather than the next one this document anticipated. This field only fills in the concrete anchor the 'start' field above always pointed to (the first M6-config session's first snapshot, taken from state/paper.db / state/paper_2x.db directly, not this timestamp, which exists so engine.sleeve_pnl has a since= cursor to query from) — it does not change any rule, threshold, or methodology.",
   "window": {"primary_sessions": 63, "extension_sessions": 126, "note": "~3 months, then ~6 months before any real-money discussion"},
   "benchmark": "SPY total return over the identical sessions, taken from the SPY mark inside each snapshot's positions blob (the same construction as the 2026-09-14 forensic decomposition), rf = BIL",
   "kill_rules": {
     "evaluated": "daily from session 20 onward, at the last snapshot of the day",
+    "min_sessions": 20,
+    "return_floor_pp": -4.0,
+    "drawdown_limit_pct": {"base": 10.0, "2x": 20.0},
+    "slippage_limit_bps": 25.0,
+    "structured_fields_note": "the four fields above are machine-readable extractions of K1/K2/K3's prose rules below for engine.sleeve_pnl.validation_kill_rule_status (scripts/weekly.py's Phase-4 monitoring); they restate, not revise, those rules",
     "rules": [
       {"id": "K1", "rule": "portfolio return since start minus SPY return since start < -4.0 pp", "action": "stand the lev_trend sleeve down (config: lev_trend 0.0, equity_core 1.00) and reopen the campaign; base keeps SPY"},
       {"id": "K2", "rule": "drawdown from the validation-window peak deeper than 10% (base) or 20% (2x) while SPY's own drawdown over the same span is shallower by more than the paired-bootstrap band", "action": "same as K1"},
