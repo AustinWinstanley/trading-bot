@@ -10,6 +10,10 @@ PyYAML>=6,<7
 # hit it. Re-confirmed 2026-08-14 against the then-latest release
 # (50.0.0, via Dependabot proposing cryptography<51): still crashes with
 # "Illegal instruction" (SIGILL) on this same Docker backend;
-# cryptography<43 still installs and imports cleanly. Do not accept a
-# Dependabot bump to this ceiling without re-testing exactly this way.
+# cryptography<43 still installs and imports cleanly. Re-confirmed AGAIN
+# 2026-09-15 (PR #45, cryptography<51, latest release 50.0.1 at the
+# time): identical SIGILL, exit code 132, reproduced with
+# `docker run --rm python:3.13-slim bash -c "pip install cryptography && python -c 'from cryptography.hazmat.primitives import hashes'"`
+# on Docker Desktop for Mac. Do not accept a Dependabot bump to this
+# ceiling without re-testing exactly this way.
 cryptography<43
