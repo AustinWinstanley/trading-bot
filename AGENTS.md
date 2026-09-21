@@ -860,6 +860,56 @@ run it's created. Sleeve attribution reuses `held_sleeve_by_symbol()`
 symbol with no attribution at all defaults to "needs a stop" rather than
 being skipped.
 
+### The equity runner canceled the options close order, and nothing noticed
+
+Live incident, 2026-09-14 → 2026-09-21, on the first structure this repo
+ever tried to close (`f927d483`). Four gaps, one chain:
+
+1. `scripts/run_daily.py`'s stale-order pass treats every non-protective
+   open order on the account as its own. At 12:39 ET the `daily2x` run
+   canceled the spread's `close_by_dte` mleg order ("cancel stale
+   (unfilled 154m, limit 0.53) — will re-price this run") — and it has no
+   options path to re-price anything with. `is_option_order` now excludes
+   mleg/`us_option` orders from `stale_pending_orders`; they belong to
+   `scripts/options_daily.py`.
+2. `reconcile_pending_orders` only ever handled `filled`, so a close order
+   that died unfilled left the structure `closing_pending` forever (the
+   exit pass acts on `open` only). A canceled/expired/rejected close now
+   returns the structure to `open` and the same run resubmits it; a dead
+   *open* order becomes `open_failed`, which frees the one-structure cap.
+3. The close was priced at the ORIGINAL credit, which fills only once the
+   spread has already decayed below it — a profit-take, not the risk close
+   `close_by_dte` exists to be. `closing_debit` prices it off the legs' live
+   quotes (short ask − long bid, plus a cent, capped at the strike width —
+   still a bounded limit, never a market order), falling back to the old
+   price only when a leg has no quote.
+4. Nothing journaled an expiry. The spread rode through 2026-09-18, both
+   legs expired worthless, and the row stayed open: `health2x` CRITICAL
+   every day, entry pass blocked indefinitely. `settle_expired_structures`
+   closes a past-expiration structure **only** on positive broker evidence
+   — an `OPEXP` activity on every leg and no `OPASN`/`OPEXC` on any
+   (`expired_worthless`). An assignment, an exercise, or a silent activity
+   feed all leave it open for a human, the same no-assumed-remediation rule
+   as `reconcile_option_structures`.
+
+`main()` also now brings the journal current (pending orders, then
+settlement) *before* comparing it with the broker — the old order paged a
+"leg is missing" CRITICAL for any structure that had simply finished since
+the last run. `scripts/healthcheck.py` runs before this job each morning
+and cannot write the journal, so it drops structures
+`finished_at_broker` can prove are done (filled close, worthless expiry)
+before reconciling. Tests: `tests/test_options_lifecycle.py`.
+
+### Validation "sessions" are trading days
+
+`engine/sleeve_pnl.sleeve_pnl` reported `sessions` as the snapshot count,
+and the daily job journals a snapshot on every full run — two a day. The
+first weekly report under the M6 validation read "8 sessions" for four
+trading days, which would have armed the kill rules on day 10 instead of
+the registered session 20 and reached the 63-session verdict in about six
+and a half weeks. It now counts distinct snapshot dates. Anything else
+that reads a registered session count off the journal must do the same.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized

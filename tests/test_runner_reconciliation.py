@@ -106,6 +106,22 @@ def test_stale_pending_orders_flags_old_nonprotective_orders():
     assert [(o["symbol"], round(age)) for o, age in stale] == [("BE", 249)]
 
 
+def test_stale_pending_orders_never_flags_an_options_order():
+    """2026-09-14: the 12:39 daily2x run canceled the bull-put spread's
+    close_by_dte order as "stale" and could not re-price it; the spread
+    rode unmanaged through expiration. An mleg order has no top-level
+    symbol or side — this is the shape Alpaca actually returns."""
+    orders = [
+        {"id": "m", "symbol": None, "type": "limit", "order_class": "mleg",
+         "asset_class": "", "limit_price": "0.53",
+         "legs": [{"symbol": "SPY260918P00751000"}, {"symbol": "SPY260918P00746000"}],
+         "submitted_at": "2026-08-13T14:05:01Z"},
+        {"id": "s", "symbol": "SPY260918P00751000", "type": "limit",
+         "asset_class": "us_option", "submitted_at": "2026-08-13T14:05:01Z"},
+    ]
+    assert stale_pending_orders(orders, NOW) == []
+
+
 def test_stale_pending_orders_skips_unparsable_timestamps():
     orders = [
         {"id": "a", "symbol": "BE", "type": "limit", "submitted_at": None},

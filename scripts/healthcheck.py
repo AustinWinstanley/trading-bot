@@ -19,6 +19,7 @@ from scripts.options_daily import (
     EXPERIMENT_NAME as OPTIONS_EXPERIMENT_NAME,
     equity_qty_explained_by_orders,
     fetch_open_structures,
+    finished_at_broker,
     reconcile_option_structures,
 )
 from scripts.run_daily import PROFILES, is_protective_order
@@ -223,6 +224,14 @@ def main() -> None:
     # scripts.options_daily; that is healthy, not a problem.
     if args.profile == "2x":
         open_structures = open_option_structures(OPTIONS_DB)
+        # This check runs before scripts.options_daily each morning and
+        # again after the close, so a structure the broker has already
+        # finished (filled close, worthless expiry) is still `open` in the
+        # journal here — expected, not a missing leg.
+        finished = finished_at_broker(
+            trader, open_structures, positions, dt.datetime.now(ET).date()
+        )
+        open_structures = [s for s in open_structures if s["structure_id"] not in finished]
         # equity_explained_qty distinguishes a genuinely unexplained equity
         # position (a possible assignment) from an underlying — SPY, in
         # this repo's only live experiment — that's ALSO an ordinary

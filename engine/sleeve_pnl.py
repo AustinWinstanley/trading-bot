@@ -208,7 +208,11 @@ def sleeve_pnl(conn: sqlite3.Connection, *, since: str | None = None) -> dict:
     return {
         "since": snaps[0][0],
         "through": snaps[-1][0],
-        "sessions": len(snaps),
+        # Trading days, not snapshots: the daily job journals a snapshot on
+        # every full run (two a day), and the registration's session counts
+        # (20 before the kill rules arm, 63/126 for the verdicts) are days.
+        # Counting rows armed everything at half the registered history.
+        "sessions": len({str(ts)[:10] for ts, *_ in snaps}),
         "start_equity": start_equity,
         "end_equity": end_equity,
         "portfolio_return": portfolio_return,

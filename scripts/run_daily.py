@@ -164,6 +164,21 @@ def is_protective_order(order: dict) -> bool:
     return str(order.get("type", "")).lower() in PROTECTIVE_ORDER_TYPES
 
 
+def is_option_order(order: dict) -> bool:
+    """An options order (multi-leg or single contract) — scripts/options_daily.py's,
+    never this runner's. Live incident, 2026-09-14: the stale-order pass
+    below canceled the bull-put spread's close_by_dte mleg order ("cancel
+    stale   (unfilled 154m, limit 0.53) — will re-price this run"), and
+    nothing in this runner can re-price an options order — the spread rode
+    unmanaged through its 2026-09-18 expiration. An mleg order carries no
+    top-level symbol, so every part of the shape is checked."""
+    return (
+        str(order.get("order_class", "")).lower() == "mleg"
+        or str(order.get("asset_class", "")).lower() == "us_option"
+        or bool(order.get("legs"))
+    )
+
+
 def is_liquidation_order(order: dict) -> bool:
     return str(order.get("client_order_id", "")).startswith("bot-") and str(
         order.get("client_order_id", "")
@@ -308,11 +323,13 @@ def stale_pending_orders(
 ) -> list[tuple[dict, float]]:
     """Non-protective open orders older than the threshold, with ages in
     minutes. Protective (stop) orders are meant to rest indefinitely and
-    are never considered stale; orders with an unparsable submitted_at
+    are never considered stale; options orders belong to
+    scripts/options_daily.py, which this runner cannot re-price on its
+    behalf (see is_option_order); orders with an unparsable submitted_at
     are skipped rather than guessed at."""
     stale = []
     for order in open_orders:
-        if is_protective_order(order):
+        if is_protective_order(order) or is_option_order(order):
             continue
         submitted = order.get("submitted_at") or order.get("created_at")
         try:
