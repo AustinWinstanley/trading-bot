@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.0...v1.4.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **options:** keep a spread's close alive, price it at the market, settle expiries ([#57](https://github.com/AustinWinstanley/trading-bot/issues/57)) ([b97607f](https://github.com/AustinWinstanley/trading-bot/commit/b97607f7e0045bfed664aac572db0ea7d6587310))
+
 ## [1.4.0](https://github.com/AustinWinstanley/trading-bot/compare/v1.3.1...v1.4.0) (2026-09-15)
 
 
