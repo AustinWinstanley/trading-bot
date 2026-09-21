@@ -10,10 +10,20 @@ is not called a divergence, and unpushed commits are retried.
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+
+# deploy/upgrade.sh runs this suite inside the candidate *engine* image,
+# which deliberately ships no git client (the engine holds no git
+# credential — see docs/architecture.md); v1.4.2's upgrade failed on
+# exactly that. The script under test only ever runs in the journal image.
+pytestmark = pytest.mark.skipif(
+    shutil.which("git") is None or shutil.which("bash") is None,
+    reason="needs git and bash (absent from the engine image by design)",
+)
 
 SCRIPT = Path(__file__).resolve().parent.parent / "deploy" / "journal-commit.sh"
 IDENT = ["-c", "user.name=t", "-c", "user.email=t@example.invalid"]
