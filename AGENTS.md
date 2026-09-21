@@ -936,10 +936,21 @@ pages for a stop the runner will never write, or the runner writes a stop
 to silence the page. A combined sleeve with a *live* stopped part (say
 `trend` allocated again) is still "stops apply".
 
-Not changed here, deliberately: a stop row that already exists on an
-exempt position (base's SPY row from 2026-08-04, origin `fractional-entry`)
-is still honored by the software-stop pass, which reads `stops` with no
-sleeve check. Removing a live stop is a risk decision, not a bug fix.
+The same day's second half: a stop row that **already existed** on an
+exempt position was still live, because the software-stop pass reads
+`stops` with no sleeve check. Base's SPY carried a 703.26 stop (origin
+`fractional-entry`, 2026-08-04, from when the position was part `trend`).
+The operator's decision (2026-09-21) was to remove it rather than keep it
+as accidental protection: with `equity_core` re-entry-exempt, a trigger
+sells the core at -8% and the next full run buys it back — two round trips
+of slippage and no reduction in exposure — and the M6 paper validation
+would have been judging a strategy the study never modeled.
+`prune_exempt_stops` (every run, right after `backfill_missing_stops`)
+deletes software stop rows on held positions whose holding sleeve is
+exempt. It keeps a row it cannot prove is exempt: no journal attribution
+means "needs a stop", and a symbol with a live *broker* stop order is left
+alone. Drawdown protection for the core, if wanted, is a candidate to study
+through `backtest/deployable_sim.py`, not a row to leave in a table.
 
 ### The journal service never pushed, and the retired host cron covered for it
 
