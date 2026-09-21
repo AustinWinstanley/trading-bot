@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.1...v1.4.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deploy:** let the journal service authenticate, and make its failures visible ([#59](https://github.com/AustinWinstanley/trading-bot/issues/59)) ([783de87](https://github.com/AustinWinstanley/trading-bot/commit/783de872bca6416f60136dcc9f3c026c8a9b994f))
+
 ## [1.4.1](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.0...v1.4.1) (2026-09-21)
 
 
