@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.4](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.3...v1.4.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* **risk:** judge stop exemption by the sleeves that still hold a position ([#63](https://github.com/AustinWinstanley/trading-bot/issues/63)) ([0397afa](https://github.com/AustinWinstanley/trading-bot/commit/0397afa9f4454ce7e606833c99213d486f622bc2))
+* **risk:** remove software stops that predate their sleeve's exemption ([#64](https://github.com/AustinWinstanley/trading-bot/issues/64)) ([3634c24](https://github.com/AustinWinstanley/trading-bot/commit/3634c2434ff9d1ef714a50622d02e86ee1062f68))
+
 ## [1.4.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.2...v1.4.3) (2026-09-21)
 
 
