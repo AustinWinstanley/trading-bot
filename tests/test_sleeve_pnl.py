@@ -140,6 +140,20 @@ def test_fewer_than_two_snapshots_returns_empty():
     assert sleeve_pnl(conn, since="2099-01-01") == {}
 
 
+def test_sessions_count_trading_days_not_snapshots():
+    # Two full runs a day journal two snapshots a day; the registration's
+    # "session 20" means the 20th day.
+    conn = journal()
+    spy = {"SPY": {"qty": 1.0, "px": 100.0}}
+    for ts in (
+        "2026-09-15T09:47:01-04:00", "2026-09-15T12:35:01-04:00",
+        "2026-09-16T09:47:01-04:00", "2026-09-16T12:35:01-04:00",
+        "2026-09-17T09:47:01-04:00",
+    ):
+        snap(conn, ts, 1000.0, spy, {"SPY": "equity_core"})
+    assert sleeve_pnl(conn)["sessions"] == 3
+
+
 def test_kill_rules_report_insufficient_history_before_min_sessions():
     conn = journal()
     snap(conn, "T1", 1000.0, {"SPY": {"qty": 1.0, "px": 100.0}}, {"SPY": "equity_core"})
