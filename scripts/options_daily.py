@@ -10,9 +10,11 @@ safety checks before new risk):
   1. credential guard
   2. options-level pre-flight (every run, not just once — see
      scripts/check_options_level.py, which is the same check run by hand)
-  3. reconciliation / assignment-detection (before anything touches the
+  3. fill/status reconciliation for pending journal rows, then settlement
+     of any structure the broker says expired worthless — the journal has
+     to be current before it is compared with the broker
+  4. reconciliation / assignment-detection (before anything touches the
      broker)
-  4. fill/status reconciliation for pending journal rows
   5. exit pass (close-by-DTE or stand-down-forced)
   6. entry pass (only if reconciliation found no anomaly and no structure
      is already open for the experiment)
@@ -34,6 +36,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import sqlite3
 import uuid
@@ -407,10 +410,170 @@ def log_reconciliation_event(conn: sqlite3.Connection, ts: str, detail: str, *, 
     )
 
 
+def occ_strike(symbol: str) -> float:
+    """Strike from an OCC option symbol — its last eight digits are the
+    strike in thousandths of a dollar (SPY260918P00751000 -> 751.0)."""
+    return int(symbol[-8:]) / 1000
+
+
+def closing_debit(structure: dict, snapshots: dict) -> float | None:
+    """Marketable net debit per contract to flatten an open credit spread:
+    pay the short leg's ask, receive the long leg's bid. None when either
+    quote is missing, so the caller can fall back rather than guess.
+
+    Live incident, 2026-09-14: the close used to be priced at the ORIGINAL
+    credit, which only fills once the spread has already decayed below it —
+    a profit-take, not the risk close close_by_dte exists to be. One cent
+    is added above the touch because Trader.submit_multi_leg_order floors
+    a debit to the cent (0.57 * 100 is 56.99… in floating point); the
+    result is capped at the strike width, which bounds what any vertical
+    can be worth, so the order stays a bounded limit and never a market
+    order in disguise.
+    """
+    debit = 0.0
+    for leg in structure["legs"]:
+        quote = (snapshots.get(leg["symbol"]) or {}).get("latestQuote") or {}
+        short = leg["position_intent"] == "sell_to_open"
+        price = float(quote.get("ap" if short else "bp") or 0)
+        if price <= 0:
+            return None
+        debit += price * leg["ratio_qty"] * (1 if short else -1)
+    strikes = [occ_strike(leg["symbol"]) for leg in structure["legs"]]
+    width = max(strikes) - min(strikes)
+    cents = math.ceil(round(debit * 100, 6)) + 1
+    return min(max(cents, 1) / 100, width)
+
+
+def leg_snapshots(trader: Trader, structure: dict) -> dict:
+    payload = trader._get(
+        trader.data_base, "/v1beta1/options/snapshots",
+        {"symbols": ",".join(leg["symbol"] for leg in structure["legs"]),
+         "feed": "indicative"},
+    )
+    return payload.get("snapshots") or {}
+
+
+def expired_worthless(structure: dict, activities: list[dict]) -> bool:
+    """True only on positive broker evidence: every leg carries an OPEXP
+    (expiry) activity and no leg carries an OPASN/OPEXC (assignment or
+    exercise). Anything else — including no activities yet — is False, and
+    the structure stays open for reconcile_option_structures to page a
+    human about: this module never assumes how an in-the-money expiry
+    settled (see that function's docstring)."""
+    symbols = {leg["symbol"] for leg in structure["legs"]}
+    by_type: dict[str, set[str]] = {}
+    for activity in activities:
+        symbol = str(activity.get("symbol", ""))
+        if symbol in symbols:
+            by_type.setdefault(str(activity.get("activity_type", "")), set()).add(symbol)
+    if by_type.get("OPASN") or by_type.get("OPEXC"):
+        return False
+    return by_type.get("OPEXP", set()) == symbols
+
+
+def expiry_activities(trader: Trader, expiration_date: dt.date) -> list[dict]:
+    after = expiration_date - dt.timedelta(days=1)
+    return trader._get(  # type: ignore[return-value]
+        trader.trading_base, "/v2/account/activities",
+        {"activity_types": "OPEXP,OPASN,OPEXC",
+         "after": f"{after.isoformat()}T00:00:00Z", "page_size": 100},
+    )
+
+
+def finished_at_broker(
+    trader: Trader, open_structures: list[dict], positions: list[dict], today: dt.date,
+) -> set[str]:
+    """structure_ids whose lifecycle the broker has already finished — a
+    filled close order, or a worthless expiry — but that the journal still
+    lists as open because main() has not run since. Read-only, for
+    scripts/healthcheck.py: it runs minutes BEFORE this job each morning
+    and again after the close, so without this every ordinary close or
+    expiry pages one "leg is missing" CRITICAL before the journal catches
+    up. A structure that ended any other way is not in the set and still
+    pages."""
+    held = {str(p.get("symbol", "")) for p in positions if float(p.get("qty") or 0)}
+    finished = set()
+    for structure in open_structures:
+        if any(leg["symbol"] in held for leg in structure["legs"]):
+            continue
+        try:
+            if structure["status"] == "closing_pending" and structure["close_alpaca_order_id"]:
+                remote = trader.get_order(structure["close_alpaca_order_id"])
+                if str(remote.get("status")) == "filled":
+                    finished.add(structure["structure_id"])
+                    continue
+            if structure["expiration_date"] < today and expired_worthless(
+                structure, expiry_activities(trader, structure["expiration_date"])
+            ):
+                finished.add(structure["structure_id"])
+        except Exception:
+            continue
+    return finished
+
+
+def settle_expired_structures(
+    conn: sqlite3.Connection, trader: Trader, positions: list[dict],
+    today: dt.date, now: dt.datetime,
+) -> None:
+    """Close out any `open` structure past its expiration whose legs are
+    gone from the broker AND that the broker's own activity feed says
+    expired worthless — the full credit is the realized P&L. Live finding,
+    2026-09-21: nothing journaled an expiry at all, so structure f927d483
+    sat open after 2026-09-18, paging health2x daily and blocking the entry
+    pass (one-structure cap plus the reconciliation anomaly) indefinitely.
+    """
+    held = {str(p.get("symbol", "")) for p in positions if float(p.get("qty") or 0)}
+    rows = conn.execute(
+        "SELECT structure_id, expiration_date, contracts, credit, "
+        "open_filled_avg_price FROM structures WHERE status='open' AND "
+        "expiration_date < ?",
+        (today.isoformat(),),
+    ).fetchall()
+    for structure_id, expiration_date, contracts, credit, open_fill_px in rows:
+        legs = [
+            {"symbol": symbol} for (symbol,) in conn.execute(
+                "SELECT symbol FROM structure_legs WHERE structure_id=?", (structure_id,)
+            )
+        ]
+        if any(leg["symbol"] in held for leg in legs):
+            continue
+        try:
+            activities = expiry_activities(trader, dt.date.fromisoformat(expiration_date))
+        except Exception:
+            continue
+        if not expired_worthless({"legs": legs}, activities):
+            continue
+        # Alpaca's sign convention: a credit received is a negative fill
+        # price. The approved credit stands in when the open fill price was
+        # never recorded.
+        per_contract = -open_fill_px if open_fill_px is not None else credit
+        realized_pnl = per_contract * 100 * contracts
+        print(f"  SETTLE {structure_id}: expired worthless {expiration_date}, "
+              f"realized ${realized_pnl:+.2f}")
+        conn.execute(
+            "UPDATE structures SET status='closed', close_reason='expired_worthless', "
+            "close_status='expired', closed_ts=?, realized_pnl=? WHERE structure_id=?",
+            (now.isoformat(), realized_pnl, structure_id),
+        )
+
+
+# A working order that ended without filling. Every structure here is one
+# contract, so there is no partially-filled remainder to account for.
+TERMINAL_UNFILLED_STATUSES = ("canceled", "expired", "rejected")
+
+
 def reconcile_pending_orders(conn: sqlite3.Connection, trader: Trader, now: dt.datetime) -> None:
     """Poll Alpaca for any structure still waiting on an open/close fill and
     update the journal — mirrors scripts/run_daily.py's
-    reconcile_journal_orders for the equity path."""
+    reconcile_journal_orders for the equity path.
+
+    An order that died unfilled moves the structure back out of its
+    pending state: a dead open order never became a position
+    (`open_failed`, which frees the one-structure cap), and a dead close
+    order leaves the spread exactly as open as it was (`open`, so the exit
+    pass resubmits it this same run). Before 2026-09-21 only `filled` was
+    handled, so either case wedged the structure in its pending state for
+    good."""
     rows = conn.execute(
         "SELECT structure_id, status, open_alpaca_order_id, close_alpaca_order_id, "
         "contracts, open_filled_avg_price FROM structures WHERE status IN "
@@ -421,6 +584,15 @@ def reconcile_pending_orders(conn: sqlite3.Connection, trader: Trader, now: dt.d
             try:
                 remote = trader.get_order(open_id)
             except Exception:
+                continue
+            if str(remote.get("status")) in TERMINAL_UNFILLED_STATUSES:
+                print(f"  open order for {structure_id} ended {remote.get('status')} "
+                      "unfilled — structure never opened")
+                conn.execute(
+                    "UPDATE structures SET status='open_failed', open_status=? "
+                    "WHERE structure_id=?",
+                    (remote.get("status"), structure_id),
+                )
                 continue
             if str(remote.get("status")) != "filled":
                 continue
@@ -435,9 +607,18 @@ def reconcile_pending_orders(conn: sqlite3.Connection, trader: Trader, now: dt.d
                 remote = trader.get_order(close_id)
             except Exception:
                 continue
+            if str(remote.get("status")) in TERMINAL_UNFILLED_STATUSES:
+                print(f"  close order for {structure_id} ended {remote.get('status')} "
+                      "unfilled — structure is still open")
+                conn.execute(
+                    "UPDATE structures SET status='open', close_status=? "
+                    "WHERE structure_id=?",
+                    (remote.get("status"), structure_id),
+                )
+                continue
             if str(remote.get("status")) != "filled":
                 continue
-            close_fill_px = float(remote["filled_avg_price"]) if remote.get("filled_avg_price") else None
+            close_fill_px =float(remote["filled_avg_price"]) if remote.get("filled_avg_price") else None
             realized_pnl = None
             if close_fill_px is not None and open_fill_px is not None:
                 # Alpaca's own sign convention (positive=debit paid,
@@ -530,8 +711,15 @@ def main() -> None:
             conn.commit()
         return
 
-    open_structures = fetch_open_structures(conn, EXPERIMENT_NAME)
+    # Journal first, broker comparison second: a close that filled (or an
+    # expiry that settled) since the last run has legitimately removed its
+    # legs from the broker, and comparing before the journal knows that
+    # pages a "leg is missing" CRITICAL for a structure that is simply done.
     positions = trader.get_positions()
+    reconcile_pending_orders(conn, trader, now)
+    settle_expired_structures(conn, trader, positions, today, now)
+
+    open_structures = fetch_open_structures(conn, EXPERIMENT_NAME)
     equity_explained_qty = load_equity_explained_qty(EQUITY_DB, open_structures)
     findings = reconcile_option_structures(
         positions, open_structures, equity_explained_qty=equity_explained_qty
@@ -540,9 +728,6 @@ def main() -> None:
         print(f"CRITICAL: {finding}")
         log_reconciliation_event(conn, now.isoformat(), finding)
     anomaly = bool(findings)
-
-    reconcile_pending_orders(conn, trader, now)
-    open_structures = fetch_open_structures(conn, EXPERIMENT_NAME)
 
     equity = float(account["equity"])
     st = json.loads(RISK_STATE.read_text()) if RISK_STATE.exists() else {}
@@ -615,14 +800,29 @@ def main() -> None:
             for leg in structure["legs"]
         )
         closing_legs = mirror_closing_legs(legs)
-        print(f"  CLOSE {structure['structure_id']} ({reason}), {days_to_expiry}d to expiry")
+        try:
+            debit = closing_debit(structure, leg_snapshots(trader, structure))
+        except Exception as exc:
+            print(f"    close quotes unavailable: {exc}")
+            debit = None
+        if debit is None:
+            # No usable quote on a leg: rest the order at the original
+            # credit (the pre-2026-09-21 price) rather than invent one. It
+            # fills only if the spread has decayed that far; the next run
+            # re-prices it either way.
+            debit = structure["credit"]
+        print(f"  CLOSE {structure['structure_id']} ({reason}), {days_to_expiry}d to expiry, "
+              f"debit ${debit:.2f}")
         if args.dry_run:
             continue
         try:
             order = trader.submit_multi_leg_order(
                 closing_legs, qty=structure["contracts"],
-                credit=-structure["credit"],  # closing a credit spread is a debit, approximately
-                client_order_id=f"opt-{today:%Y%m%d}-{structure['structure_id'][:8]}-close",
+                credit=-debit,
+                # HHMM, not just the date: a close that died unfilled and is
+                # resubmitted the same day must not collide with its own
+                # earlier id (the 2026-08-18 equity incident, same shape).
+                client_order_id=f"opt-{now:%Y%m%d%H%M}-{structure['structure_id'][:8]}-close",
             )
             record_close_submission(conn, structure["structure_id"], order=order, reason=reason)
         except AlpacaError as exc:
