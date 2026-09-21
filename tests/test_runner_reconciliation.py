@@ -12,6 +12,7 @@ from scripts.run_daily import (
     broker_fill_fields,
     cancel_symbol_orders,
     is_liquidation_order,
+    prune_exempt_stops,
     marketable_limit,
     is_protective_order,
     order_client_id,
@@ -521,3 +522,62 @@ def test_backfill_does_not_stop_the_core_over_a_stood_down_sleeve():
     )
     assert backfilled == []
     assert conn.execute("SELECT 1 FROM stops WHERE symbol='SPY'").fetchone() is None
+
+
+def _stop(conn, symbol, price=703.2572, origin="fractional-entry"):
+    conn.execute("INSERT INTO stops VALUES (?,?,?,?,?)",
+                 (symbol, price, 764.41, "2026-08-04", origin))
+
+
+def _stopped(conn):
+    return sorted(r[0] for r in conn.execute("SELECT symbol FROM stops"))
+
+
+def test_prune_removes_a_stop_that_predates_its_sleeves_exemption():
+    """Base, 2026-09-21: SPY still carried the 2026-08-04 stop from when it
+    was part `trend`. Triggered, it sells the M6 core at -8% and the
+    re-entry-exempt sleeve buys it back the next run."""
+    conn = journal()
+    _stop(conn, "SPY")
+    positions = {"SPY": Position("SPY", 10.1474, 764.41, 767.08)}
+    pruned = prune_exempt_stops(
+        conn, load_config(), positions, {"SPY": "equity_core"}, protective_symbols=set()
+    )
+    assert pruned == ["SPY"]
+    assert _stopped(conn) == []
+
+
+def test_prune_reads_a_stale_combined_sleeve_the_way_backfill_does():
+    conn = journal()
+    _stop(conn, "SPY")
+    positions = {"SPY": Position("SPY", 9.77, 756.82, 773.06)}
+    assert prune_exempt_stops(
+        conn, load_config(), positions, {"SPY": "equity_core+trend"}, set()
+    ) == ["SPY"]
+    # ... and backfill must not put it straight back.
+    assert backfill_missing_stops(
+        conn, FakeBarsTrader(), load_config(), positions,
+        [{"symbol": "SPY", "asset_class": "us_equity"}],
+        held_sleeve={"SPY": "equity_core+trend"}, today=dt.date(2026, 9, 21),
+    ) == []
+
+
+def test_prune_keeps_every_stop_it_cannot_prove_is_exempt():
+    conn = journal()
+    for symbol in ("XLK", "GLD", "SPY", "QLD", "OLD"):
+        _stop(conn, symbol)
+    positions = {
+        s: Position(s, 1.0, 100.0, 100.0) for s in ("XLK", "GLD", "SPY", "QLD")
+    }
+    held_sleeve = {
+        "XLK": "tsmom",        # a stopped sleeve
+        # GLD: no journal attribution at all -> unknown means "needs a stop"
+        "SPY": "equity_core",  # exempt, but the broker holds a live stop order
+        "QLD": "lev_trend",    # exempt, software row -> the only one pruned
+        "OLD": "equity_core",  # exempt but no longer held: not this function's row
+    }
+    pruned = prune_exempt_stops(
+        conn, load_config(), positions, held_sleeve, protective_symbols={"SPY"}
+    )
+    assert pruned == ["QLD"]
+    assert _stopped(conn) == ["GLD", "OLD", "SPY", "XLK"]

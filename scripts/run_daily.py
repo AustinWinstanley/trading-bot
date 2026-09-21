@@ -449,6 +449,45 @@ def backfill_missing_stops(
     return backfilled
 
 
+def prune_exempt_stops(
+    conn: sqlite3.Connection,
+    cfg: Config,
+    positions: dict[str, Position],
+    held_sleeve: dict[str, str],
+    protective_symbols: set[str],
+) -> list[str]:
+    """Delete software stop rows on held positions whose sleeve is
+    stop-exempt, so "an exempt sleeve carries exactly zero stop" — the
+    invariant engine/risk.py already holds every new entry to — is also
+    true of rows that predate the exemption.
+
+    Live finding, 2026-09-21: base's SPY still carried the 703.26
+    `fractional-entry` stop written on 2026-08-04, when the position was
+    part `trend`. The software-stop pass reads `stops` with no sleeve
+    check, so it would have sold the whole M6 core at -8% — and
+    `equity_core` is re-entry-exempt, so the next full run would have
+    bought it straight back. backtest/deployable_sim.py models no such
+    stop (a risk control is a strategy change).
+
+    Conservative on both sides: a symbol with no journal attribution keeps
+    its row (unknown means "needs a stop", as in backfill_missing_stops),
+    and a symbol with a live broker stop order is left alone — that row
+    mirrors an order this function does not cancel.
+    """
+    pruned = []
+    for (symbol,) in conn.execute("SELECT symbol FROM stops").fetchall():
+        sleeve = held_sleeve.get(symbol)
+        if (
+            symbol in positions
+            and symbol not in protective_symbols
+            and sleeve
+            and not cfg.risk.stops_apply_to(cfg.holding_sleeve(sleeve))
+        ):
+            conn.execute("DELETE FROM stops WHERE symbol=?", (symbol,))
+            pruned.append(symbol)
+    return sorted(pruned)
+
+
 def held_sleeve_by_symbol(conn: sqlite3.Connection, symbols) -> dict[str, str]:
     """Best-known sleeve attribution for each currently-held symbol.
 
@@ -600,6 +639,10 @@ def main() -> None:
     if backfilled_stops:
         print(f"  backfilled fallback stop for {', '.join(backfilled_stops)} "
               "(held with neither a broker nor software stop)")
+    pruned_stops = prune_exempt_stops(conn, cfg, positions, held_sleeve, protective_symbols)
+    if pruned_stops:
+        print(f"  removed software stop on {', '.join(pruned_stops)} "
+              "(sleeve is stop-exempt; the row predates the exemption)")
     pending_symbols = {
         str(o.get("symbol")) for o in open_orders
         if o.get("symbol") and not is_protective_order(o)
