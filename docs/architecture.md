@@ -16,7 +16,7 @@ them is enforced by more than a comment:
 | Service | Holds broker credentials? | Can mutate state? | Network exposure |
 | --- | --- | --- | --- |
 | **`engine`** (`engine/`, `scripts/`, `backtest/`) | Yes, via `env_file` | Yes — the only tier that can | none (no inbound port) |
-| **`journal`** | No | Only `.git` in the mounted checkout, via a repo-scoped deploy key | none (no inbound port) |
+| **`journal`** | No | `.git` in the mounted checkout, via a repo-scoped deploy key, plus its own block in `logs/` | none (no inbound port) |
 | **`dashboard`** (port 8787) | No | No — read-only by construction | LAN, no auth |
 | **`mcp-server`** (port 8788) | No | No — read-only by construction | LAN, no auth |
 
@@ -140,14 +140,18 @@ pull, so nothing keeps the server's checkout in sync with `origin/main` the
 way `git pull` inside the old host-cron `scripts/upgrade.sh` used to.
 `journal` (`deploy/journal.Dockerfile`, a separate scheduled `supercronic`
 job of its own — see `deploy/journal-crontab`) fills that gap nightly:
-`git pull --ff-only` (never a merge — a real divergence is a human problem,
-not something to paper over) delivers dev-committed research, including
+a fetch and a fast-forward (never a merge — a real divergence is a human
+problem, not something to paper over) deliver dev-committed research, including
 `reports/experiments/*.json` registrations `engine/config.py` validates
 exist at startup, into the same checkout `engine` mounts read-write; then
 `git add reports/paper*/ && git commit && git push` publishes whatever
 `engine` wrote that day. It holds a repo-scoped SSH deploy key — write
 access to this repo only — mounted via Compose `secrets:`, never `.env`,
-and `engine` itself has no git credential at all.
+and `engine` itself has no git credential at all. Each run appends a
+`job=journal` block to `logs/paper-YYYYMMDD.log` — the one file it writes
+outside `.git` — so that its failures reach the same CRITICAL scrape every
+engine job's do; see [operations.md](operations.md#the-journal-service-and-its-deploy-key)
+for how to verify it can actually authenticate.
 
 ## Money path
 

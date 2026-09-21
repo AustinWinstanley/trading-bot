@@ -78,6 +78,16 @@ services:
       # The whole checkout, read-write: `git add`/`commit`/`push` need the
       # working tree and .git/ both, not just reports/.
       - ..:/repo
+      # OpenSSH refuses to run at all for a uid with no passwd entry ("No
+      # user exists for uid 1000"), and the image only knows its own build-
+      # time `journal` user — not whatever host uid `user:` above maps in.
+      # Found 2026-09-21: every scheduled run since the 2026-08-17 cutover
+      # had failed this way (the deploy key's last_used on GitHub was seven
+      # seconds after it was created), and the retired host cron had been
+      # the only thing pushing reports/. The host's own passwd, read-only,
+      # resolves any ENGINE_UID that can own the checkout; it carries
+      # account names only, never password hashes (those live in shadow).
+      - /etc/passwd:/etc/passwd:ro
     secrets:
       - journal_deploy_key
     healthcheck:
