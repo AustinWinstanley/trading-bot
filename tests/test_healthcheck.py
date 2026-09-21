@@ -218,3 +218,27 @@ def test_open_option_structures_reads_a_real_journal(tmp_path, monkeypatch):
     structures = open_option_structures(db_path)
     assert [s["structure_id"] for s in structures] == ["s1"]
     assert structures[0]["legs"][0]["position_intent"] == "sell_to_open"
+
+
+def test_unstopped_from_journal_drops_a_stood_down_part_of_a_combined_sleeve():
+    """The 2026-09-21 upgrade-gate failure: `SPY: position has no broker or
+    fallback stop`, from a last buy journaled as `equity_core+trend` with
+    `trend` since stood down to 0.0."""
+    import sqlite3
+
+    from engine.config import load_config
+    from scripts.healthcheck import unstopped_from_journal
+
+    cfg = load_config()
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE orders(ts TEXT, symbol TEXT, side TEXT, sleeve TEXT)")
+    conn.executemany(
+        "INSERT INTO orders VALUES (?,?,?,?)",
+        [
+            ("2026-08-04", "SPY", "buy", "equity_core+trend"),
+            ("2026-09-21", "SPY", "sell", "equity_core"),  # a trim is not an entry
+        ],
+    )
+    exempt = cfg.risk.stop_exempt_sleeves
+    assert unstopped_from_journal(conn, exempt) == set()  # the old, exact-match reading
+    assert unstopped_from_journal(conn, exempt, cfg.holding_sleeve) == {"SPY"}

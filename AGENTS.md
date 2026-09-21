@@ -910,6 +910,37 @@ the registered session 20 and reached the 63-session verdict in about six
 and a half weeks. It now counts distinct snapshot dates. Anything else
 that reads a registered session count off the journal must do the same.
 
+### A stood-down sleeve kept deciding whether the SPY core carries a stop
+
+Live, 2x, 2026-09-15 and again 2026-09-21 (where it failed the v1.4.3
+upgrade gate). A position's sleeve is whatever its last **buy** was
+journaled as, and 2x's SPY was last bought on 2026-08-04 as
+`equity_core+trend`; since M6 it has only been trimmed. `trend` went to 0.0
+on 2026-09-14, but `risk.stops_apply_to` is an exact match and
+`"equity_core+trend"` is not literally in `stop_exempt_sleeves` — so each
+trim deleted SPY's stop row (every sell does), `health2x` paged "no broker
+or fallback stop", and the next full run's `backfill_missing_stops`
+"fixed" the page by writing an -8% software stop onto ~85% of the account.
+`backtest/deployable_sim.py` models no such stop (a risk control is a
+strategy change), and `equity_core` is re-entry-exempt, so a trigger would
+have sold the core and bought it straight back.
+
+`Config.holding_sleeve` reduces a journaled sleeve to the parts that still
+hold the position — `+`-joined parts whose `paper_portfolio.sleeves` weight
+is zero are dropped; a name that is not a portfolio sleeve (an experiment)
+is always kept; a sleeve whose *every* part is stood down is returned
+unchanged, because a leftover is still the position that sleeve opened.
+Both `backfill_missing_stops` and `scripts/healthcheck.unstopped_from_journal`
+apply it, and they must keep agreeing: when they disagree, either health
+pages for a stop the runner will never write, or the runner writes a stop
+to silence the page. A combined sleeve with a *live* stopped part (say
+`trend` allocated again) is still "stops apply".
+
+Not changed here, deliberately: a stop row that already exists on an
+exempt position (base's SPY row from 2026-08-04, origin `fractional-entry`)
+is still honored by the software-stop pass, which reads `stops` with no
+sleeve check. Removing a live stop is a risk decision, not a bug fix.
+
 ### The journal service never pushed, and the retired host cron covered for it
 
 Found 2026-09-21, when `deploy/upgrade.sh` refused to fast-forward a

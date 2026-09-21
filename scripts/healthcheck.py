@@ -8,6 +8,7 @@ import json
 import os
 import sqlite3
 import time
+from collections.abc import Callable
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -27,12 +28,21 @@ from scripts.run_daily import PROFILES, is_protective_order
 ET = ZoneInfo("America/New_York")
 
 
-def unstopped_from_journal(conn: sqlite3.Connection, exempt_sleeves: frozenset[str]) -> set[str]:
+def unstopped_from_journal(
+    conn: sqlite3.Connection,
+    exempt_sleeves: frozenset[str],
+    holding_sleeve: Callable[[str], str] = str,
+) -> set[str]:
     """Symbols whose most recent entry came from a deliberately unstopped sleeve.
 
     Keyed on the latest opening order rather than the current target list: a
     position lingers after its sleeve drops it, and until it is closed it is
-    still the unstopped position that sleeve opened.
+    still the unstopped position that sleeve opened. ``holding_sleeve``
+    (Config.holding_sleeve) first drops any `+`-joined part that has since
+    been stood down, the same reduction scripts/run_daily.py's
+    backfill_missing_stops applies — the two must agree, or this check
+    pages for a stop the runner will never write (or, as on 2026-09-15 and
+    2026-09-21, the runner "fixes" the page by stopping the SPY core).
     """
     if not exempt_sleeves:
         return set()
@@ -41,7 +51,7 @@ def unstopped_from_journal(conn: sqlite3.Connection, exempt_sleeves: frozenset[s
         "AND ts = (SELECT MAX(ts) FROM orders o2 WHERE o2.symbol = orders.symbol "
         "          AND o2.side IN ('buy','short'))"
     ).fetchall()
-    return {str(sym) for sym, sleeve in rows if str(sleeve) in exempt_sleeves}
+    return {str(sym) for sym, sleeve in rows if holding_sleeve(str(sleeve)) in exempt_sleeves}
 
 
 def open_option_structures(db_path: Path) -> list[dict]:
@@ -182,7 +192,8 @@ def main() -> None:
     elapsed["orders"] = time.monotonic() - t0
 
     cfg_file, _, _ = PROFILES[args.profile]
-    exempt_sleeves = load_config(REPO_ROOT / cfg_file).risk.stop_exempt_sleeves
+    cfg = load_config(REPO_ROOT / cfg_file)
+    exempt_sleeves = cfg.risk.stop_exempt_sleeves
 
     last_snapshot = None
     fallback_stops: set[str] = set()
@@ -190,7 +201,7 @@ def main() -> None:
     journal_is_pristine = True
     if db_path.exists():
         conn = sqlite3.connect(db_path)
-        unstopped_symbols = unstopped_from_journal(conn, exempt_sleeves)
+        unstopped_symbols = unstopped_from_journal(conn, exempt_sleeves, cfg.holding_sleeve)
         row = conn.execute("SELECT MAX(ts) FROM snapshots").fetchone()
         if row and row[0]:
             last_snapshot = dt.datetime.fromisoformat(row[0])

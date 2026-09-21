@@ -501,3 +501,23 @@ def test_order_writes_commit_immediately_not_deferred_to_end_of_run():
             "a fill submitted here would sit uncommitted (invisible to every "
             "other reader) until the run's final commit"
         )
+
+
+def test_backfill_does_not_stop_the_core_over_a_stood_down_sleeve():
+    """2x, 2026-09-15 and again 2026-09-21: SPY's last BUY was journaled as
+    `equity_core+trend` on 2026-08-04; `trend` has been 0.0 since
+    2026-09-14. A trim deleted the stop row, exact-match exemption read the
+    stale combined sleeve as "stopped", and the next run backfilled an -8%
+    software stop onto a position that is ~85% of the account and that the
+    M6 study models with no stop at all."""
+    conn = journal()
+    cfg = load_config()
+    assert cfg.sleeves_paper["sleeves"]["trend"] == 0.0  # the premise
+    positions = {"SPY": Position("SPY", 9.77, 756.82, 773.06)}
+    raw_positions = [{"symbol": "SPY", "asset_class": "us_equity"}]
+    backfilled = backfill_missing_stops(
+        conn, FakeBarsTrader(), cfg, positions, raw_positions,
+        held_sleeve={"SPY": "equity_core+trend"}, today=dt.date(2026, 9, 21),
+    )
+    assert backfilled == []
+    assert conn.execute("SELECT 1 FROM stops WHERE symbol='SPY'").fetchone() is None

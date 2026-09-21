@@ -421,7 +421,7 @@ def backfill_missing_stops(
         # never an equity-style stop — see scripts/healthcheck.py's
         # matching us_option exclusion for why flagging them is noise.
         and asset_class.get(symbol) != "us_option"
-        and cfg.risk.stops_apply_to(held_sleeve.get(symbol, ""))
+        and cfg.risk.stops_apply_to(cfg.holding_sleeve(held_sleeve.get(symbol, "")))
     )
     if not candidates:
         return []
