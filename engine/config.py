@@ -161,6 +161,25 @@ class Config:
     leveraged_symbols: frozenset[str]
     experiments: dict[str, ExperimentConfig] = field(default_factory=dict)
 
+    def holding_sleeve(self, sleeve: str) -> str:
+        """A held position's journal sleeve, reduced to the sleeves that
+        still hold it: `+`-joined parts whose `paper_portfolio.sleeves`
+        weight is now zero are dropped.
+
+        The journal's attribution is frozen at the last buy. 2x's SPY was
+        last BOUGHT on 2026-08-04 as `equity_core+trend`; `trend` went to
+        0.0 on 2026-09-14 and the position has only been trimmed since, so
+        every exact-match sleeve rule kept reading a sleeve that no longer
+        exists — see AGENTS.md. A name that is not a portfolio sleeve at
+        all (an experiment) is always kept, and a sleeve whose every part
+        is stood down is returned unchanged: a leftover position is still
+        the position that sleeve opened.
+        """
+        weights = self.sleeves_paper.get("sleeves") or {}
+        parts = [p for p in sleeve.split("+") if p]
+        live = [p for p in parts if not (p in weights and float(weights[p]) == 0.0)]
+        return "+".join(live) if live else sleeve
+
 
 def _require(mapping: dict, key: str, path: str):
     if key not in mapping:
