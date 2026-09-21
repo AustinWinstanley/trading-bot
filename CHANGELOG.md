@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.2...v1.4.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deploy:** skip the journal-commit tests where git is not installed ([#61](https://github.com/AustinWinstanley/trading-bot/issues/61)) ([a5468af](https://github.com/AustinWinstanley/trading-bot/commit/a5468aff1e16d2befa86519a10658dadd7552e27))
+
 ## [1.4.2](https://github.com/AustinWinstanley/trading-bot/compare/v1.4.1...v1.4.2) (2026-09-21)
 
 
