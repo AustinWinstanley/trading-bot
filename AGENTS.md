@@ -910,6 +910,33 @@ the registered session 20 and reached the 63-session verdict in about six
 and a half weeks. It now counts distinct snapshot dates. Anything else
 that reads a registered session count off the journal must do the same.
 
+### The journal service never pushed, and the retired host cron covered for it
+
+Found 2026-09-21, when `deploy/upgrade.sh` refused to fast-forward a
+diverged server checkout. The `journal` container runs as the host uid
+that owns the checkout (`ENGINE_UID`, 1000), its image has no passwd entry
+for that uid, and OpenSSH will not start without one — `No user exists for
+uid 1000`. Every scheduled run since the 2026-08-17 cutover failed that
+way; the deploy key's "last used" on GitHub was seven seconds after its
+creation. Nobody noticed because a leftover **host** crontab line
+(`5 2 * * *`, `auto: journal`, all output to `/dev/null`) had been
+committing and pushing `reports/` the whole time — until a push to `main`
+from a dev machine on 2026-09-15 put `origin` ahead and that cron's pushes
+began failing silently too.
+
+Three lessons are encoded in the fix rather than left here as advice:
+`deploy/docker-compose.yml` mounts the host's `/etc/passwd` read-only into
+`journal`; `deploy/journal-commit.sh` fetches and fast-forwards as separate
+steps (the old `git pull --ff-only` reported an authentication failure as
+"checkout has diverged"), pushes whenever the checkout is ahead rather than
+only after a fresh commit, and writes its block to `logs/paper-*.log` so a
+failure is a CRITICAL the dashboard and the weekly report already surface
+instead of a line in `docker logs` nothing reads. A container healthcheck
+that only proves the scheduler process is alive proves nothing about
+whether the job it schedules has ever succeeded — see
+docs/operations.md's verification command. `tests/test_journal_commit.py`
+runs the script against real throwaway repositories.
+
 ## Account size is a real constraint
 
 Both profiles hold about $10,000, so a MOM_LS slot is roughly $75. Gates sized

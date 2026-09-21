@@ -139,6 +139,31 @@ start. It commits nightly (`deploy/journal-crontab`); see
 [docs/architecture.md](architecture.md#the-journal-service) for why this is
 a separate, narrower trust tier rather than folded into `engine`.
 
+Placing the key is not proof the service works. Prove it end to end, with
+the same user, key and host-key pinning the scheduled job uses — read-only,
+it pushes nothing:
+
+```bash
+docker compose -f deploy/docker-compose.yml run --rm -T --no-deps journal \
+  sh -c 'cd /repo && git ls-remote origin main'
+```
+
+A commit hash means the nightly push can authenticate. `No user exists for
+uid …` means the runtime uid has no passwd entry inside the container (the
+`/etc/passwd` mount in `deploy/docker-compose.yml` exists for exactly
+this); `Permission denied (publickey)` means the key file or its GitHub
+registration. GitHub's deploy-key page shows a **last used** date — if it
+is not recent, the service is not pushing, whatever `docker compose ps`
+says about its health.
+
+Each run writes a `job=journal` block to `logs/paper-YYYYMMDD.log`, the
+same file `scripts/paper.sh` writes, so a failure shows up as a CRITICAL in
+the dashboard's attention signal and in the weekly report. It fast-forwards
+only: if someone pushes to `main` while the checkout holds journal commits
+that never reached GitHub, the run refuses and lists them. Those commits
+touch `reports/paper*/` only and were never published, so the resolution on
+the server is `git pull --rebase origin main && git push origin main`.
+
 ## Legacy host-cron deployment (rollback only)
 
 Production cut over to the containerized deployment above on **2026-08-17**.
