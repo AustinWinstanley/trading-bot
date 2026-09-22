@@ -79,7 +79,9 @@ accounts (base −$144 of a −$96 total, 2× −$665 of −$565) while SPY rose
 3.2% — see the `mom_ls` note in `config.yaml` and
 [docs/research.md](docs/research.md#live-results-and-the-2026-09-14-stand-down).
 Its 15% moved to the SPY core pending a replacement sleeve that clears a
-benchmark-beats-SPY study. Cash is an intentional residual position.
+benchmark-beats-SPY study — the ordered candidate list, and what has
+already been judged, is [docs/candidates.md](docs/candidates.md). Cash is
+an intentional residual position.
 
 ### Strategy status
 
