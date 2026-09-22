@@ -171,6 +171,10 @@ directional intraday family qualified. News passed a data-feasibility check but
 not a return study, and the 0DTE surface collector is read-only observation.
 **Check `reports/*.json` for an existing `decision` before proposing a
 change.** Overriding one needs new evidence, not a fresh opinion.
+[docs/candidates.md](docs/candidates.md) is the running map of those
+decisions by family, the candidates still worth studying in priority
+order, and the operational items that gate them — start there, and keep
+it current when a candidate is registered or decided.
 
 ### The 2026-08-04 frozen window was substantially spent by 2026-08-12
 
