@@ -30,7 +30,7 @@
 
 annotated-types==0.8.0
     # via pydantic
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   httpx2
     #   mcp
@@ -42,17 +42,17 @@ attrs==26.1.0
     #   referencing
 blinker==1.9.0
     # via flask
-certifi==2026.7.22
+certifi==2026.10.19
     # via requests
 cffi==2.1.1
     # via cryptography
-charset-normalizer==3.5.0
+charset-normalizer==3.5.2
     # via requests
-click==8.4.2
+click==8.5.0
     # via
     #   flask
     #   uvicorn
-cryptography==42.0.8
+cryptography==50.0.2
     # via
     #   -r /tmp/combined-v3.in
     #   pyjwt
@@ -64,16 +64,16 @@ h11==0.16.0
     # via
     #   httpcore2
     #   uvicorn
-httpcore2==2.10.0
+httpcore2==2.15.1
     # via httpx2
-httpx2==2.10.0
+httpx2==2.15.1
     # via mcp
-idna==3.18
+idna==3.20
     # via
     #   anyio
     #   httpx2
     #   requests
-iniconfig==2.3.0
+iniconfig==2.3.1
     # via pytest
 itsdangerous==2.2.0
     # via flask
@@ -83,42 +83,42 @@ jsonschema==4.26.0
     # via mcp
 jsonschema-specifications==2025.9.1
     # via jsonschema
-markupsafe==3.0.3
+markupsafe==3.0.4
     # via
     #   flask
     #   jinja2
     #   werkzeug
-mcp==2.0.0
+mcp==2.3.0
     # via -r /tmp/combined-v3.in
-mcp-types==2.0.0
+mcp-types==2.3.0
     # via mcp
-numpy==2.5.2
+numpy==2.5.4
     # via
     #   -r /tmp/combined-v3.in
     #   pandas
-opentelemetry-api==1.44.0
+opentelemetry-api==1.45.1
     # via mcp
 packaging==26.3
     # via
     #   gunicorn
     #   pytest
-pandas==3.0.5
+pandas==3.0.6
     # via -r /tmp/combined-v3.in
-pluggy==1.6.0
+pluggy==1.7.0
     # via pytest
-pyarrow==25.0.1
+pyarrow==26.0.0
     # via -r /tmp/combined-v3.in
-pycparser==3.0
+pycparser==3.11
     # via cffi
-pydantic==2.13.4
+pydantic==2.14.1
     # via
     #   mcp
     #   mcp-types
-pydantic-core==2.46.4
+pydantic-core==2.50.1
     # via pydantic
-pygments==2.20.0
+pygments==2.21.0
     # via pytest
-pyjwt==2.13.0
+pyjwt==2.15.1
     # via mcp (its own dependency spec pulls in the [crypto] extra; a
     # constraints file cannot carry extras syntax, only name==version —
     # this line pins the version, mcp's requirement still applies the extra)
@@ -136,19 +136,19 @@ referencing==0.37.0
     #   jsonschema-specifications
 requests==2.34.2
     # via -r /tmp/combined-v3.in
-rpds-py==2026.6.3
+rpds-py==2026.9.1
     # via
     #   jsonschema
     #   referencing
 six==1.17.0
     # via python-dateutil
-sse-starlette==3.4.8
+sse-starlette==3.5.0
     # via mcp
-starlette==1.6.0
+starlette==1.9.0
     # via
     #   mcp
     #   sse-starlette
-truststore==0.10.4
+truststore==0.10.5
     # via
     #   httpcore2
     #   httpx2
@@ -164,9 +164,9 @@ typing-inspection==0.4.4
     # via
     #   mcp
     #   pydantic
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
-uvicorn==0.52.3
+uvicorn==0.54.0
     # via mcp
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via flask
